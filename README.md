@@ -34,6 +34,19 @@ flowchart TD
 
 Reference facts and calculated estimates have distinct semantics. PostgreSQL prepares the relationships and reporting outputs. Power BI presents filtered views, paths, and time series using explicit row grains.
 
+## First working slice: synthetic fixture contract
+
+The repository now has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It does not yet load PostgreSQL, calculate rolling correlations, or create a Power BI report. Python 3.11 or newer is required; runtime dependencies are empty in `requirements.lock`.
+
+```bash
+PYTHONPATH=src python -m market_atlas fixture build --output /tmp/marketatlas-fixture
+PYTHONPATH=src python -m market_atlas fixture validate --input /tmp/marketatlas-fixture
+PYTHONPATH=src python -m market_atlas fixture inspect --knowledge-cutoff 2024-02-10T00:00:00Z
+PYTHONPATH=src python -m unittest discover -s tests -v
+```
+
+The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Initial discovery](reports/discovery.md) records what was verified about EcoMedallion and what still needs authorized database inspection. All implementation acceptance criteria remain pending.
+
 ## Delivery documents
 
 Read in order:
