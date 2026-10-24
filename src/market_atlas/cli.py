@@ -36,7 +36,11 @@ from .migrations import (
     apply_migrations,
     validate_role_boundaries,
 )
-from .publishing.fixture_build import build_fixture_snapshot, validate_fixture_build
+from .publishing.fixture_build import (
+    build_fixture_snapshot,
+    validate_fixture_build,
+    validate_fixture_reporting,
+)
 
 
 def _build(output: Path) -> int:
@@ -310,6 +314,18 @@ def _validate_fixture_build(config_path: Path) -> int:
     return 0 if result["status"] == "valid" else 1
 
 
+def _validate_fixture_reporting(config_path: Path) -> int:
+    try:
+        result = validate_fixture_reporting(
+            load_target_database(config_path), build_fixture()
+        )
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="market-atlas")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -391,6 +407,12 @@ def main(argv: list[str] | None = None) -> int:
     build_fixture.add_argument("--knowledge-cutoff")
     build_validate = build_commands.add_parser("validate-fixture")
     build_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    report = commands.add_parser(
+        "report", help="validate snapshot-pinned report outputs"
+    )
+    report_commands = report.add_subparsers(dest="report_command", required=True)
+    report_validate = report_commands.add_parser("validate-fixture")
+    report_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     args = parser.parse_args(argv)
     if args.command == "database":
         if args.database_command == "migrate":
@@ -410,6 +432,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.build_command == "fixture":
             return _build_fixture_snapshot(args.config, args.knowledge_cutoff)
         return _validate_fixture_build(args.config)
+    if args.command == "report":
+        return _validate_fixture_reporting(args.config)
     if args.command == "graph":
         if args.graph_command == "load-fixture":
             return _load_fixture_graph(args.config)

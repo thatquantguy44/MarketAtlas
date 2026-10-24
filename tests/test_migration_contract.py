@@ -86,6 +86,25 @@ class MigrationContractTests(unittest.TestCase):
         ):
             self.assertIn(required, sql)
 
+    def test_reporting_migration_declares_snapshot_pinned_grains(self):
+        sql = Path("sql/migrations/007_reporting_provenance.sql").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "CREATE TABLE IF NOT EXISTS atlas_report.node_snapshot",
+            "CREATE TABLE IF NOT EXISTS atlas_report.relationship_snapshot",
+            "CREATE TABLE IF NOT EXISTS atlas_report.macro_context_snapshot",
+            "CREATE TABLE IF NOT EXISTS atlas_report.bounded_path_snapshot",
+            "CREATE TABLE IF NOT EXISTS atlas_report.provenance_snapshot",
+            "current_snapshot_metadata",
+            "current_node_dimension",
+            "current_relationship_fact",
+            "current_macro_context_fact",
+            "current_bounded_path_bridge",
+            "current_provenance",
+        ):
+            self.assertIn(required, sql)
+
 
 if __name__ == "__main__":
     unittest.main()
