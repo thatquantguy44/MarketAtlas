@@ -208,6 +208,54 @@ def load_fixture(
                     ),
                 )
 
+            for context in fixture["curated_contexts"]:
+                cursor.execute(
+                    """
+                    INSERT INTO atlas.curated_macro_context_version (
+                        curated_macro_context_version_id, context_key,
+                        macro_series_node_id, target_node_id, target_node_type,
+                        mapping_kind, evidence_basis, rationale, mapping_owner,
+                        source_reference, taxonomy_provider, taxonomy_version,
+                        supporting_assertion_id, valid_from, valid_to, available_at,
+                        availability_status, input_manifest_id, source_record,
+                        recorded_from, provenance
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, 'known', %s, %s, %s, %s
+                    )
+                    ON CONFLICT (curated_macro_context_version_id) DO UPDATE
+                    SET rationale = EXCLUDED.rationale,
+                        mapping_owner = EXCLUDED.mapping_owner,
+                        source_reference = EXCLUDED.source_reference,
+                        taxonomy_provider = EXCLUDED.taxonomy_provider,
+                        taxonomy_version = EXCLUDED.taxonomy_version,
+                        input_manifest_id = EXCLUDED.input_manifest_id,
+                        provenance = EXCLUDED.provenance
+                    """,
+                    (
+                        stable_id("curated-context", context["id"]),
+                        stable_id("curated-context-key", context["id"]),
+                        node_ids[context["macro_series_id"]],
+                        node_ids[context["target_id"]],
+                        entity_types[context["target_id"]],
+                        context["mapping_kind"],
+                        context["evidence_basis"],
+                        context["rationale"],
+                        context["mapping_owner"],
+                        context["source_reference"],
+                        context["taxonomy_provider"],
+                        context["taxonomy_version"],
+                        stable_id("assertion", context["supporting_assertion_id"]),
+                        context["valid_from"],
+                        context["valid_to"],
+                        context["available_at"],
+                        input_manifest_id,
+                        f"synthetic-fixture:{context['id']}",
+                        context["recorded_at"],
+                        Jsonb({"source": context["provenance"]}),
+                    ),
+                )
+
             calendar_name = fixture["metadata"]["calendar"]
             for session in fixture["sessions"]:
                 cursor.execute(
@@ -330,7 +378,9 @@ def _fixture_counts(cursor: Any) -> dict[str, int]:
             (SELECT count(*) FROM atlas.market_observation_version
              WHERE source_record LIKE 'synthetic-price-%') AS market_observations,
             (SELECT count(*) FROM atlas.macro_observation_version
-             WHERE source_record LIKE 'synthetic-macro-%') AS macro_observations
+             WHERE source_record LIKE 'synthetic-macro-%') AS macro_observations,
+            (SELECT count(*) FROM atlas.curated_macro_context_version
+             WHERE source_record LIKE 'synthetic-fixture:CTX%') AS curated_contexts
         """
     )
     row = cursor.fetchone()
@@ -340,6 +390,7 @@ def _fixture_counts(cursor: Any) -> dict[str, int]:
         "assertion_count": row[2],
         "market_observation_count": row[3],
         "macro_observation_count": row[4],
+        "curated_context_count": row[5],
     }
 
 
@@ -710,4 +761,99 @@ def validate_observation_fixture(
         message = getattr(diagnostic, "message_primary", None) or str(error)
         raise DatabaseUnavailable(
             f"observation fixture validation failed: {message}"
+        ) from error
+
+
+def validate_curated_context_fixture(
+    config: TargetDatabaseConfig, fixture: dict[str, Any]
+) -> dict[str, Any]:
+    """Prove curated macro context is attributable and never labeled as sensitivity."""
+    try:
+        from psycopg.errors import CheckViolation
+        from psycopg.types.json import Jsonb
+
+        load_fixture(config, fixture)
+        with _connect(config) as connection, connection.cursor() as cursor:
+            macro_series = stable_id("node", "M-GROWTH")
+            cursor.execute(
+                """
+                SELECT mapping_kind, evidence_basis, semantic_label, mapping_owner,
+                       source_reference, taxonomy_provider, taxonomy_version
+                FROM atlas.curated_macro_context_as_of(%s, %s, NULL)
+                WHERE macro_series_node_id = %s
+                ORDER BY mapping_kind
+                """,
+                ("2024-02-10", "2024-02-10T23:59:59Z", macro_series),
+            )
+            rows = cursor.fetchall()
+            explicit_context_labels = len(rows) == 3 and all(
+                row[2] == "context_only_not_measured_sensitivity_or_causality"
+                for row in rows
+            )
+            complete_mapping_examples = {(row[0], row[1]) for row in rows} == {
+                ("series_concept", "source_backed"),
+                ("series_country", "source_backed"),
+                ("market_context", "curated"),
+            }
+            provenance_complete = all(all(value for value in row[3:]) for row in rows)
+
+            cursor.execute("SAVEPOINT invalid_context_target")
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO atlas.curated_macro_context_version (
+                        curated_macro_context_version_id, context_key,
+                        macro_series_node_id, target_node_id, target_node_type,
+                        mapping_kind, evidence_basis, rationale, mapping_owner,
+                        source_reference, taxonomy_provider, taxonomy_version,
+                        supporting_assertion_id, valid_from, available_at,
+                        availability_status, input_manifest_id, source_record,
+                        recorded_from, provenance
+                    ) VALUES (
+                        %s, %s, %s, %s, 'instrument',
+                        'series_country', 'source_backed', 'invalid validation mapping',
+                        'validation-owner', 'validation-source', 'validation-taxonomy',
+                        'v1', %s, '2024-01-02', '2024-01-02T12:00:00Z',
+                        'known', %s, 'validation:invalid-context',
+                        '2024-01-02T12:00:00Z', %s
+                    )
+                    """,
+                    (
+                        stable_id("validation", "invalid-context"),
+                        stable_id("validation-key", "invalid-context"),
+                        macro_series,
+                        stable_id("node", "I-A"),
+                        stable_id("assertion", "A11"),
+                        stable_id("input-manifest", sha256(fixture)),
+                        Jsonb({"source": "validation"}),
+                    ),
+                )
+                invalid_target_rejected = False
+            except CheckViolation:
+                invalid_target_rejected = True
+                cursor.execute("ROLLBACK TO SAVEPOINT invalid_context_target")
+            connection.rollback()
+
+        passed = all(
+            (
+                explicit_context_labels,
+                complete_mapping_examples,
+                provenance_complete,
+                invalid_target_rejected,
+            )
+        )
+        return {
+            "status": "valid" if passed else "invalid",
+            "explicit_context_labels": explicit_context_labels,
+            "complete_mapping_examples": complete_mapping_examples,
+            "provenance_complete": provenance_complete,
+            "invalid_target_rejected": invalid_target_rejected,
+        }
+    except (ValueError, DatabaseUnavailable):
+        raise
+    except Exception as error:
+        diagnostic = getattr(error, "diag", None)
+        message = getattr(diagnostic, "message_primary", None) or str(error)
+        raise DatabaseUnavailable(
+            f"curated-context fixture validation failed: {message}"
         ) from error

@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, and versioned fixture observations exist; analytics, publication, and reporting sections remain proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, and bounded rolling correlations exist; publication and reporting sections remain proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -28,7 +28,8 @@ Proposed schemas: `atlas` for graph/build objects and `atlas_report` for serving
 | `node_type`, `edge_type`, `edge_endpoint_rule` | Controlled type definitions and allowed ordered endpoint-type pairs |
 | `reference_assertion` | One versioned sourced fact or curated mapping assertion, including rationale/source and temporal fields |
 | `market_observation_version`, `macro_observation_version`, `input_manifest` | Implemented fixture contracts: one market or release/vintage version at declared grain, with a reproducible input hash |
-| `analytical_edge` | One canonical pair, method/configuration, endpoint date, and build snapshot |
+| `curated_macro_context_version` | Implemented fixture context mapping with evidence basis, owner, source, taxonomy version, temporal fields, and a non-sensitivity semantic label |
+| `rolling_correlation_estimate_version` | Implemented fixture estimate: canonical instrument pair, fixed session window, cutoff, method/configuration and input hashes, correlation or explicit undefined status |
 | `build_run`, `input_manifest`, `quality_result` | Run status, immutable input identity, and validation outcomes |
 | `serving_snapshot`, `publication` | Complete validated serving outputs and one atomically selected publication |
 

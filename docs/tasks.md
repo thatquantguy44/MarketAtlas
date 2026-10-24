@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-24. T-005 and T-006 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-24. T-005 through T-009 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -60,17 +60,21 @@ Implement calendar, measure/unit, adjustment, release/vintage, and cutoff contra
 
 Completed 2026-10-24 for the fixture track. Migration `003_observation_versions.sql` adds `input_manifest`, calendar sessions, versioned market and macro observations, and cutoff-aware query functions. The live validation confirms an initial macro vintage at the early cutoff and the later revision only after its availability time; it excludes a not-yet-available market observation, labels an unsupported adjusted-history probe, and reproduces the fixture manifest hash. Evidence: `reports/t007-validation.md`.
 
-### [ ] T-008 — Add curated macro context
+### [x] T-008 — Add curated macro context
 
 Owner: quant / mapping owner. Dependencies: T-006, T-007. Maps: REQ-007 → AC-007.
 
 Add source-backed or curated series-country/concept mappings and a limited set of market relevance links. Record rationale, owner, effective/knowledge dates, and taxonomy/provider versions. Distinguish domicile/listing/currency facts from economic exposure. Evidence: inspectable mapping examples and explicit context labels; no curated link is presented as measured sensitivity.
 
-### [ ] T-009 — Implement bounded rolling correlations
+Completed 2026-10-24 for the fixture track. Migration `004_curated_macro_context.sql` adds versioned mappings with explicit source/curated basis, owner, source reference, taxonomy provider/version, support assertion, temporal fields, input manifest, and the required `context_only_not_measured_sensitivity_or_causality` label. The fixture validation exposes source-backed country and concept mappings plus a curated sector mapping, verifies complete provenance, and rejects an invalid country-to-instrument context mapping. Evidence: `reports/t008-validation.md`.
+
+### [x] T-009 — Implement bounded rolling correlations
 
 Owner: quant implementation engineer. Dependencies: T-007. Maps: REQ-008, NFR-002, NFR-003 → AC-008, AC-014, AC-015.
 
 Implement the configured pair list, common session grid, transformed returns, fixed 60-session window/minimum 45 paired observations, canonical pair IDs, and explicit undefined statuses. Record method/input/window metadata. Evidence: independent numerical comparison within declared tolerance; missing data does not expand windows; constant/incompatible/asynchronous inputs are handled explicitly; future observations cannot enter earlier cutoffs.
+
+Completed 2026-10-24 for the fixture track. Migration `005_rolling_correlation_estimates.sql` adds versioned, canonical instrument-pair estimates with the fixed 60-session/45-pair contract, method/configuration hashes, input selection hash, availability cutoff, and explicit supported/undefined statuses. The fixture validation persists 16 supported `I-A`/`I-B` estimates and 16 explicit zero-variance `I-A`/`I-C` outcomes; the final supported value agrees with an independent calculation within `1e-12`, missing prices do not expand the window, and a historical cutoff produces only 20 estimates whose inputs were already available. Evidence: `reports/t009-validation.md`.
 
 ## Phase C — Publish and explain
 

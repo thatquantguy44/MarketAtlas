@@ -10,6 +10,10 @@ from pathlib import Path
 
 from .adapters.macro_medallion import extract as extract_macro_medallion
 from .adapters.macro_medallion import verify_contract as verify_macro_medallion
+from .analytics.fixture_correlations import (
+    calculate_fixture_correlations,
+    validate_rolling_correlation_fixture,
+)
 from .config import (
     DEFAULT_CONFIG_PATH,
     ConfigError,
@@ -22,6 +26,7 @@ from .database import DatabaseUnavailable, inspect_source
 from .fixtures import build_fixture
 from .graph.fixture_loader import (
     load_fixture,
+    validate_curated_context_fixture,
     validate_fixture_graph,
     validate_observation_fixture,
     validate_temporal_fixture,
@@ -59,6 +64,7 @@ def _build(output: Path) -> int:
                 "assertions",
                 "market_observations",
                 "macro_observations",
+                "curated_contexts",
                 "configured_pairs",
             )
         },
@@ -93,6 +99,7 @@ def _validate(directory: Path) -> int:
             "assertions",
             "market_observations",
             "macro_observations",
+            "curated_contexts",
             "configured_pairs",
         )
     }
@@ -240,6 +247,44 @@ def _validate_observation_fixture(config_path: Path) -> int:
     return 0 if result["status"] == "valid" else 1
 
 
+def _validate_curated_context_fixture(config_path: Path) -> int:
+    try:
+        result = validate_curated_context_fixture(
+            load_target_database(config_path), build_fixture()
+        )
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
+def _calculate_fixture_correlations(
+    config_path: Path, knowledge_cutoff: str | None
+) -> int:
+    try:
+        result = calculate_fixture_correlations(
+            load_target_database(config_path), build_fixture(), knowledge_cutoff
+        )
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0
+
+
+def _validate_rolling_correlation_fixture(config_path: Path) -> int:
+    try:
+        result = validate_rolling_correlation_fixture(
+            load_target_database(config_path), build_fixture()
+        )
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="market-atlas")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -297,6 +342,23 @@ def main(argv: list[str] | None = None) -> int:
     graph_validate_observation.add_argument(
         "--config", type=Path, default=DEFAULT_CONFIG_PATH
     )
+    graph_validate_context = graph_commands.add_parser(
+        "validate-curated-context-fixture"
+    )
+    graph_validate_context.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
+    analytics = commands.add_parser(
+        "analytics", help="calculate or validate bounded fixture estimates"
+    )
+    analytics_commands = analytics.add_subparsers(
+        dest="analytics_command", required=True
+    )
+    analytics_calculate = analytics_commands.add_parser("calculate-fixture")
+    analytics_calculate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    analytics_calculate.add_argument("--knowledge-cutoff")
+    analytics_validate = analytics_commands.add_parser("validate-fixture")
+    analytics_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     args = parser.parse_args(argv)
     if args.command == "database":
         if args.database_command == "migrate":
@@ -308,6 +370,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.adapter_command == "verify":
             return _verify_adapter(args.config)
         return _extract_adapter(args.config, args.pilot_config, args.output)
+    if args.command == "analytics":
+        if args.analytics_command == "calculate-fixture":
+            return _calculate_fixture_correlations(args.config, args.knowledge_cutoff)
+        return _validate_rolling_correlation_fixture(args.config)
     if args.command == "graph":
         if args.graph_command == "load-fixture":
             return _load_fixture_graph(args.config)
@@ -315,6 +381,8 @@ def main(argv: list[str] | None = None) -> int:
             return _validate_temporal_fixture(args.config)
         if args.graph_command == "validate-observation-fixture":
             return _validate_observation_fixture(args.config)
+        if args.graph_command == "validate-curated-context-fixture":
+            return _validate_curated_context_fixture(args.config)
         return _validate_fixture_graph(args.config)
     if args.fixture_command == "build":
         return _build(args.output)

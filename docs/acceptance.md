@@ -10,15 +10,15 @@ Status: implementation evidence is in progress. AC-003 passes for the fixture tr
 | AC-004 | REQ-004 | Passed (fixture) | `reports/t006-validation.md`: bounded path, endpoint rules, disputed/retracted state handling, and invalid-type rejection pass | Implementation agent, 2026-10-24 |
 | AC-005 | REQ-005 | Passed (fixture) | `reports/t006-validation.md`: source availability and MarketAtlas record-time replay differ as expected; unsupported history is explicit | Implementation agent, 2026-10-24 |
 | AC-006 | REQ-006 | Passed (fixture) | `reports/t007-validation.md`: market/macro version contracts, macro-vintage cutoff selection, adjustment-history labeling, and input-manifest reproduction | Implementation agent, 2026-10-24 |
-| AC-007 | REQ-007 | Pending | Not yet produced | Unassigned |
-| AC-008 | REQ-008 | Pending | Not yet produced | Unassigned |
+| AC-007 | REQ-007 | Passed (fixture) | `reports/t008-validation.md`: source-backed country/concept and curated sector context mappings have rationale, owner, source, dates, taxonomy version, and explicit non-sensitivity label | Implementation agent, 2026-10-24 |
+| AC-008 | REQ-008 | Passed (fixture) | `reports/t009-validation.md`: fixed-window configured-pair return correlations, independent numerical match, undefined statuses, input/cutoff metadata, and no-lookahead validation | Implementation agent, 2026-10-24 |
 | AC-009 | REQ-009 | Pending | Not yet produced | Unassigned |
 | AC-010 | REQ-010 | Pending | Not yet produced | Unassigned |
 | AC-011 | REQ-011 | Pending | Not yet produced | Unassigned |
 | AC-012 | REQ-012 | Pending | Not yet produced | Unassigned |
 | AC-013 | NFR-001 | Partial | `reports/t005-validation.md`: source/writer/report role boundaries and negative write probe pass; release artifact review remains | Implementation agent, 2026-10-24 |
-| AC-014 | NFR-002 | Partial | `reports/t007-validation.md`: fixture input hash and macro-vintage cutoff selection are reproducible; end-to-end build/snapshot reproducibility remains | Implementation agent, 2026-10-24 |
-| AC-015 | NFR-003 | Partial | `reports/t005-validation.md`, `reports/t006-validation.md`, `reports/t007-validation.md`: graph, temporal, and observation guards pass; analytical/publication checks remain | Implementation agent, 2026-10-24 |
+| AC-014 | NFR-002 | Partial | `reports/t007-validation.md`, `reports/t009-validation.md`: fixture input hash, observation cutoff selection, and correlation configuration/input hashes are reproducible; end-to-end build/snapshot reproducibility remains | Implementation agent, 2026-10-24 |
+| AC-015 | NFR-003 | Partial | `reports/t005-validation.md`, `reports/t006-validation.md`, `reports/t007-validation.md`, `reports/t008-validation.md`, `reports/t009-validation.md`: graph, temporal, observation, context, and analytical guards pass; publication checks remain | Implementation agent, 2026-10-24 |
 | AC-016 | NFR-004 | Pending | Not yet produced | Unassigned |
 | AC-017 | NFR-005 | Pending | Not yet produced | Unassigned |
 | AC-018 | NFR-006 | Pending | Not yet produced | Unassigned |
