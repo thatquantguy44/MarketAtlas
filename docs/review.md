@@ -62,4 +62,4 @@ Documentation checks should verify file links, stable requirement/acceptance ref
 | NFR-005 | P5, Failure Modes & Rollback | T-010, T-013, T-014 | AC-017 |
 | NFR-006 | P1, P7 | T-002, T-014 | AC-018 |
 
-All tasks and acceptance evidence remain pending. The checked-in evidence register is [acceptance.md](acceptance.md). The package includes the results of documentation-only structure and reference checks in `reports/documentation-checks.md`.
+Implementation status has advanced since the original documentation review. The checked-in evidence register is [acceptance.md](acceptance.md), and T-005 evidence is retained in `reports/t005-validation.md`. The earlier `reports/documentation-checks.md` remains a historical record of the documentation-only review.

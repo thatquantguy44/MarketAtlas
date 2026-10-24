@@ -2,11 +2,11 @@
 
 **A temporal market knowledge graph connecting instruments, macro data, and measurable relationships through PostgreSQL and Power BI.**
 
-Status: design stage. This repository contains the specification and delivery documents. The graph implementation, source integrations, and Power BI report are planned.
+Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, and temporal assertion replay work. Observation loading, analytics, serving publication, and Power BI remain planned.
 
 MarketAtlas gives market data a relationship layer. Start with a security, issuer, currency, country, index, or economic series; follow the links; inspect the source and the date each link was known. Compare those sourced relationships with time-bounded statistical estimates without treating correlation as causality.
 
-The project is designed to consume existing MacroMedallion / EcoMedallion outputs through small adapters and use PostgreSQL for graph storage and reporting views. Their exact repository identities, schemas, and reusable components must be established during discovery.
+The project consumes verified MacroMedallion PostgreSQL outputs through a small read-only adapter and will use dedicated PostgreSQL schemas for graph storage and reporting views. Repository identity, redistribution rights, and a least-privilege database role still require owner decisions.
 
 ## The first demonstration
 
@@ -34,9 +34,9 @@ flowchart TD
 
 Reference facts and calculated estimates have distinct semantics. PostgreSQL prepares the relationships and reporting outputs. Power BI presents filtered views, paths, and time series using explicit row grains.
 
-## First working slice: synthetic fixture contract
+## Working slices
 
-The repository now has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It does not yet load PostgreSQL, calculate rolling correlations, or create a Power BI report. Python 3.11 or newer is required; runtime dependencies are empty in `requirements.lock`.
+The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations. It does not yet load the MarketAtlas graph, calculate rolling correlations, or create a Power BI report. Python 3.11 or newer is required.
 
 ```bash
 PYTHONPATH=src python -m market_atlas fixture build --output /tmp/marketatlas-fixture
@@ -45,7 +45,21 @@ PYTHONPATH=src python -m market_atlas fixture inspect --knowledge-cutoff 2024-02
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Initial discovery](reports/discovery.md) records what was verified about EcoMedallion and what still needs authorized database inspection. All implementation acceptance criteria remain pending.
+For local PostgreSQL integration, copy `configs/local.example.toml` to the git-ignored `configs/local.toml`, fill in the connection values, install `requirements.lock`, and run:
+
+```bash
+PYTHONPATH=src python -m market_atlas database inspect --output data/generated/macro_medallion_schema.json
+PYTHONPATH=src python -m market_atlas database migrate
+PYTHONPATH=src python -m market_atlas database validate-roles
+PYTHONPATH=src python -m market_atlas adapter verify
+PYTHONPATH=src python -m market_atlas adapter extract --output data/generated/macro_medallion_pilot.json
+PYTHONPATH=src python -m market_atlas graph validate-fixture
+PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
+```
+
+Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The migration never changes objects or permissions inside existing source schemas beyond granting the source role SELECT on the two approved interfaces.
+
+The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records one fixture criterion passed and the remaining partial or pending checks.
 
 ## Delivery documents
 

@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: candidate design for the v0.1 specification, 2026-10-24. This document proposes downstream work; it does not assert specification approval, an implementation gate pass, or completed integrations. All paths, tables, and commands below are proposed unless described as existing documentation.
+Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, and temporal reference replay exist; observations, analytics, publication, and reporting sections remain proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -107,7 +107,7 @@ Report pages: market map, macro context, correlation monitor, and provenance/qua
 | `tests/`, `reports/` | Contract/temporal/numeric/integration validation and evidence |
 | `docs/` | Specification chain, decisions, operating handoff |
 
-Proposed CLI workflow: `market-atlas demo`, `market-atlas build --adapter <name>`, `market-atlas validate --snapshot <id>`, and `market-atlas publish --snapshot <id>`. These commands do not exist yet; T-002/T-014 must implement and document the actual interface.
+Existing CLI workflow: `market-atlas fixture build|validate|inspect`, `market-atlas database inspect`, and `market-atlas adapter verify|extract`. Proposed downstream workflow: `market-atlas demo`, `market-atlas build --adapter <name>`, `market-atlas validate --snapshot <id>`, and `market-atlas publish --snapshot <id>`. T-005 through T-014 must implement and document those downstream commands.
 
 Validate invalid endpoints, ticker reuse, late corrections, macro revisions, unavailable historical data, constant/missing series, clean-room fixture execution, idempotency, failure retention, provenance, and Power BI filter/grain behavior. Match numerical results against an independent hand-checkable calculation. For AC-016 record hardware, scale, query text, cache policy, build duration, and at least 20 runs per prepared query; target build under 5 minutes and query p95 at most 2 seconds. These are unmeasured proposed targets, not database or Power BI guarantees.
 

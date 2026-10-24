@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: candidate task plan, 2026-10-24. **Every task is pending.** Checkboxes describe implementation work; no database, pipeline, analytical result, Power BI report, or validation evidence is implied by this document.
+Status: active task plan, 2026-10-24. T-005 and T-006 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -11,6 +11,8 @@ Role names are proposed responsibilities. Record the actual person/agent on assi
 Owner: integration engineer. Dependencies: none. Maps: REQ-001 → AC-001.
 
 Identify exact MacroMedallion / EcoMedallion URL(s)/commits and relationships, owners, PostgreSQL interfaces, grains, permissions, history, and redistribution terms. Produce `reports/discovery.md` with reusable components and unresolved gaps. If access is unavailable, record the limitation and select the independent fixture track; never mark upstream verification passed. Evidence: actual inspected metadata or an explicit unresolved-status inventory, reviewed pilot defaults, and source-owner decisions.
+
+Progress: the local PostgreSQL interface, relevant series/vintage objects, keys, columns, and effective privileges have been inspected. Repository identity, owners, redistribution terms, and a least-privilege source role remain unresolved.
 
 ### [ ] T-002 — Scaffold repository and isolated runtime
 
@@ -30,19 +32,25 @@ Owner: integration engineer. Dependencies: T-001, T-003. Maps: REQ-001, REQ-006,
 
 Implement normalized contracts for entities, assertions, observations, and manifests. Map verified upstream objects when available; record optional adapter status separately from working fixtures. Validate required metadata, schema drift, rights, timestamp coverage, and source read permissions. Evidence: fixture contract checks plus inspected upstream mappings and read-only role checks for each activated adapter. Unavailable upstream adapters remain pending, not advertised as implemented.
 
+Progress: a bounded MacroMedallion adapter verifies and extracts macro-series metadata and point-in-time observation versions through an enforced read-only source role. Role-boundary evidence and graph loading now pass. Rights review and complete manifest/run lineage remain pending.
+
 ## Phase B — Build graph and analytical contracts
 
-### [ ] T-005 — Implement identities and ontology
+### [x] T-005 — Implement identities and ontology
 
 Owner: database / implementation engineer. Dependencies: T-003, T-004 fixture contract. Maps: REQ-003, REQ-004, NFR-003 → AC-003, AC-004, AC-015.
 
 Add dedicated-schema migrations for stable entities, versioned attributes, source identifiers, controlled predicates, and allowed endpoint pairs. Distinguish instruments/listings and types referenced by index/country/concept links. Evidence: stable IDs on reload, ticker-change and ticker-collision cases, no orphan accepted endpoints, and rejected invalid types/ambiguous overlaps. Preserve valid multi-membership.
 
-### [ ] T-006 — Implement temporal reference assertions
+Completed 2026-10-24 for the fixture track. Migration `001_identity_ontology.sql` created dedicated schemas, scoped NOLOGIN roles, identity/ontology tables, declarative endpoint enforcement, identifier overlap protection, and quarantine storage. The live fixture validation loaded 15 nodes, 4 identifier intervals, and 14 assertions; identical reloads preserved counts and UUIDs, `OLDX`/`NEWX` resolved to one listing, and invalid endpoint plus overlapping identifier probes were rejected. Evidence: `reports/t005-validation.md`.
+
+### [x] T-006 — Implement temporal reference assertions
 
 Owner: database engineer. Dependencies: T-005. Maps: REQ-004, REQ-005, NFR-003 → AC-004, AC-005, AC-015.
 
 Store effective validity, source availability, and system record intervals with provenance. Preserve corrections/retractions and disputed/unknown states. Implement bounded path queries with explicit effective/knowledge/system cutoffs. Evidence: late-arrival fixture produces the expected difference between current context and historical replay; unsupported history is visible, and invalid intervals are quarantined.
+
+Completed 2026-10-24 for the fixture track. Migration `002_temporal_assertions.sql` adds assertion business keys, correction versioning, source/effective/system cutoff queries, and recursive bounded paths. The live validation proves late source availability differs from historical MarketAtlas replay, a retraction retains the prior accepted version, the affected path disappears in current context, and an unknown-availability assertion is returned as `unsupported_history`. Evidence: `reports/t006-validation.md`.
 
 ### [ ] T-007 — Implement observation versions and availability selection
 

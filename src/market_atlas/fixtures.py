@@ -38,21 +38,69 @@ def build_fixture() -> dict:
         {"id": "M-GROWTH", "type": "macro_series", "label": "Synthetic Growth Index"},
     ]
     identifiers = [
-        {"entity_id": "L-A", "source": "fixture-exchange", "scheme": "ticker", "value": "OLDX", "valid_from": "2024-01-02", "valid_to": sessions[35]},
-        {"entity_id": "L-A", "source": "fixture-exchange", "scheme": "ticker", "value": "NEWX", "valid_from": sessions[35], "valid_to": None},
-        {"entity_id": "L-B", "source": "fixture-exchange", "scheme": "ticker", "value": "BETA", "valid_from": "2024-01-02", "valid_to": None},
-        {"entity_id": "L-C", "source": "fixture-exchange", "scheme": "ticker", "value": "FLAT", "valid_from": "2024-01-02", "valid_to": None},
+        {
+            "entity_id": "L-A",
+            "source": "fixture-exchange",
+            "scheme": "ticker",
+            "value": "OLDX",
+            "valid_from": "2024-01-02",
+            "valid_to": sessions[35],
+        },
+        {
+            "entity_id": "L-A",
+            "source": "fixture-exchange",
+            "scheme": "ticker",
+            "value": "NEWX",
+            "valid_from": sessions[35],
+            "valid_to": None,
+        },
+        {
+            "entity_id": "L-B",
+            "source": "fixture-exchange",
+            "scheme": "ticker",
+            "value": "BETA",
+            "valid_from": "2024-01-02",
+            "valid_to": None,
+        },
+        {
+            "entity_id": "L-C",
+            "source": "fixture-exchange",
+            "scheme": "ticker",
+            "value": "FLAT",
+            "valid_from": "2024-01-02",
+            "valid_to": None,
+        },
     ]
 
-    def assertion(key: str, source: str, target: str, predicate: str, *,
-                  available_at: str = "2024-01-02T12:00:00Z", status: str = "accepted",
-                  kind: str = "reference", rationale: str | None = None) -> dict:
+    def assertion(
+        key: str,
+        source: str,
+        target: str,
+        predicate: str,
+        *,
+        available_at: str = "2024-01-02T12:00:00Z",
+        recorded_at: str | None = None,
+        status: str = "accepted",
+        kind: str = "reference",
+        rationale: str | None = None,
+        assertion_key: str | None = None,
+        supersedes_id: str | None = None,
+    ) -> dict:
         return {
-            "id": key, "source_id": source, "target_id": target,
-            "predicate": predicate, "kind": kind, "status": status,
-            "valid_from": "2024-01-02", "valid_to": None,
-            "available_at": available_at, "recorded_at": available_at,
-            "provenance": "synthetic-fixture", "rationale": rationale,
+            "id": key,
+            "source_id": source,
+            "target_id": target,
+            "predicate": predicate,
+            "kind": kind,
+            "status": status,
+            "valid_from": "2024-01-02",
+            "valid_to": None,
+            "available_at": available_at,
+            "recorded_at": recorded_at or available_at,
+            "provenance": "synthetic-fixture",
+            "rationale": rationale,
+            "assertion_key": assertion_key or key,
+            "supersedes_id": supersedes_id,
         }
 
     assertions = [
@@ -61,17 +109,51 @@ def build_fixture() -> dict:
         assertion("A3", "L-C", "I-C", "lists"),
         assertion("A4", "I-A", "O-A", "issued_by"),
         assertion("A5", "I-B", "O-B", "issued_by"),
-        assertion("A6", "O-A", "S-TECH", "classified_as"),
+        assertion(
+            "A6", "O-A", "S-TECH", "classified_as", assertion_key="REL-ALPHA-TECH"
+        ),
         assertion("A7", "O-A", "IDX-DEMO", "member_of"),
-        assertion("A8", "O-A", "S-IND", "classified_as", status="disputed", available_at="2024-04-01T12:00:00Z"),
+        assertion(
+            "A8",
+            "O-A",
+            "S-IND",
+            "classified_as",
+            status="disputed",
+            available_at="2024-04-01T12:00:00Z",
+        ),
         assertion("A9", "L-A", "C-US", "listed_in"),
         assertion("A10", "I-A", "CCY-USD", "denominated_in"),
         assertion("A11", "M-GROWTH", "EC-GROWTH", "measures"),
         assertion("A12", "M-GROWTH", "C-US", "covers"),
-        assertion("A13", "S-TECH", "M-GROWTH", "context_for", kind="curated_context",
-                  rationale="Illustrative mapping only; not a measured sensitivity."),
-        assertion("A14", "O-B", "S-IND", "classified_as", available_at="2024-04-15T12:00:00Z",
-                  rationale="Late-arriving reference fact fixture"),
+        assertion(
+            "A13",
+            "S-TECH",
+            "M-GROWTH",
+            "context_for",
+            kind="curated_context",
+            rationale="Illustrative mapping only; not a measured sensitivity.",
+        ),
+        assertion(
+            "A14",
+            "O-B",
+            "S-IND",
+            "classified_as",
+            available_at="2024-04-15T12:00:00Z",
+            recorded_at="2024-05-01T12:00:00Z",
+            rationale="Late-arriving reference fact fixture",
+        ),
+        assertion(
+            "A15",
+            "O-A",
+            "S-TECH",
+            "classified_as",
+            available_at="2024-04-02T12:00:00Z",
+            recorded_at="2024-04-03T12:00:00Z",
+            status="retracted",
+            rationale="Synthetic correction retracting the original classification.",
+            assertion_key="REL-ALPHA-TECH",
+            supersedes_id="A6",
+        ),
     ]
 
     prices: list[dict] = []
@@ -84,23 +166,49 @@ def build_fixture() -> dict:
             # A missing price must not be forward-filled into a daily return.
             if instrument == "I-B" and index in (12, 34, 51):
                 continue
-            prices.append({"instrument_id": instrument, "session": session,
-                           "value": round(value, 8), "unit": "USD", "measure": "adjusted_close",
-                           "adjustment": "synthetic-none", "available_at": session + "T22:00:00Z",
-                           "source_record": f"synthetic-price-{instrument}-{index}"})
+            prices.append(
+                {
+                    "instrument_id": instrument,
+                    "session": session,
+                    "value": round(value, 8),
+                    "unit": "USD",
+                    "measure": "adjusted_close",
+                    "adjustment": "synthetic-none",
+                    "available_at": session + "T22:00:00Z",
+                    "source_record": f"synthetic-price-{instrument}-{index}",
+                }
+            )
 
     macro = [
-        {"series_id": "M-GROWTH", "period": "2024-01", "value": 101.0, "unit": "index",
-         "frequency": "monthly", "vintage": "initial", "available_at": "2024-02-05T13:00:00Z",
-         "source_record": "synthetic-macro-initial"},
-        {"series_id": "M-GROWTH", "period": "2024-01", "value": 101.4, "unit": "index",
-         "frequency": "monthly", "vintage": "revision", "available_at": "2024-03-05T13:00:00Z",
-         "source_record": "synthetic-macro-revision"},
+        {
+            "series_id": "M-GROWTH",
+            "period": "2024-01",
+            "value": 101.0,
+            "unit": "index",
+            "frequency": "monthly",
+            "vintage": "initial",
+            "available_at": "2024-02-05T13:00:00Z",
+            "source_record": "synthetic-macro-initial",
+        },
+        {
+            "series_id": "M-GROWTH",
+            "period": "2024-01",
+            "value": 101.4,
+            "unit": "index",
+            "frequency": "monthly",
+            "vintage": "revision",
+            "available_at": "2024-03-05T13:00:00Z",
+            "source_record": "synthetic-macro-revision",
+        },
     ]
     return {
-        "metadata": {"fixture_version": FIXTURE_VERSION, "synthetic": True,
-                     "license": "generated-synthetic", "calendar": "synthetic-weekdays-no-holidays",
-                     "source": "market-atlas-fixture"},
+        "metadata": {
+            "fixture_version": FIXTURE_VERSION,
+            "synthetic": True,
+            "license": "generated-synthetic",
+            "calendar": "synthetic-weekdays-no-holidays",
+            "source": "market-atlas-fixture",
+        },
         "sessions": sessions,
         "entities": entities,
         "identifiers": identifiers,

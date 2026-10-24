@@ -6,33 +6,35 @@ Updated: 2026-10-24. This is an early implementation handoff, not a completed pi
 
 The original market knowledge graph specification has been reviewed and reorganized into specification, architecture plan, tasks, roadmap, and traceability documents. The product name is MarketAtlas. The repository is [thatquantguy44/MarketAtlas](https://github.com/thatquantguy44/MarketAtlas), default branch `main`.
 
-The documentation package is on `main` at `f57d3c9423326f38cc060a38474614ff10ae6c8e`. The [EcoMedallion repository](https://github.com/thatquantguy44/EcoMedallion) and its README have been inspected for initial discovery; a distinct MacroMedallion repository has not been identified. A first fixture implementation slice now exists on `feat/fixture-foundation`: Python CLI, deterministic synthetic records, validation, manifest, and availability-cutoff inspection. [Initial discovery](../reports/discovery.md) records verified repository facts and remaining gaps. Live database tables, permissions, data rights, and the Power BI environment remain uninspected. No graph database migration, live adapter, rolling-correlation output, or Power BI report has been implemented or exercised. All 18 release acceptance criteria remain pending.
+The [EcoMedallion repository](https://github.com/thatquantguy44/EcoMedallion) and its README have been inspected; a distinct MacroMedallion repository has not been identified. The fixture implementation provides a Python CLI, deterministic synthetic records, validation, manifest, and availability-cutoff inspection. An authorized local MacroMedallion PostgreSQL database is connected through a scoped source-reader role, and a bounded adapter verifies `meta.fred_series` plus `gold.fred_point_in_time`. The configured pilot extracted three macro series and 151 observation versions with selection hash `75f9edc270aabe7ed6604b9663b4a575dc6ce32bfbfa0ac0f31c0da936faf875`.
+
+T-005 and T-006 are complete for the fixture track. Migration `001_identity_ontology.sql` created the `atlas` and `atlas_report` schemas, three scoped NOLOGIN roles, identity/ontology tables, endpoint constraints, identifier-overlap protection, and quarantine storage. Migration `002_temporal_assertions.sql` adds correction/retraction versions, effective/knowledge/system cutoff queries, and bounded traversal. Live validation loaded 15 nodes, 4 identifiers, and 15 assertions idempotently; it rejected invalid endpoint/identifier cases and passed all temporal replay cases. Observation storage, analytical estimates, serving snapshots, and Power BI remain unimplemented.
 
 ## Gate Status
 
 **Satisfied for documentation handoff:** the package defines a candidate scope, downstream design, task dependencies, and required evidence. The documents are reviewable planning artifacts.
 
-**Implementation readiness pending discovery:** upstream source contracts and the selected environment are unverified. The fixture generator supports independent contract work; it does not pass the end-to-end fixture or database acceptance gates. Candidate design and task documents may be refined as discovery supplies evidence. This is not a claim that lifecycle approval, source integration, validation, or release gates have passed. The QF Workflow SDK stage hook is not included in this package and has not been run.
+**Implementation readiness established through T-006 for fixtures:** the two upstream objects, vintage semantics, dedicated write schemas, role boundaries, and temporal reference replay are verified. Repository identity, source ownership/redistribution rights, and full adapter run-lineage remain open. This is not an end-to-end release gate pass.
 
 ## Next Action
 
-**Owner: integration engineer or implementation agent.** Continue **T-001** by verifying approved EcoMedallion source objects, grains, availability/vintage fields, read-only access, and data rights; confirm whether MacroMedallion is a separate asset. Inputs: `spec.md`, `plan.md`, `tasks.md`, [discovery.md](../reports/discovery.md), an authorized EcoMedallion environment, and the intended PostgreSQL metadata. Do not wire an upstream adapter before this contract is checked.
+**Owner: data engineer / quant implementation engineer.** The exact next implementation slice is **T-007 — observation versions and availability selection**. Add market and macro observation storage with units, calendar, adjustment, release/vintage, cutoff, and source-run fields. Load the synthetic macro revision and verify that each cutoff selects only its eligible vintage; explicitly withhold unsupported adjusted-history cases.
 
-Extend the discovery report with source ownership, schemas, grains, identifier conventions, available timestamps/vintages, row counts, data rights, and deployment constraints. Confirm whether MacroMedallion is a separate repository, former name, or alias for EcoMedallion; inspect approved interfaces rather than relying on the README alone. The synthetic fixture path can progress independently. The next fixture implementation step is T-004's typed adapter boundary, followed by T-005's PostgreSQL identity and ontology migration; keep all acceptance rows pending until their full evidence exists.
+Inputs for T-007 are the completed identity and temporal schema, `spec.md`, `plan.md`, `tasks.md`, the verified adapter contract, and the fixture contract. Do not write into `meta`, `silver`, `gold`, `bronze`, or `audit`; upstream access remains through `marketatlas_source_reader`.
 
 ## Access and integration checklist
 
 | Needed input | Owner role | Why it matters | Default until resolved |
 | --- | --- | --- | --- |
 | Repository identity and current commit(s) | Josh / repository owner | Prevent integration against guessed paths or stale APIs | No repository-specific import paths assumed |
-| Approved source tables/views and grains | Data owner | Establish read contracts and source keys | Read-only discovery; fixture adapter available |
-| PostgreSQL version, schema permissions, migration convention | Database owner | Select compatible migration and serving strategy | Dedicated graph/report schemas; no upstream DDL |
+| Approved source tables/views and grains | Data owner | Establish read contracts and source keys | `meta.fred_series` and `gold.fred_point_in_time` verified for the bounded adapter |
+| PostgreSQL version, schema permissions, migration convention | Database owner | Select compatible migration and serving strategy | PostgreSQL 16.15 verified; `atlas`/`atlas_report` and scoped roles created by versioned migration |
 | Market adjustment and macro vintage metadata | Quant / data owner | Support historical and analytical claims | Unsupported estimates withheld; latest-only labeled descriptive |
 | Source and redistribution rights | Data owner | Define public demo contents | Synthetic fixtures only in public artifacts |
 | Power BI authoring/refresh environment | Report owner | Confirm Import/DirectQuery, gateway and visual constraints | Proposed Import pilot; standard visuals remain usable |
 | Owner and runtime scheduling | Engineering owner | Make refresh and rollback accountable | Manual fixture run before scheduling |
 
-Never record passwords, connection strings with credentials, internal hostnames, or restricted source samples in the public discovery report. Authorized environment details belong in the appropriate private configuration.
+Never record passwords, connection strings with credentials, internal hostnames, or restricted source samples in the public discovery report. Authorized environment details belong only in git-ignored `configs/local.toml`. The tracked `configs/local.example.toml` contains placeholders.
 
 ## Implementation instructions for the receiving agent
 

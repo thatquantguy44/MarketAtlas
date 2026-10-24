@@ -1,0 +1,7 @@
+[macro_medallion]
+# Bounded v0.1 integration sample. These are FRED identifiers, not MarketAtlas IDs.
+series_ids = ["CPIAUCSL", "GDP", "UNRATE"]
+observation_start = "2024-01-01"
+observation_end = "2026-10-24"
+knowledge_cutoff = "2026-10-24"
+redistribution_status = "unresolved"

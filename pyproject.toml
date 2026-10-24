@@ -9,6 +9,9 @@ description = "MarketAtlas synthetic fixture and contract foundation"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.3,<4"]
+
 [project.scripts]
 market-atlas = "market_atlas.cli:main"
 

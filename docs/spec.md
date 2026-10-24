@@ -1,6 +1,6 @@
 # MarketAtlas — Product Specification
 
-Status: candidate v0.1 specification, prepared for review on 2026-10-24. Implementation, database discovery, and acceptance execution have not started. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe proposed delivery.
+Status: candidate v0.1 specification, prepared for review on 2026-10-24. Early fixture, PostgreSQL adapter, and identity/ontology implementation is underway; acceptance evidence is tracked separately and the release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work.
 
 ## Request and purpose
 
@@ -29,7 +29,7 @@ Later scope includes beta estimation, timestamped event context and event studie
 
 ## Existing systems and evidence status
 
-The connected GitHub account exposes [thatquantguy44/EcoMedallion](https://github.com/thatquantguy44/EcoMedallion). Its README describes a multi-source Bronze/Silver/Gold economic-data pipeline, point-in-time outputs for vintage-enabled series, and SQLite, PostgreSQL, and Databricks storage paths. This verifies the repository identity and its documented capabilities, not a running database, available data, or a working MarketAtlas adapter. A distinct **MacroMedallion** repository was not found by repository-name search; whether that name refers to EcoMedallion or another asset remains open. Approved source objects, grains, usable history, owners, licenses, privileges, and deployment conventions still require T-001 discovery before upstream integration is represented as working.
+The connected GitHub account exposes [thatquantguy44/EcoMedallion](https://github.com/thatquantguy44/EcoMedallion). Its README describes a multi-source Bronze/Silver/Gold economic-data pipeline, point-in-time outputs for vintage-enabled series, and SQLite, PostgreSQL, and Databricks storage paths. An authorized local MacroMedallion PostgreSQL database and a bounded MarketAtlas adapter have now verified series metadata and point-in-time observation interfaces. A distinct **MacroMedallion** repository was not found by repository-name search; whether that name refers to EcoMedallion or another asset remains open. Owners, licenses/redistribution rights, a least-privilege source role, and deployment conventions still require T-001/T-004 work.
 
 The public fixture path is independently runnable. Verified upstream integrations consume existing interfaces or tables under explicit contracts; adaptation choices belong in the plan. Missing dependencies must produce an honest fixture-only or blocked integration status.
 
@@ -132,7 +132,7 @@ The documentation package is complete when its requirements, proposed plan, task
 
 ## Acceptance Criteria
 
-All criteria are **planned / not executed** as of this document. “Evidence” means a retained output or inspection from implementation; the statements below are instructions for future validation.
+Criteria below define release-level passing conditions. Actual status and retained implementation evidence are recorded in [acceptance.md](acceptance.md); specification text alone is not evidence.
 
 | ID | Maps to | Passing condition and evidence |
 | --- | --- | --- |

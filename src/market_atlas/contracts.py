@@ -20,7 +20,9 @@ ALLOWED_EDGES = {
 
 
 def canonical_bytes(value: object) -> bytes:
-    return (json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
+    return (
+        json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
+    ).encode("utf-8")
 
 
 def sha256(value: object) -> str:
@@ -30,7 +32,7 @@ def sha256(value: object) -> str:
 def _timestamp(value: str) -> datetime:
     if not isinstance(value, str) or not value.endswith("Z"):
         raise ValueError("timestamp must be a UTC ISO-8601 string ending in Z")
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return datetime.fromisoformat(value)
 
 
 def _day(value: str) -> date:
@@ -46,7 +48,14 @@ def validate_fixture(data: dict) -> list[str]:
         errors.append("fixture license label is missing or unexpected")
 
     entities = data.get("entities", [])
-    for key in ("entities", "identifiers", "assertions", "market_observations", "macro_observations", "configured_pairs"):
+    for key in (
+        "entities",
+        "identifiers",
+        "assertions",
+        "market_observations",
+        "macro_observations",
+        "configured_pairs",
+    ):
         if not data.get(key):
             errors.append(f"fixture requires nonempty {key}")
     ids = [item.get("id") for item in entities]
@@ -75,7 +84,12 @@ def validate_fixture(data: dict) -> list[str]:
                 errors.append(f"{label}: invalid effective interval")
         except (KeyError, TypeError, ValueError):
             errors.append(f"{label}: invalid effective date")
-        key = (row.get("source"), row.get("scheme"), row.get("value"), row.get("valid_from"))
+        key = (
+            row.get("source"),
+            row.get("scheme"),
+            row.get("value"),
+            row.get("valid_from"),
+        )
         if key in identifier_keys:
             errors.append(f"{label}: duplicate source identifier interval start")
         identifier_keys.add(key)
@@ -86,13 +100,19 @@ def validate_fixture(data: dict) -> list[str]:
         if row.get("id") in assertion_ids or not row.get("id"):
             errors.append(f"{label}: missing or duplicate ID")
         assertion_ids.add(row.get("id"))
+        if not row.get("assertion_key"):
+            errors.append(f"{label}: missing assertion key")
+        if row.get("supersedes_id") == row.get("id"):
+            errors.append(f"{label}: assertion cannot supersede itself")
         source_type = types.get(row.get("source_id"))
         target_type = types.get(row.get("target_id"))
         if (row.get("predicate"), source_type, target_type) not in ALLOWED_EDGES:
             errors.append(f"{label}: invalid predicate or endpoint types")
         if row.get("kind") not in ("reference", "curated_context"):
             errors.append(f"{label}: invalid relationship kind")
-        if row.get("predicate") == "context_for" and (row.get("kind") != "curated_context" or not row.get("rationale")):
+        if row.get("predicate") == "context_for" and (
+            row.get("kind") != "curated_context" or not row.get("rationale")
+        ):
             errors.append(f"{label}: macro context requires a curated rationale")
         if row.get("status") not in ("accepted", "disputed", "retracted"):
             errors.append(f"{label}: invalid relationship status")
@@ -108,6 +128,11 @@ def validate_fixture(data: dict) -> list[str]:
         except (KeyError, TypeError, ValueError):
             errors.append(f"{label}: invalid temporal fields")
 
+    for index, row in enumerate(data.get("assertions", [])):
+        supersedes_id = row.get("supersedes_id")
+        if supersedes_id and supersedes_id not in assertion_ids:
+            errors.append(f"assertion[{index}]: superseded assertion does not exist")
+
     seen_prices: set[tuple] = set()
     for index, row in enumerate(data.get("market_observations", [])):
         label = f"market_observation[{index}]"
@@ -117,11 +142,18 @@ def validate_fixture(data: dict) -> list[str]:
         if key in seen_prices:
             errors.append(f"{label}: duplicate observation key")
         seen_prices.add(key)
-        if row.get("session") not in session_set or row.get("measure") != "adjusted_close":
+        if (
+            row.get("session") not in session_set
+            or row.get("measure") != "adjusted_close"
+        ):
             errors.append(f"{label}: invalid session or measure")
         if not isinstance(row.get("value"), (float, int)) or row["value"] <= 0:
             errors.append(f"{label}: price must be positive")
-        if not row.get("unit") or not row.get("adjustment") or not row.get("source_record"):
+        if (
+            not row.get("unit")
+            or not row.get("adjustment")
+            or not row.get("source_record")
+        ):
             errors.append(f"{label}: missing measure metadata")
         try:
             _timestamp(row["available_at"])
@@ -146,7 +178,12 @@ def validate_fixture(data: dict) -> list[str]:
 
     seen_pairs: set[tuple] = set()
     for index, pair in enumerate(data.get("configured_pairs", [])):
-        if not isinstance(pair, list) or len(pair) != 2 or pair[0] == pair[1] or any(types.get(item) != "instrument" for item in pair):
+        if (
+            not isinstance(pair, list)
+            or len(pair) != 2
+            or pair[0] == pair[1]
+            or any(types.get(item) != "instrument" for item in pair)
+        ):
             errors.append(f"configured_pair[{index}]: invalid instruments")
             continue
         key = tuple(sorted(pair))
@@ -163,7 +200,11 @@ def available_view(data: dict, cutoff: str) -> dict:
     requires the versioned PostgreSQL graph planned in T-006.
     """
     cutoff_time = _timestamp(cutoff)
-    assertions = [row for row in data["assertions"] if _timestamp(row["available_at"]) <= cutoff_time]
+    assertions = [
+        row
+        for row in data["assertions"]
+        if _timestamp(row["available_at"]) <= cutoff_time
+    ]
     macro: dict[tuple[str, str], dict] = {}
     for row in data["macro_observations"]:
         if _timestamp(row["available_at"]) > cutoff_time:
@@ -175,8 +216,15 @@ def available_view(data: dict, cutoff: str) -> dict:
         "knowledge_cutoff": cutoff,
         "assertion_ids": sorted(row["id"] for row in assertions),
         "macro_vintages": sorted(
-            [{"series_id": series, "period": period, "vintage": row["vintage"], "value": row["value"]}
-             for (series, period), row in macro.items()],
+            [
+                {
+                    "series_id": series,
+                    "period": period,
+                    "vintage": row["vintage"],
+                    "value": row["value"],
+                }
+                for (series, period), row in macro.items()
+            ],
             key=lambda row: (row["series_id"], row["period"]),
         ),
         "synthetic": True,

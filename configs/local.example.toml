@@ -1,0 +1,18 @@
+[source_database]
+host = "localhost"
+port = 55432
+database = "macro_medallion"
+username = "replace-me"
+password = "replace-me"
+
+# Source discovery and adapters always open read-only transactions.
+read_only = true
+role = "marketatlas_source_reader"
+
+[target_database]
+host = "localhost"
+port = 55432
+database = "macro_medallion"
+username = "replace-me"
+password = "replace-me"
+role = "marketatlas_writer"
