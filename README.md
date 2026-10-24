@@ -59,7 +59,10 @@ PYTHONPATH=src python -m market_atlas graph validate-observation-fixture
 PYTHONPATH=src python -m market_atlas graph validate-curated-context-fixture
 PYTHONPATH=src python -m market_atlas analytics validate-fixture
 PYTHONPATH=src python -m market_atlas build validate-fixture
+PYTHONPATH=src python -m market_atlas report validate-fixture
 ```
+
+The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
 
 Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The migration never changes objects or permissions inside existing source schemas beyond granting the source role SELECT on the two approved interfaces.
 
@@ -77,6 +80,9 @@ Read in order:
 6. [Review and traceability](docs/review.md): changes from the original spec and the requirement-to-task map.
 7. [Acceptance evidence register](docs/acceptance.md): the 18 implementation checks, currently pending.
 8. [Naming notes](docs/naming.md): repository name, alternatives, and positioning.
+9. [Frontend scaffold decision](docs/decisions/001-quantmeridian-react-scaffold.md): QuantMeridian-based React demo architecture and boundaries.
+10. [Reporting contract](docs/reporting.md): snapshot-pinned dimensions, facts, paths, and provenance drill-through.
+11. [React demo validation](reports/t012-validation.md): frontend scope, build evidence, and known dependency/security follow-up.
 
 The individual documents are canonical. Preserve requirement IDs when revising scope so the plan, tasks, and acceptance evidence stay aligned.
 

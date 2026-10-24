@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-24. T-005 through T-010 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-24. T-005 through T-012 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -86,17 +86,21 @@ Create build manifests, validation/quarantine outputs, immutable serving snapsho
 
 Completed 2026-10-24 for the fixture track. Migration `006_build_publication.sql` adds immutable build runs, serving snapshots, a single publication pointer, a snapshot-pinned correlation fact, and an `atlas_report.current_rolling_correlation_estimate` view. Builds record input manifest, cutoff, configuration hash/payload, code revision/dirty state, Python environment, validation summary, and output hash. The live validation published 32 rows from one snapshot, reused that snapshot on identical input, and recorded an injected failure without rows or publication-pointer change. Evidence: `reports/t010-validation.md`.
 
-### [ ] T-011 — Implement reporting outputs and provenance
+### [x] T-011 — Implement reporting outputs and provenance
 
 Owner: database / BI engineer. Dependencies: T-010. Maps: REQ-009, REQ-011 → AC-009, AC-011.
 
 Create grain-documented dimensions/facts/bridges, bounded paths, quality/freshness, and provenance outputs. Bind all queries to one report snapshot and its temporal cutoffs. Evidence: source-row reconciliation and no multiplied observations/pairs under multi-membership; one sourced edge, curated link, and estimate trace to original evidence and build. SQL evidence alone does not pass Power BI acceptance.
 
-### [ ] T-012 — Implement and exercise Power BI report
+Completed 2026-10-24 for the fixture track. Migration `007_reporting_provenance.sql` materializes snapshot-pinned node, relationship, macro-context, bounded-path, and provenance reporting tables, with current views resolving only through the publication pointer. The live report validation found 15 nodes, 14 relationship facts, 3 context facts, 24 bounded paths, 32 correlation facts, and 49 provenance records in one snapshot. It reconciles endpoint joins without multiplying correlations and traces one sourced edge, one curated mapping, and one estimate to the build/input/method evidence. Evidence: `reports/t011-validation.md`, `reporting.md`.
 
-Owner: BI engineer. Dependencies: T-011 and supported Power BI authoring access. Maps: REQ-009, REQ-011 → AC-009, AC-011.
+### [x] T-012 — Implement and exercise demo report (React)
 
-Build market-map, macro-context, correlation, and provenance/quality pages using explicit relationships and standard visuals. Pin a single snapshot across refresh queries. Evidence: actual semantic-model/report artifacts, filter and distinct-count reconciliation, valid as-of labels, drill-through, and refresh behavior. Retain screenshots from the synthetic demonstration. If Power BI is unavailable, retain design outputs and mark AC-009 pending.
+Owner: frontend / BI engineer. Dependencies: T-011 and supported frontend runtime. Maps: REQ-009, REQ-011 → AC-009, AC-011.
+
+Build market-map, macro-context, correlation, and provenance/quality pages using explicit relationships and standard visuals. Pin a single snapshot across refresh queries. Evidence: actual semantic-model/report artifacts, filter and distinct-count reconciliation, valid as-of labels, drill-through, and refresh behavior. Retain screenshots from the synthetic demonstration. The user selected the React implementation in ADR-001; Power BI acceptance remains pending until separately exercised.
+
+Completed 2026-10-24 for the fixture demo. The independent `frontend/` application uses React, TypeScript, Vite, React Router, Zustand, and Tailwind in the QuantMeridian scaffold pattern. It renders five routes—overview, market map, macro context, correlations, and provenance—from a labeled fixture snapshot adapter and prohibits browser-to-PostgreSQL access. Typecheck, two frontend fixture tests, and production build pass. Evidence: `reports/t012-validation.md`, `frontend/README.md`. AC-009 remains partial because Power BI has not been exercised.
 
 ## Phase D — Validate and hand off
 

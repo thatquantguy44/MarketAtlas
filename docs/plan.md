@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, and atomic fixture publication exist; reporting remains proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, and a React fixture demo exist. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -92,7 +92,7 @@ Propose Import mode for the small pilot, subject to the BI environment. SQL outp
 
 Use role-playing dimensions for pair endpoints and explicit bridge filtering for multi-valued memberships. Keep observations and estimates at their own grains; do not flatten all memberships into a one-row-per-instrument observation view. Default to controlled single-direction relationships and deliberate selection measures. Instrument counts use distinct instrument IDs; pair measures operate at pair/date grain. Validate row totals before and after filters, including multi-classification fixtures.
 
-Report pages: market map, macro context, correlation monitor, and provenance/quality drill-through. Show context versus estimates, as-of date, snapshot, freshness, status, and sample/window definitions. Use tables, slicers, matrices, and time series as the baseline; any approved network visual consumes a bounded extract. Report consumers should not need to understand physical table internals. (REQ-009, REQ-011)
+Report pages: market map, macro context, correlation monitor, and provenance/quality drill-through. Show context versus estimates, as-of date, snapshot, freshness, status, and sample/window definitions. Use tables, slicers, matrices, and time series as the baseline; any approved network visual consumes a bounded extract. Report consumers should not need to understand physical table internals. The React demo will adopt the [QuantMeridian scaffold decision](decisions/001-quantmeridian-react-scaffold.md), while keeping MarketAtlas data/API contracts independent. (REQ-009, REQ-011)
 
 ## P7. Layout, validation, and delivery
 
@@ -101,6 +101,7 @@ Report pages: market map, macro context, correlation monitor, and provenance/qua
 | `src/market_atlas/adapters/` | Fixture and verified upstream contracts/adapters |
 | `src/market_atlas/graph/` | Identity, ontology, temporal assertions, and bounded paths |
 | `src/market_atlas/analytics/` | Return alignment and rolling correlation |
+| `frontend/` | Independent QuantMeridian-style React fixture demo consuming the T-011 reporting contract |
 | `src/market_atlas/pipeline/` | Build manifests, quality gates, publication, recovery |
 | `sql/migrations/`, `sql/serving/` | Dedicated-schema DDL and grain-documented outputs |
 | `config/`, `data/fixtures/` | Public non-secret configuration and synthetic inputs |
