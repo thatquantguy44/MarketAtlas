@@ -6,7 +6,7 @@ Document date: 2026-10-24. This is a documentation handoff, not an implementatio
 
 The original market knowledge graph specification has been reviewed and reorganized into specification, architecture plan, tasks, roadmap, and traceability documents. The product name is MarketAtlas. The repository is [thatquantguy44/MarketAtlas](https://github.com/thatquantguy44/MarketAtlas), default branch `main`.
 
-The MarketAtlas repository was inspected at initial commit `bbd63330d17a28580ba28725fa3045efcd030d81`; it contained a starter README and MIT license, with no repository-specific contribution instructions. This change adds the documentation package. MacroMedallion / EcoMedallion repository contents, database tables, credentials, data rights, and Power BI environment have not been inspected. No graph pipeline, database migration, analytical output, or Power BI report has been implemented or exercised. All implementation tasks begin pending; proposed commands and paths describe intended interfaces.
+The MarketAtlas repository was inspected at initial commit `bbd63330d17a28580ba28725fa3045efcd030d81`; it contained a starter README and MIT license, with no repository-specific contribution instructions. This change adds the documentation package. The [EcoMedallion repository](https://github.com/thatquantguy44/EcoMedallion) and its README have now been inspected for initial discovery: the README documents a multi-source medallion pipeline, point-in-time outputs for vintage-enabled series, and a PostgreSQL backend. A distinct MacroMedallion repository has not been identified. Live database tables, permissions, data rights, and the Power BI environment remain uninspected. No graph pipeline, database migration, analytical output, or Power BI report has been implemented or exercised. All implementation tasks begin pending; proposed commands and paths describe intended interfaces.
 
 ## Gate Status
 
@@ -18,7 +18,7 @@ The MarketAtlas repository was inspected at initial commit `bbd63330d17a28580ba2
 
 **Owner: integration engineer or implementation agent.** Complete **T-001** (source and environment discovery) before wiring an upstream adapter. Inputs: `spec.md`, `plan.md`, `tasks.md`, this handoff, authorized MacroMedallion / EcoMedallion checkout(s), and access to the intended PostgreSQL metadata.
 
-Record the exact repository URL(s), commits, source ownership, schemas, grains, identifier conventions, available timestamps/vintages, row counts, data rights, and deployment constraints in the discovery report. Determine whether the two names refer to separate repositories, a renamed project, or aliases. The fixture demonstration may proceed without upstream availability under the documented fixture contract.
+Record the exact repository URL(s), commits, source ownership, schemas, grains, identifier conventions, available timestamps/vintages, row counts, data rights, and deployment constraints in the discovery report. Confirm whether MacroMedallion is a separate repository, a former name, or an alias for EcoMedallion; then inspect approved interfaces rather than relying on the README alone. The fixture demonstration may proceed without upstream availability under the documented fixture contract.
 
 ## Access and integration checklist
 
