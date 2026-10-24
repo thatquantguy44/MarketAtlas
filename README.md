@@ -2,7 +2,7 @@
 
 **A temporal market knowledge graph connecting instruments, macro data, and measurable relationships through PostgreSQL and Power BI.**
 
-Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, temporal assertion replay, versioned synthetic observation loading, curated macro-context mappings, and bounded rolling correlations work. Serving publication and Power BI remain planned.
+Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, temporal assertion replay, versioned synthetic observation loading, curated macro-context mappings, bounded rolling correlations, and atomic fixture publication work. Power BI remains planned.
 
 MarketAtlas gives market data a relationship layer. Start with a security, issuer, currency, country, index, or economic series; follow the links; inspect the source and the date each link was known. Compare those sourced relationships with time-bounded statistical estimates without treating correlation as causality.
 
@@ -36,7 +36,7 @@ Reference facts and calculated estimates have distinct semantics. PostgreSQL pre
 
 ## Working slices
 
-The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations, versioned fixture loading into the dedicated `atlas` schema, and a bounded rolling-correlation fixture calculator. It does not yet create a serving publication or Power BI report. Python 3.11 or newer is required.
+The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations, versioned fixture loading into the dedicated `atlas` schema, a bounded rolling-correlation fixture calculator, and an atomic fixture-serving publication. It does not yet create a Power BI report. Python 3.11 or newer is required.
 
 ```bash
 PYTHONPATH=src python -m market_atlas fixture build --output /tmp/marketatlas-fixture
@@ -58,6 +58,7 @@ PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
 PYTHONPATH=src python -m market_atlas graph validate-observation-fixture
 PYTHONPATH=src python -m market_atlas graph validate-curated-context-fixture
 PYTHONPATH=src python -m market_atlas analytics validate-fixture
+PYTHONPATH=src python -m market_atlas build validate-fixture
 ```
 
 Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The migration never changes objects or permissions inside existing source schemas beyond granting the source role SELECT on the two approved interfaces.

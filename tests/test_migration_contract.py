@@ -70,6 +70,22 @@ class MigrationContractTests(unittest.TestCase):
         ):
             self.assertIn(required, sql)
 
+    def test_build_migration_declares_atomic_publication_contract(self):
+        sql = Path("sql/migrations/006_build_publication.sql").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "CREATE TABLE IF NOT EXISTS atlas.build_run",
+            "CREATE TABLE IF NOT EXISTS atlas.serving_snapshot",
+            "CREATE TABLE IF NOT EXISTS atlas.publication",
+            "rolling_correlation_estimate_snapshot",
+            "atlas.publish_serving_snapshot",
+            "snapshot_status = 'validated'",
+            "snapshot_status = 'superseded'",
+            "current_rolling_correlation_estimate",
+        ):
+            self.assertIn(required, sql)
+
 
 if __name__ == "__main__":
     unittest.main()

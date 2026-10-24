@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-24. T-005 through T-009 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-24. T-005 through T-010 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -78,11 +78,13 @@ Completed 2026-10-24 for the fixture track. Migration `005_rolling_correlation_e
 
 ## Phase C — Publish and explain
 
-### [ ] T-010 — Implement repeatable builds and atomic publication
+### [x] T-010 — Implement repeatable builds and atomic publication
 
 Owner: pipeline/database engineer. Dependencies: T-006, T-007, T-008, T-009. Maps: REQ-010, NFR-002, NFR-003, NFR-005 → AC-010, AC-014, AC-015, AC-017.
 
 Create build manifests, validation/quarantine outputs, immutable serving snapshots, atomic publication, and prior-snapshot retention. Evidence: identical inputs preserve business results without duplicates; injected build failure leaves prior publication intact; readers never see mixed snapshots. Document snapshot pinning and safe cleanup.
+
+Completed 2026-10-24 for the fixture track. Migration `006_build_publication.sql` adds immutable build runs, serving snapshots, a single publication pointer, a snapshot-pinned correlation fact, and an `atlas_report.current_rolling_correlation_estimate` view. Builds record input manifest, cutoff, configuration hash/payload, code revision/dirty state, Python environment, validation summary, and output hash. The live validation published 32 rows from one snapshot, reused that snapshot on identical input, and recorded an injected failure without rows or publication-pointer change. Evidence: `reports/t010-validation.md`.
 
 ### [ ] T-011 — Implement reporting outputs and provenance
 

@@ -13,14 +13,14 @@ Status: implementation evidence is in progress. AC-003 passes for the fixture tr
 | AC-007 | REQ-007 | Passed (fixture) | `reports/t008-validation.md`: source-backed country/concept and curated sector context mappings have rationale, owner, source, dates, taxonomy version, and explicit non-sensitivity label | Implementation agent, 2026-10-24 |
 | AC-008 | REQ-008 | Passed (fixture) | `reports/t009-validation.md`: fixed-window configured-pair return correlations, independent numerical match, undefined statuses, input/cutoff metadata, and no-lookahead validation | Implementation agent, 2026-10-24 |
 | AC-009 | REQ-009 | Pending | Not yet produced | Unassigned |
-| AC-010 | REQ-010 | Pending | Not yet produced | Unassigned |
+| AC-010 | REQ-010 | Passed (fixture) | `reports/t010-validation.md`: immutable build/snapshot identities, idempotent output reuse, validation hash, and single-pointer publication | Implementation agent, 2026-10-24 |
 | AC-011 | REQ-011 | Pending | Not yet produced | Unassigned |
 | AC-012 | REQ-012 | Pending | Not yet produced | Unassigned |
 | AC-013 | NFR-001 | Partial | `reports/t005-validation.md`: source/writer/report role boundaries and negative write probe pass; release artifact review remains | Implementation agent, 2026-10-24 |
-| AC-014 | NFR-002 | Partial | `reports/t007-validation.md`, `reports/t009-validation.md`: fixture input hash, observation cutoff selection, and correlation configuration/input hashes are reproducible; end-to-end build/snapshot reproducibility remains | Implementation agent, 2026-10-24 |
-| AC-015 | NFR-003 | Partial | `reports/t005-validation.md`, `reports/t006-validation.md`, `reports/t007-validation.md`, `reports/t008-validation.md`, `reports/t009-validation.md`: graph, temporal, observation, context, and analytical guards pass; publication checks remain | Implementation agent, 2026-10-24 |
+| AC-014 | NFR-002 | Partial | `reports/t007-validation.md`, `reports/t009-validation.md`, `reports/t010-validation.md`: fixture input, correlation configuration/input, code revision/environment, and output hash are recorded; broader environment/recovery reproducibility remains | Implementation agent, 2026-10-24 |
+| AC-015 | NFR-003 | Partial | `reports/t005-validation.md`, `reports/t006-validation.md`, `reports/t007-validation.md`, `reports/t008-validation.md`, `reports/t009-validation.md`, `reports/t010-validation.md`: graph, temporal, observation, context, analytical, and serving-snapshot guards pass; broader publication checks remain | Implementation agent, 2026-10-24 |
 | AC-016 | NFR-004 | Pending | Not yet produced | Unassigned |
-| AC-017 | NFR-005 | Pending | Not yet produced | Unassigned |
+| AC-017 | NFR-005 | Passed (fixture) | `reports/t010-validation.md`: injected failed build remains un-published with zero snapshot rows; the last complete snapshot remains the sole reader view | Implementation agent, 2026-10-24 |
 | AC-018 | NFR-006 | Pending | Not yet produced | Unassigned |
 
 Attach reproducible output locations, input hashes, method/configuration versions, declared environment, and concise results as appropriate. Restricted data and environment details must stay in their authorized location; public summaries should use synthetic examples and safe identifiers. Record failed and unsupported checks honestly.

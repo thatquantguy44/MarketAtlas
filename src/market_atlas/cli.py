@@ -36,6 +36,7 @@ from .migrations import (
     apply_migrations,
     validate_role_boundaries,
 )
+from .publishing.fixture_build import build_fixture_snapshot, validate_fixture_build
 
 
 def _build(output: Path) -> int:
@@ -285,6 +286,30 @@ def _validate_rolling_correlation_fixture(config_path: Path) -> int:
     return 0 if result["status"] == "valid" else 1
 
 
+def _build_fixture_snapshot(config_path: Path, knowledge_cutoff: str | None) -> int:
+    try:
+        result = build_fixture_snapshot(
+            load_target_database(config_path), build_fixture(), knowledge_cutoff
+        )
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] != "fixture_snapshot_failed" else 1
+
+
+def _validate_fixture_build(config_path: Path) -> int:
+    try:
+        result = validate_fixture_build(
+            load_target_database(config_path), build_fixture()
+        )
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="market-atlas")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -359,6 +384,13 @@ def main(argv: list[str] | None = None) -> int:
     analytics_calculate.add_argument("--knowledge-cutoff")
     analytics_validate = analytics_commands.add_parser("validate-fixture")
     analytics_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    build_run = commands.add_parser("build", help="build or validate serving snapshots")
+    build_commands = build_run.add_subparsers(dest="build_command", required=True)
+    build_fixture = build_commands.add_parser("fixture")
+    build_fixture.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    build_fixture.add_argument("--knowledge-cutoff")
+    build_validate = build_commands.add_parser("validate-fixture")
+    build_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     args = parser.parse_args(argv)
     if args.command == "database":
         if args.database_command == "migrate":
@@ -374,6 +406,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.analytics_command == "calculate-fixture":
             return _calculate_fixture_correlations(args.config, args.knowledge_cutoff)
         return _validate_rolling_correlation_fixture(args.config)
+    if args.command == "build":
+        if args.build_command == "fixture":
+            return _build_fixture_snapshot(args.config, args.knowledge_cutoff)
+        return _validate_fixture_build(args.config)
     if args.command == "graph":
         if args.graph_command == "load-fixture":
             return _load_fixture_graph(args.config)

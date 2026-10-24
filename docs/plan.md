@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, and bounded rolling correlations exist; publication and reporting sections remain proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, and atomic fixture publication exist; reporting remains proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -30,8 +30,8 @@ Proposed schemas: `atlas` for graph/build objects and `atlas_report` for serving
 | `market_observation_version`, `macro_observation_version`, `input_manifest` | Implemented fixture contracts: one market or release/vintage version at declared grain, with a reproducible input hash |
 | `curated_macro_context_version` | Implemented fixture context mapping with evidence basis, owner, source, taxonomy version, temporal fields, and a non-sensitivity semantic label |
 | `rolling_correlation_estimate_version` | Implemented fixture estimate: canonical instrument pair, fixed session window, cutoff, method/configuration and input hashes, correlation or explicit undefined status |
-| `build_run`, `input_manifest`, `quality_result` | Run status, immutable input identity, and validation outcomes |
-| `serving_snapshot`, `publication` | Complete validated serving outputs and one atomically selected publication |
+| `build_run`, `input_manifest` | Implemented fixture run status, immutable input identity, configuration/code/environment capture, and validation outcome |
+| `serving_snapshot`, `publication` | Implemented fixture snapshot identity, output hash, failure evidence, prior-snapshot retention, and one atomically selected publication |
 
 Include instrument, listing, issuer, organization, index/basket, country, currency, sector/industry, economic concept, market, and macro-series types where pilot links use them. Do not equate an exchange listing with its underlying instrument. The same ticker on two venues must be resolvable without a collision.
 
