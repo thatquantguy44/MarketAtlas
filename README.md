@@ -2,7 +2,7 @@
 
 **A temporal market knowledge graph connecting instruments, macro data, and measurable relationships through PostgreSQL and Power BI.**
 
-Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, and temporal assertion replay work. Observation loading, analytics, serving publication, and Power BI remain planned.
+Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, temporal assertion replay, versioned synthetic observation loading, curated macro-context mappings, bounded rolling correlations, and atomic fixture publication work. Power BI remains planned.
 
 MarketAtlas gives market data a relationship layer. Start with a security, issuer, currency, country, index, or economic series; follow the links; inspect the source and the date each link was known. Compare those sourced relationships with time-bounded statistical estimates without treating correlation as causality.
 
@@ -36,7 +36,7 @@ Reference facts and calculated estimates have distinct semantics. PostgreSQL pre
 
 ## Working slices
 
-The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations. It does not yet load the MarketAtlas graph, calculate rolling correlations, or create a Power BI report. Python 3.11 or newer is required.
+The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations, versioned fixture loading into the dedicated `atlas` schema, a bounded rolling-correlation fixture calculator, and an atomic fixture-serving publication. It does not yet create a Power BI report. Python 3.11 or newer is required.
 
 ```bash
 PYTHONPATH=src python -m market_atlas fixture build --output /tmp/marketatlas-fixture
@@ -55,11 +55,18 @@ PYTHONPATH=src python -m market_atlas adapter verify
 PYTHONPATH=src python -m market_atlas adapter extract --output data/generated/macro_medallion_pilot.json
 PYTHONPATH=src python -m market_atlas graph validate-fixture
 PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
+PYTHONPATH=src python -m market_atlas graph validate-observation-fixture
+PYTHONPATH=src python -m market_atlas graph validate-curated-context-fixture
+PYTHONPATH=src python -m market_atlas analytics validate-fixture
+PYTHONPATH=src python -m market_atlas build validate-fixture
+PYTHONPATH=src python -m market_atlas report validate-fixture
 ```
+
+The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
 
 Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The migration never changes objects or permissions inside existing source schemas beyond granting the source role SELECT on the two approved interfaces.
 
-The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records one fixture criterion passed and the remaining partial or pending checks.
+The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. The database loader records a reproducible `input_manifest` for the same fixture hash and structured source-backed/curated context mappings. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records fixture evidence and the remaining partial or pending checks.
 
 ## Delivery documents
 
@@ -73,6 +80,9 @@ Read in order:
 6. [Review and traceability](docs/review.md): changes from the original spec and the requirement-to-task map.
 7. [Acceptance evidence register](docs/acceptance.md): the 18 implementation checks, currently pending.
 8. [Naming notes](docs/naming.md): repository name, alternatives, and positioning.
+9. [Frontend scaffold decision](docs/decisions/001-quantmeridian-react-scaffold.md): QuantMeridian-based React demo architecture and boundaries.
+10. [Reporting contract](docs/reporting.md): snapshot-pinned dimensions, facts, paths, and provenance drill-through.
+11. [React demo validation](reports/t012-validation.md): frontend scope, build evidence, and known dependency/security follow-up.
 
 The individual documents are canonical. Preserve requirement IDs when revising scope so the plan, tasks, and acceptance evidence stay aligned.
 

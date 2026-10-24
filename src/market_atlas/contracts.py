@@ -54,6 +54,7 @@ def validate_fixture(data: dict) -> list[str]:
         "assertions",
         "market_observations",
         "macro_observations",
+        "curated_contexts",
         "configured_pairs",
     ):
         if not data.get(key):
@@ -175,6 +176,80 @@ def validate_fixture(data: dict) -> list[str]:
             _timestamp(row["available_at"])
         except (KeyError, TypeError, ValueError):
             errors.append(f"{label}: invalid availability")
+
+    context_kinds = {
+        "series_country": "country",
+        "series_concept": "economic_concept",
+    }
+    seen_contexts: set[str] = set()
+    for index, row in enumerate(data.get("curated_contexts", [])):
+        label = f"curated_context[{index}]"
+        if row.get("id") in seen_contexts or not row.get("id"):
+            errors.append(f"{label}: missing or duplicate ID")
+        seen_contexts.add(row.get("id"))
+        if types.get(row.get("macro_series_id")) != "macro_series":
+            errors.append(f"{label}: unknown macro series")
+        target_type = types.get(row.get("target_id"))
+        mapping_kind = row.get("mapping_kind")
+        if mapping_kind in context_kinds and target_type != context_kinds[mapping_kind]:
+            errors.append(f"{label}: invalid target for mapping kind")
+        if mapping_kind == "market_context" and target_type not in {
+            "instrument",
+            "sector",
+            "industry",
+            "index",
+        }:
+            errors.append(f"{label}: invalid market-context target")
+        if mapping_kind not in {*context_kinds, "market_context"}:
+            errors.append(f"{label}: invalid mapping kind")
+        if row.get("evidence_basis") not in {"source_backed", "curated"}:
+            errors.append(f"{label}: invalid evidence basis")
+        for field in (
+            "rationale",
+            "mapping_owner",
+            "source_reference",
+            "taxonomy_provider",
+            "taxonomy_version",
+            "supporting_assertion_id",
+            "provenance",
+        ):
+            if not row.get(field):
+                errors.append(f"{label}: missing {field}")
+        try:
+            start = _day(row["valid_from"])
+            end = _day(row["valid_to"]) if row.get("valid_to") else None
+            if end is not None and end <= start:
+                errors.append(f"{label}: invalid effective interval")
+            _timestamp(row["available_at"])
+            _timestamp(row["recorded_at"])
+        except (KeyError, TypeError, ValueError):
+            errors.append(f"{label}: invalid temporal fields")
+
+    assertion_by_id = {row.get("id"): row for row in data.get("assertions", [])}
+    for index, row in enumerate(data.get("curated_contexts", [])):
+        support = assertion_by_id.get(row.get("supporting_assertion_id"))
+        if not support:
+            errors.append(f"curated_context[{index}]: missing supporting assertion")
+            continue
+        endpoints = {support.get("source_id"), support.get("target_id")}
+        if {row.get("macro_series_id"), row.get("target_id")} != endpoints:
+            errors.append(
+                f"curated_context[{index}]: support does not match mapping endpoints"
+            )
+        if (
+            row.get("evidence_basis") == "source_backed"
+            and support.get("kind") != "reference"
+        ):
+            errors.append(
+                f"curated_context[{index}]: source-backed mapping needs reference support"
+            )
+        if (
+            row.get("evidence_basis") == "curated"
+            and support.get("kind") != "curated_context"
+        ):
+            errors.append(
+                f"curated_context[{index}]: curated mapping needs curated support"
+            )
 
     seen_pairs: set[tuple] = set()
     for index, pair in enumerate(data.get("configured_pairs", [])):

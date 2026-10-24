@@ -33,6 +33,23 @@ class FixtureContractTests(unittest.TestCase):
         self.assertEqual("A6", correction["supersedes_id"])
         self.assertEqual("REL-ALPHA-TECH", correction["assertion_key"])
         self.assertEqual(
+            {
+                ("series_country", "source_backed"),
+                ("series_concept", "source_backed"),
+                ("market_context", "curated"),
+            },
+            {
+                (row["mapping_kind"], row["evidence_basis"])
+                for row in first["curated_contexts"]
+            },
+        )
+        self.assertTrue(
+            all(
+                "not measured sensitivity or causality" in row["rationale"]
+                for row in first["curated_contexts"]
+            )
+        )
+        self.assertEqual(
             75,
             len(
                 [
@@ -79,6 +96,16 @@ class FixtureContractTests(unittest.TestCase):
             payload["entities"][0]["label"] = "tampered"
             (path / "fixture.json").write_bytes(canonical_bytes(payload))
             self.assertEqual(1, main(["fixture", "validate", "--input", directory]))
+
+    def test_invalid_curated_context_is_rejected(self):
+        fixture = copy.deepcopy(build_fixture())
+        fixture["curated_contexts"][0]["target_id"] = "I-A"
+        self.assertTrue(
+            any(
+                "invalid target for mapping kind" in error
+                for error in validate_fixture(fixture)
+            )
+        )
 
 
 if __name__ == "__main__":

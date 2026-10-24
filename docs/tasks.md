@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-24. T-005 and T-006 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-24. T-005 through T-012 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -52,43 +52,55 @@ Store effective validity, source availability, and system record intervals with 
 
 Completed 2026-10-24 for the fixture track. Migration `002_temporal_assertions.sql` adds assertion business keys, correction versioning, source/effective/system cutoff queries, and recursive bounded paths. The live validation proves late source availability differs from historical MarketAtlas replay, a retraction retains the prior accepted version, the affected path disappears in current context, and an unknown-availability assertion is returned as `unsupported_history`. Evidence: `reports/t006-validation.md`.
 
-### [ ] T-007 — Implement observation versions and availability selection
+### [x] T-007 — Implement observation versions and availability selection
 
 Owner: data engineer / quant. Dependencies: T-004, T-005. Maps: REQ-005, REQ-006, NFR-002, NFR-003 → AC-005, AC-006, AC-014, AC-015.
 
 Implement calendar, measure/unit, adjustment, release/vintage, and cutoff contracts. Retain immutable permitted inputs or reproducible immutable source references. Evidence: macro revision and future-release fixtures select only eligible versions; unsupported adjusted-history/availability cases are withheld or labeled descriptive; manifests reproduce input selection.
 
-### [ ] T-008 — Add curated macro context
+Completed 2026-10-24 for the fixture track. Migration `003_observation_versions.sql` adds `input_manifest`, calendar sessions, versioned market and macro observations, and cutoff-aware query functions. The live validation confirms an initial macro vintage at the early cutoff and the later revision only after its availability time; it excludes a not-yet-available market observation, labels an unsupported adjusted-history probe, and reproduces the fixture manifest hash. Evidence: `reports/t007-validation.md`.
+
+### [x] T-008 — Add curated macro context
 
 Owner: quant / mapping owner. Dependencies: T-006, T-007. Maps: REQ-007 → AC-007.
 
 Add source-backed or curated series-country/concept mappings and a limited set of market relevance links. Record rationale, owner, effective/knowledge dates, and taxonomy/provider versions. Distinguish domicile/listing/currency facts from economic exposure. Evidence: inspectable mapping examples and explicit context labels; no curated link is presented as measured sensitivity.
 
-### [ ] T-009 — Implement bounded rolling correlations
+Completed 2026-10-24 for the fixture track. Migration `004_curated_macro_context.sql` adds versioned mappings with explicit source/curated basis, owner, source reference, taxonomy provider/version, support assertion, temporal fields, input manifest, and the required `context_only_not_measured_sensitivity_or_causality` label. The fixture validation exposes source-backed country and concept mappings plus a curated sector mapping, verifies complete provenance, and rejects an invalid country-to-instrument context mapping. Evidence: `reports/t008-validation.md`.
+
+### [x] T-009 — Implement bounded rolling correlations
 
 Owner: quant implementation engineer. Dependencies: T-007. Maps: REQ-008, NFR-002, NFR-003 → AC-008, AC-014, AC-015.
 
 Implement the configured pair list, common session grid, transformed returns, fixed 60-session window/minimum 45 paired observations, canonical pair IDs, and explicit undefined statuses. Record method/input/window metadata. Evidence: independent numerical comparison within declared tolerance; missing data does not expand windows; constant/incompatible/asynchronous inputs are handled explicitly; future observations cannot enter earlier cutoffs.
 
+Completed 2026-10-24 for the fixture track. Migration `005_rolling_correlation_estimates.sql` adds versioned, canonical instrument-pair estimates with the fixed 60-session/45-pair contract, method/configuration hashes, input selection hash, availability cutoff, and explicit supported/undefined statuses. The fixture validation persists 16 supported `I-A`/`I-B` estimates and 16 explicit zero-variance `I-A`/`I-C` outcomes; the final supported value agrees with an independent calculation within `1e-12`, missing prices do not expand the window, and a historical cutoff produces only 20 estimates whose inputs were already available. Evidence: `reports/t009-validation.md`.
+
 ## Phase C — Publish and explain
 
-### [ ] T-010 — Implement repeatable builds and atomic publication
+### [x] T-010 — Implement repeatable builds and atomic publication
 
 Owner: pipeline/database engineer. Dependencies: T-006, T-007, T-008, T-009. Maps: REQ-010, NFR-002, NFR-003, NFR-005 → AC-010, AC-014, AC-015, AC-017.
 
 Create build manifests, validation/quarantine outputs, immutable serving snapshots, atomic publication, and prior-snapshot retention. Evidence: identical inputs preserve business results without duplicates; injected build failure leaves prior publication intact; readers never see mixed snapshots. Document snapshot pinning and safe cleanup.
 
-### [ ] T-011 — Implement reporting outputs and provenance
+Completed 2026-10-24 for the fixture track. Migration `006_build_publication.sql` adds immutable build runs, serving snapshots, a single publication pointer, a snapshot-pinned correlation fact, and an `atlas_report.current_rolling_correlation_estimate` view. Builds record input manifest, cutoff, configuration hash/payload, code revision/dirty state, Python environment, validation summary, and output hash. The live validation published 32 rows from one snapshot, reused that snapshot on identical input, and recorded an injected failure without rows or publication-pointer change. Evidence: `reports/t010-validation.md`.
+
+### [x] T-011 — Implement reporting outputs and provenance
 
 Owner: database / BI engineer. Dependencies: T-010. Maps: REQ-009, REQ-011 → AC-009, AC-011.
 
 Create grain-documented dimensions/facts/bridges, bounded paths, quality/freshness, and provenance outputs. Bind all queries to one report snapshot and its temporal cutoffs. Evidence: source-row reconciliation and no multiplied observations/pairs under multi-membership; one sourced edge, curated link, and estimate trace to original evidence and build. SQL evidence alone does not pass Power BI acceptance.
 
-### [ ] T-012 — Implement and exercise Power BI report
+Completed 2026-10-24 for the fixture track. Migration `007_reporting_provenance.sql` materializes snapshot-pinned node, relationship, macro-context, bounded-path, and provenance reporting tables, with current views resolving only through the publication pointer. The live report validation found 15 nodes, 14 relationship facts, 3 context facts, 24 bounded paths, 32 correlation facts, and 49 provenance records in one snapshot. It reconciles endpoint joins without multiplying correlations and traces one sourced edge, one curated mapping, and one estimate to the build/input/method evidence. Evidence: `reports/t011-validation.md`, `reporting.md`.
 
-Owner: BI engineer. Dependencies: T-011 and supported Power BI authoring access. Maps: REQ-009, REQ-011 → AC-009, AC-011.
+### [x] T-012 — Implement and exercise demo report (React)
 
-Build market-map, macro-context, correlation, and provenance/quality pages using explicit relationships and standard visuals. Pin a single snapshot across refresh queries. Evidence: actual semantic-model/report artifacts, filter and distinct-count reconciliation, valid as-of labels, drill-through, and refresh behavior. Retain screenshots from the synthetic demonstration. If Power BI is unavailable, retain design outputs and mark AC-009 pending.
+Owner: frontend / BI engineer. Dependencies: T-011 and supported frontend runtime. Maps: REQ-009, REQ-011 → AC-009, AC-011.
+
+Build market-map, macro-context, correlation, and provenance/quality pages using explicit relationships and standard visuals. Pin a single snapshot across refresh queries. Evidence: actual semantic-model/report artifacts, filter and distinct-count reconciliation, valid as-of labels, drill-through, and refresh behavior. Retain screenshots from the synthetic demonstration. The user selected the React implementation in ADR-001; Power BI acceptance remains pending until separately exercised.
+
+Completed 2026-10-24 for the fixture demo. The independent `frontend/` application uses React, TypeScript, Vite, React Router, Zustand, and Tailwind in the QuantMeridian scaffold pattern. It renders five routes—overview, market map, macro context, correlations, and provenance—from a labeled fixture snapshot adapter and prohibits browser-to-PostgreSQL access. Typecheck, two frontend fixture tests, and production build pass. Evidence: `reports/t012-validation.md`, `frontend/README.md`. AC-009 remains partial because Power BI has not been exercised.
 
 ## Phase D — Validate and hand off
 

@@ -1,0 +1,9 @@
+import { ArrowRight } from "lucide-react";
+import { StatusPill } from "@/components/ui/StatusPill";
+import { fixtureReportSnapshot } from "@/data/reportSnapshot";
+import { useDemoStore } from "@/lib/demoStore";
+
+export function MarketMapPage() {
+  const selectSubject = useDemoStore((state) => state.selectSubject);
+  return <section className="space-y-6"><div><p className="eyebrow">Bounded relationship paths</p><h2 className="mt-2 text-3xl font-semibold">Synthetic Alpha Share</h2><p className="mt-2 text-term-muted">The reporting bridge contains 24 directed paths, each capped at depth four and pinned to the published snapshot.</p></div><div className="panel overflow-hidden rounded"><table className="w-full text-left text-sm"><thead className="bg-term-panel2 font-mono text-xs uppercase text-term-muted"><tr><th className="p-4">Source</th><th className="p-4">Relationship</th><th className="p-4">Target</th><th className="p-4">State</th><th className="p-4">Evidence</th></tr></thead><tbody>{fixtureReportSnapshot.relationships.map((relationship) => <tr key={relationship.id} className="border-t border-term-border"><td className="p-4 font-medium">{relationship.source}</td><td className="p-4"><span className="inline-flex items-center gap-2 font-mono text-xs text-term-gold">{relationship.edge}<ArrowRight size={14} /></span></td><td className="p-4">{relationship.target}</td><td className="p-4"><StatusPill tone={relationship.status === "accepted" ? "green" : "amber"}>{relationship.status}</StatusPill></td><td className="p-4"><button className="font-mono text-xs text-term-amber hover:text-term-gold" onClick={() => selectSubject(relationship.id)}>open {relationship.sourceRecord}</button></td></tr>)}</tbody></table></div><p className="text-sm text-term-muted">A path is navigational context. It does not create economic exposure, sensitivity, or causality.</p></section>;
+}

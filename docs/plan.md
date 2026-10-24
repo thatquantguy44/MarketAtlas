@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, and temporal reference replay exist; observations, analytics, publication, and reporting sections remain proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, and a React fixture demo exist. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -27,10 +27,11 @@ Proposed schemas: `atlas` for graph/build objects and `atlas_report` for serving
 | `node_identifier` | Source identifier mapped to entity over explicit intervals; ambiguous overlaps quarantined |
 | `node_type`, `edge_type`, `edge_endpoint_rule` | Controlled type definitions and allowed ordered endpoint-type pairs |
 | `reference_assertion` | One versioned sourced fact or curated mapping assertion, including rationale/source and temporal fields |
-| `observation_version` or adapter snapshot | One observation/release/vintage version at a declared measure and time grain |
-| `analytical_edge` | One canonical pair, method/configuration, endpoint date, and build snapshot |
-| `build_run`, `input_manifest`, `quality_result` | Run status, immutable input identity, and validation outcomes |
-| `serving_snapshot`, `publication` | Complete validated serving outputs and one atomically selected publication |
+| `market_observation_version`, `macro_observation_version`, `input_manifest` | Implemented fixture contracts: one market or release/vintage version at declared grain, with a reproducible input hash |
+| `curated_macro_context_version` | Implemented fixture context mapping with evidence basis, owner, source, taxonomy version, temporal fields, and a non-sensitivity semantic label |
+| `rolling_correlation_estimate_version` | Implemented fixture estimate: canonical instrument pair, fixed session window, cutoff, method/configuration and input hashes, correlation or explicit undefined status |
+| `build_run`, `input_manifest` | Implemented fixture run status, immutable input identity, configuration/code/environment capture, and validation outcome |
+| `serving_snapshot`, `publication` | Implemented fixture snapshot identity, output hash, failure evidence, prior-snapshot retention, and one atomically selected publication |
 
 Include instrument, listing, issuer, organization, index/basket, country, currency, sector/industry, economic concept, market, and macro-series types where pilot links use them. Do not equate an exchange listing with its underlying instrument. The same ticker on two venues must be resolvable without a collision.
 
@@ -91,7 +92,7 @@ Propose Import mode for the small pilot, subject to the BI environment. SQL outp
 
 Use role-playing dimensions for pair endpoints and explicit bridge filtering for multi-valued memberships. Keep observations and estimates at their own grains; do not flatten all memberships into a one-row-per-instrument observation view. Default to controlled single-direction relationships and deliberate selection measures. Instrument counts use distinct instrument IDs; pair measures operate at pair/date grain. Validate row totals before and after filters, including multi-classification fixtures.
 
-Report pages: market map, macro context, correlation monitor, and provenance/quality drill-through. Show context versus estimates, as-of date, snapshot, freshness, status, and sample/window definitions. Use tables, slicers, matrices, and time series as the baseline; any approved network visual consumes a bounded extract. Report consumers should not need to understand physical table internals. (REQ-009, REQ-011)
+Report pages: market map, macro context, correlation monitor, and provenance/quality drill-through. Show context versus estimates, as-of date, snapshot, freshness, status, and sample/window definitions. Use tables, slicers, matrices, and time series as the baseline; any approved network visual consumes a bounded extract. Report consumers should not need to understand physical table internals. The React demo will adopt the [QuantMeridian scaffold decision](decisions/001-quantmeridian-react-scaffold.md), while keeping MarketAtlas data/API contracts independent. (REQ-009, REQ-011)
 
 ## P7. Layout, validation, and delivery
 
@@ -100,6 +101,7 @@ Report pages: market map, macro context, correlation monitor, and provenance/qua
 | `src/market_atlas/adapters/` | Fixture and verified upstream contracts/adapters |
 | `src/market_atlas/graph/` | Identity, ontology, temporal assertions, and bounded paths |
 | `src/market_atlas/analytics/` | Return alignment and rolling correlation |
+| `frontend/` | Independent QuantMeridian-style React fixture demo consuming the T-011 reporting contract |
 | `src/market_atlas/pipeline/` | Build manifests, quality gates, publication, recovery |
 | `sql/migrations/`, `sql/serving/` | Dedicated-schema DDL and grain-documented outputs |
 | `config/`, `data/fixtures/` | Public non-secret configuration and synthetic inputs |
