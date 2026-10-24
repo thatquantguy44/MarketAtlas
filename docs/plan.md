@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, and temporal reference replay exist; observations, analytics, publication, and reporting sections remain proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, and versioned fixture observations exist; analytics, publication, and reporting sections remain proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -27,7 +27,7 @@ Proposed schemas: `atlas` for graph/build objects and `atlas_report` for serving
 | `node_identifier` | Source identifier mapped to entity over explicit intervals; ambiguous overlaps quarantined |
 | `node_type`, `edge_type`, `edge_endpoint_rule` | Controlled type definitions and allowed ordered endpoint-type pairs |
 | `reference_assertion` | One versioned sourced fact or curated mapping assertion, including rationale/source and temporal fields |
-| `observation_version` or adapter snapshot | One observation/release/vintage version at a declared measure and time grain |
+| `market_observation_version`, `macro_observation_version`, `input_manifest` | Implemented fixture contracts: one market or release/vintage version at declared grain, with a reproducible input hash |
 | `analytical_edge` | One canonical pair, method/configuration, endpoint date, and build snapshot |
 | `build_run`, `input_manifest`, `quality_result` | Run status, immutable input identity, and validation outcomes |
 | `serving_snapshot`, `publication` | Complete validated serving outputs and one atomically selected publication |

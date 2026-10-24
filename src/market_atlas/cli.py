@@ -23,6 +23,7 @@ from .fixtures import build_fixture
 from .graph.fixture_loader import (
     load_fixture,
     validate_fixture_graph,
+    validate_observation_fixture,
     validate_temporal_fixture,
 )
 from .migrations import (
@@ -227,6 +228,18 @@ def _validate_temporal_fixture(config_path: Path) -> int:
     return 0 if result["status"] == "valid" else 1
 
 
+def _validate_observation_fixture(config_path: Path) -> int:
+    try:
+        result = validate_observation_fixture(
+            load_target_database(config_path), build_fixture()
+        )
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="market-atlas")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -278,6 +291,12 @@ def main(argv: list[str] | None = None) -> int:
     graph_validate_temporal.add_argument(
         "--config", type=Path, default=DEFAULT_CONFIG_PATH
     )
+    graph_validate_observation = graph_commands.add_parser(
+        "validate-observation-fixture"
+    )
+    graph_validate_observation.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
     args = parser.parse_args(argv)
     if args.command == "database":
         if args.database_command == "migrate":
@@ -294,6 +313,8 @@ def main(argv: list[str] | None = None) -> int:
             return _load_fixture_graph(args.config)
         if args.graph_command == "validate-temporal-fixture":
             return _validate_temporal_fixture(args.config)
+        if args.graph_command == "validate-observation-fixture":
+            return _validate_observation_fixture(args.config)
         return _validate_fixture_graph(args.config)
     if args.fixture_command == "build":
         return _build(args.output)

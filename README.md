@@ -2,7 +2,7 @@
 
 **A temporal market knowledge graph connecting instruments, macro data, and measurable relationships through PostgreSQL and Power BI.**
 
-Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, and temporal assertion replay work. Observation loading, analytics, serving publication, and Power BI remain planned.
+Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, temporal assertion replay, and versioned synthetic observation loading work. Analytics, serving publication, and Power BI remain planned.
 
 MarketAtlas gives market data a relationship layer. Start with a security, issuer, currency, country, index, or economic series; follow the links; inspect the source and the date each link was known. Compare those sourced relationships with time-bounded statistical estimates without treating correlation as causality.
 
@@ -36,7 +36,7 @@ Reference facts and calculated estimates have distinct semantics. PostgreSQL pre
 
 ## Working slices
 
-The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations. It does not yet load the MarketAtlas graph, calculate rolling correlations, or create a Power BI report. Python 3.11 or newer is required.
+The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations, plus versioned fixture loading into the dedicated `atlas` schema. It does not yet calculate rolling correlations or create a Power BI report. Python 3.11 or newer is required.
 
 ```bash
 PYTHONPATH=src python -m market_atlas fixture build --output /tmp/marketatlas-fixture
@@ -55,11 +55,12 @@ PYTHONPATH=src python -m market_atlas adapter verify
 PYTHONPATH=src python -m market_atlas adapter extract --output data/generated/macro_medallion_pilot.json
 PYTHONPATH=src python -m market_atlas graph validate-fixture
 PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
+PYTHONPATH=src python -m market_atlas graph validate-observation-fixture
 ```
 
 Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The migration never changes objects or permissions inside existing source schemas beyond granting the source role SELECT on the two approved interfaces.
 
-The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records one fixture criterion passed and the remaining partial or pending checks.
+The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. The database loader records a reproducible `input_manifest` for the same fixture hash. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records fixture evidence and the remaining partial or pending checks.
 
 ## Delivery documents
 

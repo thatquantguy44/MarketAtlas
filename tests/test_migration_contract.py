@@ -21,6 +21,22 @@ class MigrationContractTests(unittest.TestCase):
         ):
             self.assertIn(required, sql)
 
+    def test_observation_migration_declares_versions_and_as_of_selection(self):
+        sql = Path("sql/migrations/003_observation_versions.sql").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "CREATE TABLE IF NOT EXISTS atlas.input_manifest",
+            "CREATE TABLE IF NOT EXISTS atlas.market_calendar_session",
+            "CREATE TABLE IF NOT EXISTS atlas.market_observation_version",
+            "CREATE TABLE IF NOT EXISTS atlas.macro_observation_version",
+            "atlas.market_observations_as_of",
+            "atlas.macro_observations_as_of",
+            "unsupported_adjusted_history",
+            "unsupported_history",
+        ):
+            self.assertIn(required, sql)
+
 
 if __name__ == "__main__":
     unittest.main()

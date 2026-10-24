@@ -8,19 +8,19 @@ The original market knowledge graph specification has been reviewed and reorgani
 
 The [EcoMedallion repository](https://github.com/thatquantguy44/EcoMedallion) and its README have been inspected; a distinct MacroMedallion repository has not been identified. The fixture implementation provides a Python CLI, deterministic synthetic records, validation, manifest, and availability-cutoff inspection. An authorized local MacroMedallion PostgreSQL database is connected through a scoped source-reader role, and a bounded adapter verifies `meta.fred_series` plus `gold.fred_point_in_time`. The configured pilot extracted three macro series and 151 observation versions with selection hash `75f9edc270aabe7ed6604b9663b4a575dc6ce32bfbfa0ac0f31c0da936faf875`.
 
-T-005 and T-006 are complete for the fixture track. Migration `001_identity_ontology.sql` created the `atlas` and `atlas_report` schemas, three scoped NOLOGIN roles, identity/ontology tables, endpoint constraints, identifier-overlap protection, and quarantine storage. Migration `002_temporal_assertions.sql` adds correction/retraction versions, effective/knowledge/system cutoff queries, and bounded traversal. Live validation loaded 15 nodes, 4 identifiers, and 15 assertions idempotently; it rejected invalid endpoint/identifier cases and passed all temporal replay cases. Observation storage, analytical estimates, serving snapshots, and Power BI remain unimplemented.
+T-005 through T-007 are complete for the fixture track. Migration `001_identity_ontology.sql` created the `atlas` and `atlas_report` schemas, three scoped NOLOGIN roles, identity/ontology tables, endpoint constraints, identifier-overlap protection, and quarantine storage. Migration `002_temporal_assertions.sql` adds correction/retraction versions, effective/knowledge/system cutoff queries, and bounded traversal. Migration `003_observation_versions.sql` adds input manifests, calendar sessions, and market/macro observation versions with cutoff-aware selectors. Live observation validation loaded 222 market observations and two macro versions, selected only the macro vintage eligible at each cutoff, withheld a market value before availability, and labeled unsupported adjustment history. Analytical estimates, serving snapshots, and Power BI remain unimplemented.
 
 ## Gate Status
 
 **Satisfied for documentation handoff:** the package defines a candidate scope, downstream design, task dependencies, and required evidence. The documents are reviewable planning artifacts.
 
-**Implementation readiness established through T-006 for fixtures:** the two upstream objects, vintage semantics, dedicated write schemas, role boundaries, and temporal reference replay are verified. Repository identity, source ownership/redistribution rights, and full adapter run-lineage remain open. This is not an end-to-end release gate pass.
+**Implementation readiness established through T-007 for fixtures:** the two upstream objects, vintage semantics, dedicated write schemas, role boundaries, temporal reference replay, and versioned observation selection are verified. Repository identity, source ownership/redistribution rights, and full adapter run-lineage remain open. This is not an end-to-end release gate pass.
 
 ## Next Action
 
-**Owner: data engineer / quant implementation engineer.** The exact next implementation slice is **T-007 — observation versions and availability selection**. Add market and macro observation storage with units, calendar, adjustment, release/vintage, cutoff, and source-run fields. Load the synthetic macro revision and verify that each cutoff selects only its eligible vintage; explicitly withhold unsupported adjusted-history cases.
+**Owner: quant / mapping owner.** The exact next implementation slice is **T-008 — add curated macro context**. Add a small set of source-backed or curated series-country/concept mappings and market-relevance links, with rationale, owner, temporal fields, taxonomy/provider versions, and explicit labels distinguishing context from measured sensitivity.
 
-Inputs for T-007 are the completed identity and temporal schema, `spec.md`, `plan.md`, `tasks.md`, the verified adapter contract, and the fixture contract. Do not write into `meta`, `silver`, `gold`, `bronze`, or `audit`; upstream access remains through `marketatlas_source_reader`.
+Inputs for T-008 are the completed identity, temporal, and observation schemas, `spec.md`, `plan.md`, `tasks.md`, the verified adapter contract, and the fixture contract. Do not write into `meta`, `silver`, `gold`, `bronze`, or `audit`; upstream access remains through `marketatlas_source_reader`.
 
 ## Access and integration checklist
 

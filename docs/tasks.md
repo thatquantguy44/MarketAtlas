@@ -52,11 +52,13 @@ Store effective validity, source availability, and system record intervals with 
 
 Completed 2026-10-24 for the fixture track. Migration `002_temporal_assertions.sql` adds assertion business keys, correction versioning, source/effective/system cutoff queries, and recursive bounded paths. The live validation proves late source availability differs from historical MarketAtlas replay, a retraction retains the prior accepted version, the affected path disappears in current context, and an unknown-availability assertion is returned as `unsupported_history`. Evidence: `reports/t006-validation.md`.
 
-### [ ] T-007 — Implement observation versions and availability selection
+### [x] T-007 — Implement observation versions and availability selection
 
 Owner: data engineer / quant. Dependencies: T-004, T-005. Maps: REQ-005, REQ-006, NFR-002, NFR-003 → AC-005, AC-006, AC-014, AC-015.
 
 Implement calendar, measure/unit, adjustment, release/vintage, and cutoff contracts. Retain immutable permitted inputs or reproducible immutable source references. Evidence: macro revision and future-release fixtures select only eligible versions; unsupported adjusted-history/availability cases are withheld or labeled descriptive; manifests reproduce input selection.
+
+Completed 2026-10-24 for the fixture track. Migration `003_observation_versions.sql` adds `input_manifest`, calendar sessions, versioned market and macro observations, and cutoff-aware query functions. The live validation confirms an initial macro vintage at the early cutoff and the later revision only after its availability time; it excludes a not-yet-available market observation, labels an unsupported adjusted-history probe, and reproduces the fixture manifest hash. Evidence: `reports/t007-validation.md`.
 
 ### [ ] T-008 — Add curated macro context
 
