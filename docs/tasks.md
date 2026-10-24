@@ -1,0 +1,103 @@
+# MarketAtlas — Implementation Tasks
+
+Status: candidate task plan, 2026-10-24. **Every task is pending.** Checkboxes describe implementation work; no database, pipeline, analytical result, Power BI report, or validation evidence is implied by this document.
+
+Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
+
+## Phase A — Establish a portable foundation
+
+### [ ] T-001 — Discover source assets and record scope
+
+Owner: integration engineer. Dependencies: none. Maps: REQ-001 → AC-001.
+
+Identify exact MacroMedallion / EcoMedallion URL(s)/commits and relationships, owners, PostgreSQL interfaces, grains, permissions, history, and redistribution terms. Produce `reports/discovery.md` with reusable components and unresolved gaps. If access is unavailable, record the limitation and select the independent fixture track; never mark upstream verification passed. Evidence: actual inspected metadata or an explicit unresolved-status inventory, reviewed pilot defaults, and source-owner decisions.
+
+### [ ] T-002 — Scaffold repository and isolated runtime
+
+Owner: implementation engineer. Dependencies: T-001 scope decision; fixture-only decision is sufficient. Maps: REQ-002, NFR-001, NFR-006 → AC-002, AC-013, AC-018.
+
+Create package/configuration/migration layout, a documented PostgreSQL prerequisite or optional local container, dependency lock, non-secret example configuration, and CLI entry point. Separate source reader and graph writer configuration. Evidence: a clean environment installs and reports configuration without printing secrets; no upstream connection is required for fixture mode. Document real commands only after implementation.
+
+### [ ] T-003 — Build deterministic synthetic fixtures
+
+Owner: data engineer / quant. Dependencies: T-002. Maps: REQ-002, NFR-002 → AC-002, AC-014.
+
+Define mock instruments/listings, issuer/classification/index nodes, macro series, and synthetic observations. Include ticker changes, multi-membership, late corrections, macro revisions, disputed mappings, missing/constant returns, and a known correlation example. Label every fixture and output synthetic. Evidence: reproducible seed/checksums, data dictionary, expected outcomes, and a fixture adapter manifest; no copied private records.
+
+### [ ] T-004 — Implement canonical adapter contracts
+
+Owner: integration engineer. Dependencies: T-001, T-003. Maps: REQ-001, REQ-006, NFR-001 → AC-001, AC-006, AC-013.
+
+Implement normalized contracts for entities, assertions, observations, and manifests. Map verified upstream objects when available; record optional adapter status separately from working fixtures. Validate required metadata, schema drift, rights, timestamp coverage, and source read permissions. Evidence: fixture contract checks plus inspected upstream mappings and read-only role checks for each activated adapter. Unavailable upstream adapters remain pending, not advertised as implemented.
+
+## Phase B — Build graph and analytical contracts
+
+### [ ] T-005 — Implement identities and ontology
+
+Owner: database / implementation engineer. Dependencies: T-003, T-004 fixture contract. Maps: REQ-003, REQ-004, NFR-003 → AC-003, AC-004, AC-015.
+
+Add dedicated-schema migrations for stable entities, versioned attributes, source identifiers, controlled predicates, and allowed endpoint pairs. Distinguish instruments/listings and types referenced by index/country/concept links. Evidence: stable IDs on reload, ticker-change and ticker-collision cases, no orphan accepted endpoints, and rejected invalid types/ambiguous overlaps. Preserve valid multi-membership.
+
+### [ ] T-006 — Implement temporal reference assertions
+
+Owner: database engineer. Dependencies: T-005. Maps: REQ-004, REQ-005, NFR-003 → AC-004, AC-005, AC-015.
+
+Store effective validity, source availability, and system record intervals with provenance. Preserve corrections/retractions and disputed/unknown states. Implement bounded path queries with explicit effective/knowledge/system cutoffs. Evidence: late-arrival fixture produces the expected difference between current context and historical replay; unsupported history is visible, and invalid intervals are quarantined.
+
+### [ ] T-007 — Implement observation versions and availability selection
+
+Owner: data engineer / quant. Dependencies: T-004, T-005. Maps: REQ-005, REQ-006, NFR-002, NFR-003 → AC-005, AC-006, AC-014, AC-015.
+
+Implement calendar, measure/unit, adjustment, release/vintage, and cutoff contracts. Retain immutable permitted inputs or reproducible immutable source references. Evidence: macro revision and future-release fixtures select only eligible versions; unsupported adjusted-history/availability cases are withheld or labeled descriptive; manifests reproduce input selection.
+
+### [ ] T-008 — Add curated macro context
+
+Owner: quant / mapping owner. Dependencies: T-006, T-007. Maps: REQ-007 → AC-007.
+
+Add source-backed or curated series-country/concept mappings and a limited set of market relevance links. Record rationale, owner, effective/knowledge dates, and taxonomy/provider versions. Distinguish domicile/listing/currency facts from economic exposure. Evidence: inspectable mapping examples and explicit context labels; no curated link is presented as measured sensitivity.
+
+### [ ] T-009 — Implement bounded rolling correlations
+
+Owner: quant implementation engineer. Dependencies: T-007. Maps: REQ-008, NFR-002, NFR-003 → AC-008, AC-014, AC-015.
+
+Implement the configured pair list, common session grid, transformed returns, fixed 60-session window/minimum 45 paired observations, canonical pair IDs, and explicit undefined statuses. Record method/input/window metadata. Evidence: independent numerical comparison within declared tolerance; missing data does not expand windows; constant/incompatible/asynchronous inputs are handled explicitly; future observations cannot enter earlier cutoffs.
+
+## Phase C — Publish and explain
+
+### [ ] T-010 — Implement repeatable builds and atomic publication
+
+Owner: pipeline/database engineer. Dependencies: T-006, T-007, T-008, T-009. Maps: REQ-010, NFR-002, NFR-003, NFR-005 → AC-010, AC-014, AC-015, AC-017.
+
+Create build manifests, validation/quarantine outputs, immutable serving snapshots, atomic publication, and prior-snapshot retention. Evidence: identical inputs preserve business results without duplicates; injected build failure leaves prior publication intact; readers never see mixed snapshots. Document snapshot pinning and safe cleanup.
+
+### [ ] T-011 — Implement reporting outputs and provenance
+
+Owner: database / BI engineer. Dependencies: T-010. Maps: REQ-009, REQ-011 → AC-009, AC-011.
+
+Create grain-documented dimensions/facts/bridges, bounded paths, quality/freshness, and provenance outputs. Bind all queries to one report snapshot and its temporal cutoffs. Evidence: source-row reconciliation and no multiplied observations/pairs under multi-membership; one sourced edge, curated link, and estimate trace to original evidence and build. SQL evidence alone does not pass Power BI acceptance.
+
+### [ ] T-012 — Implement and exercise Power BI report
+
+Owner: BI engineer. Dependencies: T-011 and supported Power BI authoring access. Maps: REQ-009, REQ-011 → AC-009, AC-011.
+
+Build market-map, macro-context, correlation, and provenance/quality pages using explicit relationships and standard visuals. Pin a single snapshot across refresh queries. Evidence: actual semantic-model/report artifacts, filter and distinct-count reconciliation, valid as-of labels, drill-through, and refresh behavior. Retain screenshots from the synthetic demonstration. If Power BI is unavailable, retain design outputs and mark AC-009 pending.
+
+## Phase D — Validate and hand off
+
+### [ ] T-013 — Execute release validation and performance checks
+
+Owner: validation engineer / quant reviewer. Dependencies: T-010, T-011; T-012 for BI evidence. Maps: NFR-001, NFR-002, NFR-003, NFR-004, NFR-005 → AC-013, AC-014, AC-015, AC-016, AC-017.
+
+Run meaningful role-scope, integrity, temporal, reproducibility, numerical, publication-failure, and recovery checks. Benchmark the documented fixture envelope on declared hardware; retain build time and at least 20 runs per prepared query with cache policy and p95. Proposed targets: build under 5 minutes and query p95 at most 2 seconds. Evidence: actual results/defects in the acceptance register; adjust targets explicitly before release if justified. Never fabricate passing evidence.
+
+### [ ] T-014 — Finish contributor demo, extension design, and handoff
+
+Owner: maintainer / implementation engineer. Dependencies: T-011, T-013; T-012 for a release claiming Power BI completion. Maps: REQ-002, REQ-012, NFR-001, NFR-005, NFR-006 → AC-002, AC-012, AC-013, AC-017, AC-018.
+
+Replace planned setup commands with exercised commands; complete clean-room fixture walkthrough, actual screenshots, license/data notices, owner/refresh/recovery details, and synthetic securities-finance extension contract. Update README, roadmap, and handoff with real status. Evidence: new-contributor walkthrough and reviewed mappings/permissions; all public claims match implemented capabilities.
+
+## Completion rules and coverage
+
+A task is complete only when its deliverable exists, required review/validation evidence is retained, relevant acceptance rows are updated, and documentation matches actual behavior. Downstream code may progress against fixture contracts while optional upstream integrations remain unavailable; do not collapse those statuses.
+
+The plan's requirement matrix maps all 12 functional and 6 non-functional requirements to these tasks and all 18 acceptance criteria. Acceptance evidence belongs in `docs/acceptance.md`, with links to permitted reports, manifests, or artifacts. All v0.1 Must criteria require passing evidence or an explicitly reviewed scope revision before a completed-release claim. Maintain one exact next task and owner in the handoff after each work session.
