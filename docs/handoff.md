@@ -1,24 +1,24 @@
 # MarketAtlas — Handoff
 
-Document date: 2026-10-24. This is a documentation handoff, not an implementation or production release.
+Updated: 2026-10-24. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Current state
 
 The original market knowledge graph specification has been reviewed and reorganized into specification, architecture plan, tasks, roadmap, and traceability documents. The product name is MarketAtlas. The repository is [thatquantguy44/MarketAtlas](https://github.com/thatquantguy44/MarketAtlas), default branch `main`.
 
-The MarketAtlas repository was inspected at initial commit `bbd63330d17a28580ba28725fa3045efcd030d81`; it contained a starter README and MIT license, with no repository-specific contribution instructions. This change adds the documentation package. MacroMedallion / EcoMedallion repository contents, database tables, credentials, data rights, and Power BI environment have not been inspected. No graph pipeline, database migration, analytical output, or Power BI report has been implemented or exercised. All implementation tasks begin pending; proposed commands and paths describe intended interfaces.
+The documentation package is on `main` at `f57d3c9423326f38cc060a38474614ff10ae6c8e`. The [EcoMedallion repository](https://github.com/thatquantguy44/EcoMedallion) and its README have been inspected for initial discovery; a distinct MacroMedallion repository has not been identified. A first fixture implementation slice now exists on `feat/fixture-foundation`: Python CLI, deterministic synthetic records, validation, manifest, and availability-cutoff inspection. [Initial discovery](../reports/discovery.md) records verified repository facts and remaining gaps. Live database tables, permissions, data rights, and the Power BI environment remain uninspected. No graph database migration, live adapter, rolling-correlation output, or Power BI report has been implemented or exercised. All 18 release acceptance criteria remain pending.
 
 ## Gate Status
 
 **Satisfied for documentation handoff:** the package defines a candidate scope, downstream design, task dependencies, and required evidence. The documents are reviewable planning artifacts.
 
-**Implementation readiness pending discovery:** upstream source contracts and the selected environment are unverified. Candidate design and task documents may be refined as discovery supplies evidence. This is not a claim that lifecycle approval, source integration, validation, or release gates have passed. The QF Workflow SDK stage hook is not included in this package and has not been run.
+**Implementation readiness pending discovery:** upstream source contracts and the selected environment are unverified. The fixture generator supports independent contract work; it does not pass the end-to-end fixture or database acceptance gates. Candidate design and task documents may be refined as discovery supplies evidence. This is not a claim that lifecycle approval, source integration, validation, or release gates have passed. The QF Workflow SDK stage hook is not included in this package and has not been run.
 
 ## Next Action
 
-**Owner: integration engineer or implementation agent.** Complete **T-001** (source and environment discovery) before wiring an upstream adapter. Inputs: `spec.md`, `plan.md`, `tasks.md`, this handoff, authorized MacroMedallion / EcoMedallion checkout(s), and access to the intended PostgreSQL metadata.
+**Owner: integration engineer or implementation agent.** Continue **T-001** by verifying approved EcoMedallion source objects, grains, availability/vintage fields, read-only access, and data rights; confirm whether MacroMedallion is a separate asset. Inputs: `spec.md`, `plan.md`, `tasks.md`, [discovery.md](../reports/discovery.md), an authorized EcoMedallion environment, and the intended PostgreSQL metadata. Do not wire an upstream adapter before this contract is checked.
 
-Record the exact repository URL(s), commits, source ownership, schemas, grains, identifier conventions, available timestamps/vintages, row counts, data rights, and deployment constraints in the discovery report. Determine whether the two names refer to separate repositories, a renamed project, or aliases. The fixture demonstration may proceed without upstream availability under the documented fixture contract.
+Extend the discovery report with source ownership, schemas, grains, identifier conventions, available timestamps/vintages, row counts, data rights, and deployment constraints. Confirm whether MacroMedallion is a separate repository, former name, or alias for EcoMedallion; inspect approved interfaces rather than relying on the README alone. The synthetic fixture path can progress independently. The next fixture implementation step is T-004's typed adapter boundary, followed by T-005's PostgreSQL identity and ontology migration; keep all acceptance rows pending until their full evidence exists.
 
 ## Access and integration checklist
 

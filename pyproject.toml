@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "market-atlas"
+version = "0.0.1"
+description = "MarketAtlas synthetic fixture and contract foundation"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+market-atlas = "market_atlas.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

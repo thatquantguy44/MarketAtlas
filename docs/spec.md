@@ -29,9 +29,15 @@ Later scope includes beta estimation, timestamped event context and event studie
 
 ## Existing systems and evidence status
 
-The user identified **MacroMedallion / EcoMedallion** and a **PostgreSQL database** as integration assets. Repository URLs, exact names, whether these are separate repositories or related versions, contents, data ownership, access, source licenses, database schemas, and deployment conventions have not been inspected. Discovery must resolve them before an upstream integration is represented as working.
+The connected GitHub account exposes [thatquantguy44/EcoMedallion](https://github.com/thatquantguy44/EcoMedallion). Its README describes a multi-source Bronze/Silver/Gold economic-data pipeline, point-in-time outputs for vintage-enabled series, and SQLite, PostgreSQL, and Databricks storage paths. This verifies the repository identity and its documented capabilities, not a running database, available data, or a working MarketAtlas adapter. A distinct **MacroMedallion** repository was not found by repository-name search; whether that name refers to EcoMedallion or another asset remains open. Approved source objects, grains, usable history, owners, licenses, privileges, and deployment conventions still require T-001 discovery before upstream integration is represented as working.
 
 The public fixture path is independently runnable. Verified upstream integrations consume existing interfaces or tables under explicit contracts; adaptation choices belong in the plan. Missing dependencies must produce an honest fixture-only or blocked integration status.
+
+## v0.1 review scenario
+
+The first demonstration uses one labeled synthetic instrument and a fixed information cutoff. A reviewer selects the instrument, follows its listing and issuer/classification links, opens one curated macro-context link to see its rationale and source, then views a configured rolling return-correlation pair at two endpoint dates. The result displays the pair, return definition, scheduled-session window, valid paired count, estimate or undefined reason, cutoff, method version, and input/build identity. The reviewer can drill from each displayed connection to its evidence and distinguish business effective time from source availability and MarketAtlas record time.
+
+The same fixture includes a later correction or macro revision. Moving the knowledge cutoff before that availability must remove the later information from the historical-as-known view; a current-context view may show it with its later timestamp. This walkthrough is a proposed review case for AC-002, AC-004–AC-008, and AC-011. Power BI execution and reconciliation are additionally required for AC-009; a SQL-only walkthrough cannot pass that criterion.
 
 ## Functional requirements
 
@@ -116,7 +122,7 @@ The documentation package is complete when its requirements, proposed plan, task
 
 | ID | Question | Proposed owner | Timing |
 | --- | --- | --- | --- |
-| Q-001 | Are MacroMedallion and EcoMedallion distinct repositories, versions, or one project, and what are their exact URLs? | Project maintainer | Discovery |
+| Q-001 | Does MacroMedallion name a distinct repository or an earlier name for [EcoMedallion](https://github.com/thatquantguy44/EcoMedallion)? If distinct, what is its exact URL? | Project maintainer | Discovery |
 | Q-002 | What interfaces, canonical IDs, PostgreSQL objects, privileges, and refresh patterns exist? | Upstream/database owners | Discovery |
 | Q-003 | Which data retain historical identifier/classification states and macro vintages, and when were they available? | Data/quant owner | Before historical claims |
 | Q-004 | Which sources and derived outputs may be redistributed publicly? | Source owner | Before real-data publication |
