@@ -14,6 +14,44 @@ class ConfigError(ValueError):
 
 
 @dataclass(frozen=True)
+class UpstreamAssetConfig:
+    """Optional local checkout for the MacroMedallion/EcoMedallion upstream asset."""
+
+    local_repository_path: Path | None
+
+    def public_summary(self) -> dict[str, object]:
+        """Expose whether a local checkout was selected without disclosing its path."""
+        return {"local_repository_configured": self.local_repository_path is not None}
+
+
+def load_upstream_asset(path: Path = DEFAULT_CONFIG_PATH) -> UpstreamAssetConfig:
+    """Load an optional local upstream checkout; no remote identity is required."""
+    try:
+        document = tomllib.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ConfigError(f"cannot read configuration at {path}: {error}") from error
+    except tomllib.TOMLDecodeError as error:
+        raise ConfigError(f"invalid TOML configuration at {path}: {error}") from error
+
+    section = document.get("upstream_asset", {})
+    if not isinstance(section, dict):
+        raise ConfigError("upstream_asset must be a table when configured")
+    configured_path = section.get("local_repository_path")
+    if configured_path in (None, ""):
+        return UpstreamAssetConfig(local_repository_path=None)
+    if not isinstance(configured_path, str):
+        raise ConfigError("upstream_asset.local_repository_path must be a string")
+    repository_path = Path(configured_path).expanduser()
+    if not repository_path.is_absolute():
+        raise ConfigError("upstream_asset.local_repository_path must be absolute")
+    if not repository_path.is_dir():
+        raise ConfigError(
+            "upstream_asset.local_repository_path must name an existing directory"
+        )
+    return UpstreamAssetConfig(local_repository_path=repository_path)
+
+
+@dataclass(frozen=True)
 class SourceDatabaseConfig:
     host: str
     port: int

@@ -9,6 +9,12 @@ password = "replace-me"
 read_only = true
 role = "marketatlas_source_reader"
 
+[upstream_asset]
+# MacroMedallion and EcoMedallion refer to the same upstream asset. This
+# optional local checkout is for discovery/lineage only; MarketAtlas never
+# imports its code or requires a remote URL, commit, or branch pin.
+# local_repository_path = "/absolute/path/to/EcoMedallion"
+
 [target_database]
 host = "localhost"
 port = 55432

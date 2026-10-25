@@ -12,7 +12,7 @@ MarketAtlas will use the same frontend scaffold pattern as the local `QuantMerid
 - a `src/app`, `src/components`, `src/lib`, and `src/server` layout;
 - Vite client build plus server-side route-handler build, with TypeScript checks, Vitest, and Playwright available for verification.
 
-The visual baseline is the QuantMeridian terminal language: dark panels, amber command accents, explicit green/red state semantics, compact typography, and status-forward data displays. MarketAtlas will use its own routes, components, assets, API contracts, and data model.
+The visual baseline is the QuantMeridian terminal language: dark panels, explicit evidence-state semantics, compact typography, and status-forward data displays. MarketAtlas uses its own focused workspace, components, assets, API contracts, and data model; it does not require a permanent navigation rail.
 
 ## Scope and constraints
 
@@ -22,7 +22,7 @@ The demo API must read only the `atlas_report` snapshot-pinned views created by 
 
 ## Consequences
 
-T-011 will define the snapshot-pinned report views and provenance payloads required by the frontend. T-012 will create the React application using this scaffold and implement the market map, macro-context, correlation monitor, and provenance/quality drill-through pages. The initial frontend must represent fixture-only, unsupported, and missing states explicitly rather than fabricate data.
+T-011 defines the snapshot-pinned report views and provenance payloads required by the frontend. T-012 implements them as a focused evidence workspace: graph lens, context treatment, provenance/quality drawer, and candidate-review controls. The frontend represents fixture-only, unsupported, missing, and unreviewed states explicitly rather than fabricate data.
 
 ## Evidence inspected
 

@@ -130,6 +130,7 @@ def _materialize_reporting_snapshot(
         SELECT %s, node_id, node_type, canonical_key,
                display_label, entity_status, provenance
         FROM atlas.node
+        WHERE provenance->>'source' = 'synthetic-fixture'
         ON CONFLICT DO NOTHING
         """,
         (snapshot_id,),

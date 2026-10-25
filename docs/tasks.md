@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-24. T-005 through T-012 are complete for the synthetic fixture track. T-001 and T-004 remain in progress; T-002 and T-003 have partial implementation evidence. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-24. T-002, T-003, and T-005 through T-012 are complete for the synthetic fixture track. T-001 and T-004 remain in progress. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -10,21 +10,25 @@ Role names are proposed responsibilities. Record the actual person/agent on assi
 
 Owner: integration engineer. Dependencies: none. Maps: REQ-001 → AC-001.
 
-Identify exact MacroMedallion / EcoMedallion URL(s)/commits and relationships, owners, PostgreSQL interfaces, grains, permissions, history, and redistribution terms. Produce `reports/discovery.md` with reusable components and unresolved gaps. If access is unavailable, record the limitation and select the independent fixture track; never mark upstream verification passed. Evidence: actual inspected metadata or an explicit unresolved-status inventory, reviewed pilot defaults, and source-owner decisions.
+Treat MacroMedallion and EcoMedallion as interchangeable names for one upstream asset. Accept an optional user-selected local checkout through git-ignored configuration; do not require a remote URL, commit, branch pin, or source-code import. Identify owners, PostgreSQL interfaces, grains, permissions, history, and redistribution terms. Produce `reports/discovery.md` with reusable components and unresolved gaps. If access is unavailable, record the limitation and select the independent fixture track; never mark upstream verification passed. Evidence: actual inspected metadata or an explicit unresolved-status inventory, reviewed pilot defaults, and source-owner decisions.
 
 Progress: the local PostgreSQL interface, relevant series/vintage objects, keys, columns, and effective privileges have been inspected. Repository identity, owners, redistribution terms, and a least-privilege source role remain unresolved.
 
-### [ ] T-002 — Scaffold repository and isolated runtime
+### [x] T-002 — Scaffold repository and isolated runtime
 
 Owner: implementation engineer. Dependencies: T-001 scope decision; fixture-only decision is sufficient. Maps: REQ-002, NFR-001, NFR-006 → AC-002, AC-013, AC-018.
 
 Create package/configuration/migration layout, a documented PostgreSQL prerequisite or optional local container, dependency lock, non-secret example configuration, and CLI entry point. Separate source reader and graph writer configuration. Evidence: a clean environment installs and reports configuration without printing secrets; no upstream connection is required for fixture mode. Document real commands only after implementation.
 
-### [ ] T-003 — Build deterministic synthetic fixtures
+Completed 2026-10-24 for the fixture track. The standard-library CLI, isolated fixture workflow, non-secret configuration example, separate source/target role settings, migrations, and dependency lock are present. `fixture build`, `fixture validate`, and cutoff inspection were exercised without upstream credentials; the CLI regression suite covers the documented inspection command. Evidence: `reports/t002-validation.md`.
+
+### [x] T-003 — Build deterministic synthetic fixtures
 
 Owner: data engineer / quant. Dependencies: T-002. Maps: REQ-002, NFR-002 → AC-002, AC-014.
 
 Define mock instruments/listings, issuer/classification/index nodes, macro series, and synthetic observations. Include ticker changes, multi-membership, late corrections, macro revisions, disputed mappings, missing/constant returns, and a known correlation example. Label every fixture and output synthetic. Evidence: reproducible seed/checksums, data dictionary, expected outcomes, and a fixture adapter manifest; no copied private records.
+
+Completed 2026-10-24 for the fixture track. The canonical synthetic fixture generates deterministic entities, identifiers, assertions, curated contexts, sessions, macro vintages, market observations, configured pairs, and edge cases for ticker history, multi-membership, corrections, missingness, and zero variance. Build/validation and early-cutoff inspection pass with a stable manifest hash. Evidence: `reports/t003-validation.md`, `docs/fixtures.md`.
 
 ### [ ] T-004 — Implement canonical adapter contracts
 
@@ -32,7 +36,7 @@ Owner: integration engineer. Dependencies: T-001, T-003. Maps: REQ-001, REQ-006,
 
 Implement normalized contracts for entities, assertions, observations, and manifests. Map verified upstream objects when available; record optional adapter status separately from working fixtures. Validate required metadata, schema drift, rights, timestamp coverage, and source read permissions. Evidence: fixture contract checks plus inspected upstream mappings and read-only role checks for each activated adapter. Unavailable upstream adapters remain pending, not advertised as implemented.
 
-Progress: a bounded MacroMedallion adapter verifies and extracts macro-series metadata and point-in-time observation versions through an enforced read-only source role. Role-boundary evidence and graph loading now pass. Rights review and complete manifest/run lineage remain pending.
+Progress: T-004B completed 2026-10-24 for the bounded local PostgreSQL pilot. The reader extracts three configured macro series and point-in-time observation versions; the separate writer validates the extract, records an immutable input manifest, upserts macro-series identities, and inserts versioned macro observations into atlas. The first live run inserted 3 identities and 151 observation versions; an identical repeat reused the manifest and inserted zero rows. Evidence: reports/t004b-live-ingestion-validation.md. Rights review, broader entity/relationship contracts, and complete source-owner/deployment discovery remain pending.
 
 ## Phase B — Build graph and analytical contracts
 
@@ -100,7 +104,7 @@ Owner: frontend / BI engineer. Dependencies: T-011 and supported frontend runtim
 
 Build market-map, macro-context, correlation, and provenance/quality pages using explicit relationships and standard visuals. Pin a single snapshot across refresh queries. Evidence: actual semantic-model/report artifacts, filter and distinct-count reconciliation, valid as-of labels, drill-through, and refresh behavior. Retain screenshots from the synthetic demonstration. The user selected the React implementation in ADR-001; Power BI acceptance remains pending until separately exercised.
 
-Completed 2026-10-24 for the fixture demo. The independent `frontend/` application uses React, TypeScript, Vite, React Router, Zustand, and Tailwind in the QuantMeridian scaffold pattern. It renders five routes—overview, market map, macro context, correlations, and provenance—from a labeled fixture snapshot adapter and prohibits browser-to-PostgreSQL access. Typecheck, two frontend fixture tests, and production build pass. Evidence: `reports/t012-validation.md`, `frontend/README.md`. AC-009 remains partial because Power BI has not been exercised.
+Completed 2026-10-24 for the fixture demo. The independent `frontend/` application uses React, TypeScript, Vite, React Router, Zustand, and Tailwind in the QuantMeridian scaffold pattern. Its current focused evidence workspace replaces the permanent navigation rail with a selected MarketAtlas graph lens, explicit source/review/candidate/context treatments, provenance drawer, scoped-evidence modal, and opt-in candidate-review queue. It remains fixture-only and prohibits browser-to-PostgreSQL access. Typecheck, four frontend fixture tests, and production build pass. Evidence: `reports/t012-validation.md`, `frontend/README.md`. AC-009 remains partial because Power BI has not been exercised.
 
 ## Phase D — Validate and hand off
 

@@ -9,7 +9,7 @@ Reviewed the complete original `market_knowledge_graph_spec.md` and reorganized 
 | Original gap | Resolution | Location |
 | --- | --- | --- |
 | Purpose, design, tasks, and future ideas were mixed together | Product requirements define WHAT/WHY; the plan defines HOW; task evidence and the roadmap carry execution scope | spec.md, plan.md, tasks.md, roadmap.md |
-| MacroMedallion / EcoMedallion reuse was broad and assumed two repositories | Discovery resolves exact identity, interfaces, commits, source ownership, permissions, and reusable components | REQ-001; handoff.md |
+| MacroMedallion / EcoMedallion reuse was broad and assumed two repositories | They are one operator-selected local upstream asset; discovery resolves the approved PostgreSQL contract, source ownership, permissions, and reusable components without requiring a remote pin | REQ-001; handoff.md |
 | Public GitHub demo would depend on private source systems | Independent deterministic fixtures; real upstream access is optional and reported honestly | REQ-002; NFR-001 |
 | Relationship targets referenced indices/concepts without defining their entity types | Explicit node types and allowed endpoint pairs; instrument/listing identity distinction | REQ-003–004; plan.md |
 | Effective dates alone could not reproduce what was known earlier | Business validity, source availability, system record history, and revisions have explicit semantics | REQ-005–006 |

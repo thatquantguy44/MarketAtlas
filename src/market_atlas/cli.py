@@ -20,6 +20,7 @@ from .config import (
     load_macro_medallion,
     load_source_database,
     load_target_database,
+    load_upstream_asset,
 )
 from .contracts import available_view, canonical_bytes, validate_fixture
 from .database import DatabaseUnavailable, inspect_source
@@ -31,6 +32,7 @@ from .graph.fixture_loader import (
     validate_observation_fixture,
     validate_temporal_fixture,
 )
+from .ingestion.macro_medallion import ingest as ingest_macro_medallion
 from .migrations import (
     DEFAULT_MIGRATION_DIRECTORY,
     apply_migrations,
@@ -173,6 +175,7 @@ def _validate_database_roles(config_path: Path) -> int:
 def _verify_adapter(config_path: Path) -> int:
     try:
         result = verify_macro_medallion(load_source_database(config_path))
+        result["upstream_asset"] = load_upstream_asset(config_path).public_summary()
     except (ConfigError, DatabaseUnavailable) as error:
         print(str(error), file=sys.stderr)
         return 1
@@ -185,7 +188,7 @@ def _extract_adapter(config_path: Path, pilot_path: Path, output: Path) -> int:
         result = extract_macro_medallion(
             load_source_database(config_path), load_macro_medallion(pilot_path)
         )
-    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+    except (ConfigError, DatabaseUnavailable, TypeError, ValueError) as error:
         print(str(error), file=sys.stderr)
         return 1
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -203,6 +206,20 @@ def _extract_adapter(config_path: Path, pilot_path: Path, output: Path) -> int:
             sort_keys=True,
         )
     )
+    return 0
+
+
+def _ingest_adapter(config_path: Path, pilot_path: Path) -> int:
+    """Read an approved source contract, then write only MarketAtlas schemas."""
+    try:
+        extract = extract_macro_medallion(
+            load_source_database(config_path), load_macro_medallion(pilot_path)
+        )
+        result = ingest_macro_medallion(load_target_database(config_path), extract)
+    except (ConfigError, DatabaseUnavailable, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
     return 0
 
 
@@ -367,6 +384,13 @@ def main(argv: list[str] | None = None) -> int:
         "--pilot-config", type=Path, default=Path("configs/pilot.toml")
     )
     adapter_extract.add_argument("--output", type=Path, required=True)
+    adapter_ingest = adapter_commands.add_parser(
+        "ingest", help="ingest the bounded upstream macro extract into atlas"
+    )
+    adapter_ingest.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    adapter_ingest.add_argument(
+        "--pilot-config", type=Path, default=Path("configs/pilot.toml")
+    )
     graph = commands.add_parser("graph", help="load or validate graph identities")
     graph_commands = graph.add_subparsers(dest="graph_command", required=True)
     graph_load = graph_commands.add_parser("load-fixture")
@@ -402,9 +426,11 @@ def main(argv: list[str] | None = None) -> int:
     analytics_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     build_run = commands.add_parser("build", help="build or validate serving snapshots")
     build_commands = build_run.add_subparsers(dest="build_command", required=True)
-    build_fixture = build_commands.add_parser("fixture")
-    build_fixture.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
-    build_fixture.add_argument("--knowledge-cutoff")
+    build_fixture_command = build_commands.add_parser("fixture")
+    build_fixture_command.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
+    build_fixture_command.add_argument("--knowledge-cutoff")
     build_validate = build_commands.add_parser("validate-fixture")
     build_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     report = commands.add_parser(
@@ -423,6 +449,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "adapter":
         if args.adapter_command == "verify":
             return _verify_adapter(args.config)
+        if args.adapter_command == "ingest":
+            return _ingest_adapter(args.config, args.pilot_config)
         return _extract_adapter(args.config, args.pilot_config, args.output)
     if args.command == "analytics":
         if args.analytics_command == "calculate-fixture":

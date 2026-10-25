@@ -6,15 +6,15 @@ Date: 2026-10-24. The demo implements the frontend direction selected in [ADR-00
 
 `frontend/` is an independent React 18, TypeScript, Vite, React Router, Zustand, and Tailwind application. Its terminal visual system follows the QuantMeridian scaffold pattern while retaining separate MarketAtlas source files and fixture data.
 
-The demo provides five routes:
+The initial route-oriented demo was superseded on 2026-10-24 by the current focused evidence workspace. It keeps the same fixture-only reporting boundary while composing its market-map, context, provenance, and review functions into one selected-entity graph lens:
 
 | Route | Snapshot-pinned concept shown |
 | --- | --- |
-| Overview | Snapshot identity and output counts |
-| Market map | Bounded sourced relationships |
-| Macro context | Source-backed/curated context with explicit non-causal label |
-| Correlations | Fixed-window estimate, sample count, status, and cutoff |
-| Provenance | Source/mapping/method/input/snapshot drill-through |
+| Header and insight row | Snapshot/data-health state and current evidence universe |
+| Graph stage | Bounded sourced relationships, focus lens, clustering, search, and view controls |
+| Evidence drawer | Source lineage, human-readable fields, explicit evidence status, and scoped drill-through |
+| Candidate-review queue | Opt-in unreviewed links, matching method/score, and an append-only demo decision flow |
+| Evidence legend | Source-backed, reviewed, candidate, context-only, and unavailable treatment |
 
 The current adapter is explicitly fixture-only and mirrors T-011’s declared report grains. Browser code has no PostgreSQL driver, database configuration, credential, or direct database connection. A production endpoint must read only the snapshot-pinned `atlas_report.current_*` views.
 
@@ -24,7 +24,7 @@ From `frontend/`, the following succeeded:
 
 ```text
 npm run typecheck
-npm test              # 2 tests passed
+npm test              # 4 tests passed
 npm run build         # production Vite bundle built successfully
 ```
 
