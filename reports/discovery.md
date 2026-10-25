@@ -2,6 +2,8 @@
 
 Date: 2026-10-24. Scope: repository metadata, public documentation, and authorized read-only inspection of a local MacroMedallion PostgreSQL database. Credentials and connection coordinates remain only in the git-ignored `configs/local.toml`.
 
+Update: 2026-10-25. The user confirmed that MacroMedallion and EcoMedallion are interchangeable names for one local upstream asset. The current metadata-only inventory is maintained in docs/source-catalog.md and its validation report. This initial pass remains historical; it does not require a remote repository pin.
+
 | Asset | Verified observation | Remaining decision or check |
 | --- | --- | --- |
 | MarketAtlas | [`thatquantguy44/MarketAtlas`](https://github.com/thatquantguy44/MarketAtlas) is the design-stage repository; this work starts from main commit `f57d3c9423326f38cc060a38474614ff10ae6c8e`. | Confirm pilot runtime, owners, and database scope. |

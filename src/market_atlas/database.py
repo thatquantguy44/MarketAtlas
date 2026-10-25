@@ -71,7 +71,11 @@ def inspect_source(config: SourceDatabaseConfig) -> dict[str, Any]:
                              WHEN 'm' THEN 'materialized_view'
                              WHEN 'f' THEN 'foreign_table'
                            END AS object_type,
-                           GREATEST(c.reltuples::bigint, 0) AS estimated_rows
+                           GREATEST(c.reltuples::bigint, 0) AS estimated_rows,
+                           has_table_privilege(current_user, c.oid, 'SELECT') AS can_select,
+                           has_table_privilege(
+                               current_user, c.oid, 'INSERT,UPDATE,DELETE'
+                           ) AS can_write
                     FROM pg_class AS c
                     JOIN pg_namespace AS n ON n.oid = c.relnamespace
                     WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f')
@@ -81,6 +85,64 @@ def inspect_source(config: SourceDatabaseConfig) -> dict[str, Any]:
                     """
                 )
                 objects = _dict_rows(cursor)
+                for object_row in objects:
+                    if not object_row["can_select"]:
+                        object_row["read_probe_status"] = "not_authorized"
+                        continue
+                    try:
+                        cursor.execute(
+                            sql.SQL("SELECT 1 FROM {}.{} LIMIT 0").format(
+                                sql.Identifier(object_row["schema_name"]),
+                                sql.Identifier(object_row["object_name"]),
+                            )
+                        )
+                    except psycopg.Error as error:
+                        object_row["read_probe_status"] = (
+                            f"failed:{type(error).__name__}"
+                        )
+                    else:
+                        object_row["read_probe_status"] = "passed"
+
+                cursor.execute(
+                    """
+                    SELECT n.nspname AS schema_name,
+                           c.relname AS object_name,
+                           i.relname AS index_name,
+                           ix.indisprimary AS is_primary,
+                           ix.indisunique AS is_unique,
+                           array_agg(a.attname ORDER BY key_column.ordinality)
+                               AS key_columns
+                    FROM pg_index AS ix
+                    JOIN pg_class AS c ON c.oid = ix.indrelid
+                    JOIN pg_namespace AS n ON n.oid = c.relnamespace
+                    JOIN pg_class AS i ON i.oid = ix.indexrelid
+                    JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY
+                        AS key_column(attnum, ordinality) ON key_column.attnum > 0
+                    JOIN pg_attribute AS a
+                      ON a.attrelid = c.oid AND a.attnum = key_column.attnum
+                    WHERE c.relkind IN ('r', 'p', 'm', 'f')
+                      AND n.nspname <> 'information_schema'
+                      AND n.nspname NOT LIKE 'pg_%'
+                    GROUP BY n.nspname, c.relname, i.relname, ix.indisprimary, ix.indisunique
+                    ORDER BY n.nspname, c.relname, i.relname
+                    """
+                )
+                indexes = _dict_rows(cursor)
+
+                cursor.execute(
+                    """
+                    SELECT n.nspname AS schema_name,
+                           c.relname AS object_name,
+                           md5(pg_get_viewdef(c.oid, true)) AS definition_md5
+                    FROM pg_class AS c
+                    JOIN pg_namespace AS n ON n.oid = c.relnamespace
+                    WHERE c.relkind IN ('v', 'm')
+                      AND n.nspname <> 'information_schema'
+                      AND n.nspname NOT LIKE 'pg_%'
+                    ORDER BY n.nspname, c.relname
+                    """
+                )
+                view_definitions = _dict_rows(cursor)
 
                 cursor.execute(
                     """
@@ -125,5 +187,7 @@ def inspect_source(config: SourceDatabaseConfig) -> dict[str, Any]:
         "schemas": schemas,
         "objects": objects,
         "columns": columns,
+        "indexes": indexes,
+        "view_definitions": view_definitions,
         "privileges": privileges,
     }

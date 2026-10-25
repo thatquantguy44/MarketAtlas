@@ -69,6 +69,8 @@ Source connections force `default_transaction_read_only=on` and switch to the NO
 
 The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. The database loader records a reproducible `input_manifest` for the same fixture hash and structured source-backed/curated context mappings. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records fixture evidence and the remaining partial or pending checks.
 
+The metadata-only [source catalog](docs/source-catalog.md) inventories every local upstream relation/view and assigns an explicit support state. It does not authorize or ingest an object merely because it appears in the catalog.
+
 ## Delivery documents
 
 Read in order:
@@ -84,6 +86,7 @@ Read in order:
 9. [Frontend scaffold decision](docs/decisions/001-quantmeridian-react-scaffold.md): QuantMeridian-based React demo architecture and boundaries.
 10. [Reporting contract](docs/reporting.md): snapshot-pinned dimensions, facts, paths, and provenance drill-through.
 11. [React demo validation](reports/t012-validation.md): frontend scope, build evidence, and known dependency/security follow-up.
+12. [Source catalog](docs/source-catalog.md): local relation/view inventory and object-promotion rules.
 
 The individual documents are canonical. Preserve requirement IDs when revising scope so the plan, tasks, and acceptance evidence stay aligned.
 

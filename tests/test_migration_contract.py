@@ -113,6 +113,18 @@ class MigrationContractTests(unittest.TestCase):
             "WHERE provenance->>'source' = 'synthetic-fixture'", implementation
         )
 
+    def test_source_catalog_migration_is_read_only_and_excludes_agent_tables(self):
+        sql = Path("sql/migrations/008_source_catalog_reader_scope.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "GRANT SELECT ON ALL TABLES IN SCHEMA audit, bronze, gold, meta, silver",
+            sql,
+        )
+        self.assertIn("marketatlas_source_reader", sql)
+        self.assertNotIn("public", sql.split("GRANT USAGE")[1])
+        self.assertNotIn("ALTER DEFAULT PRIVILEGES", sql)
+
 
 if __name__ == "__main__":
     unittest.main()
