@@ -125,6 +125,22 @@ class MigrationContractTests(unittest.TestCase):
         self.assertNotIn("public", sql.split("GRANT USAGE")[1])
         self.assertNotIn("ALTER DEFAULT PRIVILEGES", sql)
 
+    def test_macro_context_publication_preserves_current_only_semantics(self):
+        sql = Path("sql/migrations/009_macro_context_publication.sql").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "atlas.macro_series_taxonomy_current",
+            "atlas.macro_release_event_current",
+            "atlas.macro_source_coverage_current",
+            "atlas_report.macro_source_context_snapshot",
+            "temporal_status = 'current_only'",
+            "temporal_status = 'scheduled_event'",
+            "'macro_source_context'",
+            "current_macro_source_context",
+        ):
+            self.assertIn(required, sql)
+
 
 if __name__ == "__main__":
     unittest.main()

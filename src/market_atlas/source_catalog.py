@@ -6,35 +6,26 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from .contracts import sha256
+from .source_contracts import (
+    catalog_metadata,
+    contracts_by_object,
+    load_source_contract_registry,
+)
 
-CATALOG_VERSION = "source-catalog-v1"
+CATALOG_VERSION = "source-catalog-v2"
 MARKETATLAS_SCHEMAS = {"atlas", "atlas_report"}
-SUPPORTED_OBJECTS = {
-    "meta.fred_series": {
-        "support_state": "supported_live",
-        "purpose": "macro-series identity and metadata",
-        "declared_grain": "one row per series_id",
-        "business_key": ["series_id"],
-        "data_classification": "restricted_pending_rights",
-        "adapter": "macro_medallion_ecomedallion",
-    },
-    "gold.fred_point_in_time": {
-        "support_state": "supported_live",
-        "purpose": "point-in-time macro observation versions",
-        "declared_grain": "one row per series_id, observation_date, realtime_start",
-        "business_key": ["series_id", "observation_date", "realtime_start"],
-        "data_classification": "restricted_pending_rights",
-        "adapter": "macro_medallion_ecomedallion",
-    },
-}
 
 
 def _object_key(row: dict[str, Any]) -> str:
     return f"{row['schema_name']}.{row['object_name']}"
 
 
-def build_source_catalog(inspection: dict[str, Any]) -> dict[str, Any]:
+def build_source_catalog(
+    inspection: dict[str, Any], registry: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Classify every inspected relation without reading source data or definitions."""
+    registry = registry or load_source_contract_registry()
+    declared_contracts = contracts_by_object(registry)
     columns_by_object: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for column in inspection["columns"]:
         columns_by_object[_object_key(column)].append(
@@ -90,8 +81,8 @@ def build_source_catalog(inspection: dict[str, Any]) -> dict[str, Any]:
                     "adapter": None,
                 }
             )
-        elif key in SUPPORTED_OBJECTS:
-            catalog_entry.update(SUPPORTED_OBJECTS[key])
+        elif key in declared_contracts:
+            catalog_entry.update(catalog_metadata(declared_contracts[key]))
         elif object_row["can_select"]:
             catalog_entry.update(
                 {
@@ -134,6 +125,7 @@ def build_source_catalog(inspection: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": "cataloged_read_only",
         "catalog_version": CATALOG_VERSION,
+        "contract_registry_version": registry["registry_version"],
         "upstream_asset": "MacroMedallion/EcoMedallion",
         "server": inspection["server"],
         "source_object_count": len(source_entries),

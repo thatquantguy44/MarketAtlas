@@ -1,0 +1,6 @@
+[macro_context]
+# Bounded v0.1 enrichment sample. These are FRED identifiers, not MarketAtlas IDs.
+series_ids = ["CPIAUCSL", "GDP", "UNRATE"]
+release_start = "2026-10-01"
+release_end = "2026-12-31"
+redistribution_status = "unresolved"

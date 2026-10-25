@@ -14,6 +14,13 @@ Treat MacroMedallion and EcoMedallion as interchangeable names for one local ups
 
 Define a common adapter interface before implementation. Each adapter supplies entities, identifier mappings, reference assertions, curated context, and observations plus a manifest of source identity, extraction time, rights, checksums, and coverage. A source may explicitly lack some outputs. Missing fields must remain missing or quarantined rather than fabricated.
 
+The tracked `contracts/source_contracts.toml` registry is the promotion gate for
+upstream objects. It records contract ownership, source-owner status, purpose,
+grain/key, required schema fingerprints, temporal semantics, rights status,
+lifecycle, and adapter. A fresh metadata-only source catalog must verify against
+that registry before a `supported_live` adapter runs; readable but undeclared
+objects remain non-ingestible.
+
 Fixture mode supplies all contracts deterministically from labeled synthetic files. Upstream mode uses versioned database views or repository interfaces identified during discovery. Upstream adapters must not import guessed module paths or alter source schemas. Select existing migration and scheduling conventions where suitable; keep the public demo independent of private packages. (REQ-001, REQ-002, NFR-001, NFR-006)
 
 ## P2. Storage, identity, and ontology

@@ -34,6 +34,34 @@ flowchart TD
 
 Reference facts and calculated estimates have distinct semantics. PostgreSQL prepares the relationships and reporting outputs. Power BI presents filtered views, paths, and time series using explicit row grains.
 
+## Source access and browser boundary
+
+MacroMedallion and EcoMedallion are interchangeable names for the same optional
+local upstream asset. They are **not** browser data sources. The React demo and
+any future browser client must never receive PostgreSQL credentials or query
+`macro_medallion` source schemas directly.
+
+```text
+Browser → MarketAtlas server/report API → snapshot-pinned atlas_report views
+MarketAtlas source-contract service → read-only macro_medallion schemas
+```
+
+The scoped `marketatlas_source_reader` role can catalog and perform zero-row
+read probes on the approved economic source surface. In the current local
+catalog, 91 economic objects are readable. Five are approved as
+`supported_live`: `meta.fred_series`, `gold.fred_point_in_time`,
+`gold.dim_series`, `gold.release_calendar`, and `gold.v_source_coverage`.
+The other 86 readable objects are `discovered_not_onboarded`: visibility or
+database permission is not permission to ingest, expose, or redistribute them.
+
+An object becomes `supported_live` only after owner and rights review, a declared
+grain/business key and temporal semantics, required-column and schema-drift
+checks, a bounded adapter, manifest lineage, and validation evidence. Browser
+clients receive only explicitly selected, snapshot-pinned reporting fields from
+`atlas_report`; they do not receive raw source tables. See the
+[source catalog](docs/source-catalog.md) for the promotion rule and current
+support states.
+
 ## Working slices
 
 The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations, versioned fixture loading into the dedicated `atlas` schema, a bounded rolling-correlation fixture calculator, and an atomic fixture-serving publication. It does not yet create a Power BI report. Python 3.11 or newer is required.
@@ -51,9 +79,15 @@ For local PostgreSQL integration, copy `configs/local.example.toml` to the git-i
 PYTHONPATH=src python -m market_atlas database inspect --output data/generated/macro_medallion_schema.json
 PYTHONPATH=src python -m market_atlas database migrate
 PYTHONPATH=src python -m market_atlas database validate-roles
+PYTHONPATH=src python -m market_atlas database catalog --output data/generated/source_catalog.json
+PYTHONPATH=src python -m market_atlas database verify-contracts --catalog data/generated/source_catalog.json
 PYTHONPATH=src python -m market_atlas adapter verify
 PYTHONPATH=src python -m market_atlas adapter extract --output data/generated/macro_medallion_pilot.json
+PYTHONPATH=src python -m market_atlas adapter verify-context
+PYTHONPATH=src python -m market_atlas adapter extract-context --output data/generated/macro_context_pilot.json
 PYTHONPATH=src python -m market_atlas adapter ingest --pilot-config configs/pilot.toml
+PYTHONPATH=src python -m market_atlas context publish --input data/generated/macro_context_pilot.json
+PYTHONPATH=src python -m market_atlas context validate --input data/generated/macro_context_pilot.json
 PYTHONPATH=src python -m market_atlas graph validate-fixture
 PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
 PYTHONPATH=src python -m market_atlas graph validate-observation-fixture
@@ -65,11 +99,11 @@ PYTHONPATH=src python -m market_atlas report validate-fixture
 
 The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
 
-Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The migration never changes objects or permissions inside existing source schemas beyond granting the source role SELECT on the two approved interfaces.
+Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The source-reader migration grants read access to the explicitly named economic schemas for metadata discovery, but adapters may use only `supported_live` objects that pass the source-contract gate; it never changes source objects or grants source-write access.
 
-The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. The database loader records a reproducible `input_manifest` for the same fixture hash and structured source-backed/curated context mappings. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records fixture evidence and the remaining partial or pending checks.
+The fixture manifest records record counts, a SHA-256 hash, and the explicit status `graph_and_report_not_built`. The database loader records a reproducible `input_manifest` for the same fixture hash and structured source-backed/curated context mappings. The macro-context publisher separately persists current source taxonomy and coverage plus scheduled release events, then exposes only the immutable `atlas_report.current_macro_source_context` publication; it does not recast current source attributes as point-in-time history. [Fixture contract](docs/fixtures.md) describes the grains and edge cases. [Source discovery](reports/discovery.md) records the verified PostgreSQL contract and remaining gaps. [Acceptance evidence](docs/acceptance.md) records fixture evidence and the remaining partial or pending checks.
 
-The metadata-only [source catalog](docs/source-catalog.md) inventories every local upstream relation/view and assigns an explicit support state. It does not authorize or ingest an object merely because it appears in the catalog.
+The metadata-only [source catalog](docs/source-catalog.md) inventories every local upstream relation/view and assigns an explicit support state. The tracked [source-contract registry](contracts/source_contracts.toml) declares the required schema, ownership, temporal semantics, rights status, adapter, and fingerprints for the approved interfaces; `database verify-contracts` blocks activation on drift or missing metadata. Neither artifact authorizes or ingests an object merely because it appears in the catalog.
 
 ## Delivery documents
 

@@ -10,6 +10,8 @@ from pathlib import Path
 
 from .adapters.macro_medallion import extract as extract_macro_medallion
 from .adapters.macro_medallion import verify_contract as verify_macro_medallion
+from .adapters.macro_context import extract as extract_macro_context
+from .adapters.macro_context import verify_contract as verify_macro_context
 from .analytics.fixture_correlations import (
     calculate_fixture_correlations,
     validate_rolling_correlation_fixture,
@@ -18,6 +20,7 @@ from .config import (
     DEFAULT_CONFIG_PATH,
     ConfigError,
     load_macro_medallion,
+    load_macro_context,
     load_source_database,
     load_target_database,
     load_upstream_asset,
@@ -43,7 +46,19 @@ from .publishing.fixture_build import (
     validate_fixture_build,
     validate_fixture_reporting,
 )
+from .publishing.macro_context import (
+    ingest_context_extract,
+    load_context_extract,
+    publish_context_snapshot,
+    validate_context_publication,
+)
 from .source_catalog import build_source_catalog
+from .source_contracts import (
+    DEFAULT_SOURCE_CONTRACTS_PATH,
+    SourceContractError,
+    load_source_contract_registry,
+    verify_source_contracts,
+)
 
 
 def _build(output: Path) -> int:
@@ -175,6 +190,22 @@ def _catalog_database(config_path: Path, output: Path) -> int:
     return 0
 
 
+def _verify_source_contracts(catalog_path: Path, contracts_path: Path) -> int:
+    """Verify a metadata-only source catalog against tracked contract declarations."""
+    try:
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        if not isinstance(catalog, dict):
+            raise SourceContractError("catalog root must be a JSON object")
+        result = verify_source_contracts(
+            catalog, load_source_contract_registry(contracts_path)
+        )
+    except (OSError, json.JSONDecodeError, SourceContractError) as error:
+        print(f"cannot verify source contracts: {error}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
 def _migrate_database(config_path: Path, migration_directory: Path) -> int:
     try:
         result = apply_migrations(
@@ -234,6 +265,61 @@ def _extract_adapter(config_path: Path, pilot_path: Path, output: Path) -> int:
     return 0
 
 
+def _verify_context_adapter(config_path: Path) -> int:
+    try:
+        database = load_source_database(config_path)
+        gate = verify_source_contracts(build_source_catalog(inspect_source(database)))
+        adapter_result = verify_macro_context(database)
+    except (ConfigError, DatabaseUnavailable, SourceContractError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    result = {
+        "status": (
+            "valid"
+            if gate["status"] == "valid" and adapter_result["status"] == "valid"
+            else "invalid"
+        ),
+        "source_contract_gate": gate,
+        "adapter": adapter_result,
+    }
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
+def _extract_context_adapter(config_path: Path, pilot_path: Path, output: Path) -> int:
+    try:
+        database = load_source_database(config_path)
+        gate = verify_source_contracts(build_source_catalog(inspect_source(database)))
+        if gate["status"] != "valid":
+            print(json.dumps(gate, sort_keys=True), file=sys.stderr)
+            return 1
+        result = extract_macro_context(database, load_macro_context(pilot_path))
+    except (ConfigError, DatabaseUnavailable, SourceContractError, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    result["manifest"]["source_contract_verification"] = {
+        "catalog_fingerprint_sha256": gate["catalog_fingerprint_sha256"],
+        "registry_version": gate["registry_version"],
+        "status": gate["status"],
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(canonical_bytes(result))
+    print(
+        json.dumps(
+            {
+                "status": result["manifest"]["status"],
+                "series_taxonomy_count": len(result["series_taxonomy"]),
+                "release_event_count": len(result["release_events"]),
+                "source_coverage_count": len(result["source_coverage"]),
+                "input_selection_sha256": result["manifest"]["input_selection_sha256"],
+                "output": str(output),
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
 def _ingest_adapter(config_path: Path, pilot_path: Path) -> int:
     """Read an approved source contract, then write only MarketAtlas schemas."""
     try:
@@ -246,6 +332,42 @@ def _ingest_adapter(config_path: Path, pilot_path: Path) -> int:
         return 1
     print(json.dumps(result, sort_keys=True))
     return 0
+
+
+def _ingest_context(config_path: Path, input_path: Path) -> int:
+    try:
+        result = ingest_context_extract(
+            load_target_database(config_path), load_context_extract(input_path)
+        )
+    except (ConfigError, DatabaseUnavailable, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0
+
+
+def _publish_context(config_path: Path, input_path: Path) -> int:
+    try:
+        extract = load_context_extract(input_path)
+        ingestion = ingest_context_extract(load_target_database(config_path), extract)
+        result = publish_context_snapshot(load_target_database(config_path), extract)
+    except (ConfigError, DatabaseUnavailable, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps({"ingestion": ingestion, "publication": result}, sort_keys=True))
+    return 0 if result["status"] != "macro_context_snapshot_failed" else 1
+
+
+def _validate_context_publication(config_path: Path, input_path: Path) -> int:
+    try:
+        result = validate_context_publication(
+            load_target_database(config_path), load_context_extract(input_path)
+        )
+    except (ConfigError, DatabaseUnavailable, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
 
 
 def _load_fixture_graph(config_path: Path) -> int:
@@ -395,6 +517,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     database_catalog.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     database_catalog.add_argument("--output", type=Path, required=True)
+    database_verify_contracts = database_commands.add_parser(
+        "verify-contracts",
+        help="verify a metadata-only catalog against tracked source contracts",
+    )
+    database_verify_contracts.add_argument("--catalog", type=Path, required=True)
+    database_verify_contracts.add_argument(
+        "--contracts", type=Path, default=DEFAULT_SOURCE_CONTRACTS_PATH
+    )
     database_migrate = database_commands.add_parser("migrate")
     database_migrate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     database_migrate.add_argument(
@@ -408,12 +538,28 @@ def main(argv: list[str] | None = None) -> int:
     adapter_commands = adapter.add_subparsers(dest="adapter_command", required=True)
     adapter_verify = adapter_commands.add_parser("verify")
     adapter_verify.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    adapter_context_verify = adapter_commands.add_parser(
+        "verify-context", help="verify the bounded macro context adapter"
+    )
+    adapter_context_verify.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
     adapter_extract = adapter_commands.add_parser("extract")
     adapter_extract.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     adapter_extract.add_argument(
         "--pilot-config", type=Path, default=Path("configs/pilot.toml")
     )
     adapter_extract.add_argument("--output", type=Path, required=True)
+    adapter_context_extract = adapter_commands.add_parser(
+        "extract-context", help="extract bounded macro taxonomy, releases, and coverage"
+    )
+    adapter_context_extract.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
+    adapter_context_extract.add_argument(
+        "--context-config", type=Path, default=Path("configs/context_pilot.toml")
+    )
+    adapter_context_extract.add_argument("--output", type=Path, required=True)
     adapter_ingest = adapter_commands.add_parser(
         "ingest", help="ingest the bounded upstream macro extract into atlas"
     )
@@ -421,6 +567,19 @@ def main(argv: list[str] | None = None) -> int:
     adapter_ingest.add_argument(
         "--pilot-config", type=Path, default=Path("configs/pilot.toml")
     )
+    context = commands.add_parser(
+        "context", help="load and publish approved macro-source context extracts"
+    )
+    context_commands = context.add_subparsers(dest="context_command", required=True)
+    context_ingest = context_commands.add_parser("ingest")
+    context_ingest.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    context_ingest.add_argument("--input", type=Path, required=True)
+    context_publish = context_commands.add_parser("publish")
+    context_publish.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    context_publish.add_argument("--input", type=Path, required=True)
+    context_validate = context_commands.add_parser("validate")
+    context_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    context_validate.add_argument("--input", type=Path, required=True)
     graph = commands.add_parser("graph", help="load or validate graph identities")
     graph_commands = graph.add_subparsers(dest="graph_command", required=True)
     graph_load = graph_commands.add_parser("load-fixture")
@@ -477,13 +636,27 @@ def main(argv: list[str] | None = None) -> int:
             return _validate_database_roles(args.config)
         if args.database_command == "catalog":
             return _catalog_database(args.config, args.output)
+        if args.database_command == "verify-contracts":
+            return _verify_source_contracts(args.catalog, args.contracts)
         return _inspect_database(args.config, args.output)
     if args.command == "adapter":
         if args.adapter_command == "verify":
             return _verify_adapter(args.config)
+        if args.adapter_command == "verify-context":
+            return _verify_context_adapter(args.config)
+        if args.adapter_command == "extract-context":
+            return _extract_context_adapter(
+                args.config, args.context_config, args.output
+            )
         if args.adapter_command == "ingest":
             return _ingest_adapter(args.config, args.pilot_config)
         return _extract_adapter(args.config, args.pilot_config, args.output)
+    if args.command == "context":
+        if args.context_command == "ingest":
+            return _ingest_context(args.config, args.input)
+        if args.context_command == "validate":
+            return _validate_context_publication(args.config, args.input)
+        return _publish_context(args.config, args.input)
     if args.command == "analytics":
         if args.analytics_command == "calculate-fixture":
             return _calculate_fixture_correlations(args.config, args.knowledge_cutoff)
