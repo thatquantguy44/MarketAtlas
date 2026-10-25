@@ -4,7 +4,7 @@ Status: implementation evidence is in progress. AC-002 through AC-008, AC-010, A
 
 | Acceptance | Requirement | Status | Evidence artifact / run / commit | Reviewer and date |
 | --- | --- | --- | --- | --- |
-| AC-001 | REQ-001 | Partial | reports/t004b-live-ingestion-validation.md: bounded local PostgreSQL objects, keys, read-only access, and live manifest/observation ingestion verified; ownership, rights, and broader scope remain open | Implementation agent, 2026-10-24 |
+| AC-001 | REQ-001 | Partial | reports/t001-source-catalog-validation.md, docs/source-catalog.md, and reports/t004b-live-ingestion-validation.md: all local relations/views cataloged; two approved live interfaces verified and loaded; ownership, rights, refresh ownership, and additional-object approval remain open | Implementation agent, 2026-10-25 |
 | AC-002 | REQ-002 | Passed (fixture) | `reports/t002-validation.md`, `reports/t003-validation.md`: credential-free deterministic fixture build, validation, and cutoff inspection pass | Implementation agent, 2026-10-24 |
 | AC-003 | REQ-003 | Passed (fixture) | `reports/t005-validation.md`: stable UUID reload, ticker history, overlap rejection | Implementation agent, 2026-10-24 |
 | AC-004 | REQ-004 | Passed (fixture) | `reports/t006-validation.md`: bounded path, endpoint rules, disputed/retracted state handling, and invalid-type rejection pass | Implementation agent, 2026-10-24 |

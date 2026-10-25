@@ -43,6 +43,7 @@ from .publishing.fixture_build import (
     validate_fixture_build,
     validate_fixture_reporting,
 )
+from .source_catalog import build_source_catalog
 
 
 def _build(output: Path) -> int:
@@ -147,6 +148,30 @@ def _inspect_database(config_path: Path, output: Path | None) -> int:
         "output": str(output) if output is not None else None,
     }
     print(json.dumps(summary, sort_keys=True))
+    return 0
+
+
+def _catalog_database(config_path: Path, output: Path) -> int:
+    try:
+        result = build_source_catalog(inspect_source(load_source_database(config_path)))
+    except (ConfigError, DatabaseUnavailable, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(canonical_bytes(result))
+    print(
+        json.dumps(
+            {
+                "status": result["status"],
+                "catalog_fingerprint_sha256": result["catalog_fingerprint_sha256"],
+                "source_object_count": result["source_object_count"],
+                "marketatlas_object_count": result["marketatlas_object_count"],
+                "support_counts": result["support_counts"],
+                "output": str(output),
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 
@@ -365,6 +390,11 @@ def main(argv: list[str] | None = None) -> int:
     database_inspect = database_commands.add_parser("inspect")
     database_inspect.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     database_inspect.add_argument("--output", type=Path)
+    database_catalog = database_commands.add_parser(
+        "catalog", help="write a safe metadata-only source support catalog"
+    )
+    database_catalog.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    database_catalog.add_argument("--output", type=Path, required=True)
     database_migrate = database_commands.add_parser("migrate")
     database_migrate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     database_migrate.add_argument(
@@ -445,6 +475,8 @@ def main(argv: list[str] | None = None) -> int:
             return _migrate_database(args.config, args.migration_directory)
         if args.database_command == "validate-roles":
             return _validate_database_roles(args.config)
+        if args.database_command == "catalog":
+            return _catalog_database(args.config, args.output)
         return _inspect_database(args.config, args.output)
     if args.command == "adapter":
         if args.adapter_command == "verify":

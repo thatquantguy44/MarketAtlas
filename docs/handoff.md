@@ -18,7 +18,7 @@ T-002, T-003, and T-005 through T-012 are complete for the fixture track. T-002 
 
 ## Next Action
 
-**Owner: validation engineer / quant reviewer.** The exact next implementation slice is **T-013 — execute release validation and performance checks**. Time fixture builds and prepared report queries, repeat publication-failure/recovery tests, validate dependency posture, and record any defects. The bounded T-004B source load is complete; Power BI acceptance remains separately unpassed unless it is exercised.
+**Owner: validation engineer / quant reviewer.** The exact next implementation slice is **T-013 — execute release validation and performance checks**. The T-001A metadata catalog has inventoried all local relations/views, and the bounded T-004B source load is complete. Time fixture builds and prepared report queries, repeat publication-failure/recovery tests, validate dependency posture, and record any defects. Power BI acceptance remains separately unpassed unless it is exercised.
 
 Inputs for T-013 are the completed identity, temporal, observation, context, analytical, publication, reporting, and frontend artifacts, `spec.md`, `plan.md`, `tasks.md`, `reporting.md`, ADR-001, the verified adapter contract, and the fixture contract. Do not write into `meta`, `silver`, `gold`, `bronze`, or `audit`; upstream access remains through `marketatlas_source_reader`.
 
