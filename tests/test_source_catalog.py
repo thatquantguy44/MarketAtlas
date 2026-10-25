@@ -73,6 +73,9 @@ class SourceCatalogTests(unittest.TestCase):
             objects["silver.fred_observation"]["support_state"],
         )
         self.assertEqual("marketatlas_owned", objects["atlas.node"]["support_state"])
+        self.assertEqual(
+            "not_run", objects["gold.fred_point_in_time"]["read_probe_status"]
+        )
 
     def test_catalog_fingerprint_is_deterministic(self):
         self.assertEqual(

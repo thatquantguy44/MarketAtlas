@@ -85,6 +85,23 @@ def inspect_source(config: SourceDatabaseConfig) -> dict[str, Any]:
                     """
                 )
                 objects = _dict_rows(cursor)
+                for object_row in objects:
+                    if not object_row["can_select"]:
+                        object_row["read_probe_status"] = "not_authorized"
+                        continue
+                    try:
+                        cursor.execute(
+                            sql.SQL("SELECT 1 FROM {}.{} LIMIT 0").format(
+                                sql.Identifier(object_row["schema_name"]),
+                                sql.Identifier(object_row["object_name"]),
+                            )
+                        )
+                    except psycopg.Error as error:
+                        object_row["read_probe_status"] = (
+                            f"failed:{type(error).__name__}"
+                        )
+                    else:
+                        object_row["read_probe_status"] = "passed"
 
                 cursor.execute(
                     """

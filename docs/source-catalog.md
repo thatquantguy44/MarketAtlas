@@ -11,15 +11,16 @@ The output is git-ignored because it reflects a local environment. It stores obj
 
 ## Current catalog result
 
-The 2026-10-25 catalog found 100 upstream relations and 31 MarketAtlas-owned relations. The source reader has access only to the two explicitly approved interfaces:
+The 2026-10-25 catalog found 100 upstream relations and 31 MarketAtlas-owned relations. The source reader can execute zero-row probes against 91 economic-pipeline objects. Only two are approved as supported_live:
 
 | Object | Status | MarketAtlas support |
 | --- | --- | --- |
 | meta.fred_series | supported_live | Macro-series identity and metadata |
 | gold.fred_point_in_time | supported_live | Point-in-time macro observation versions |
-| All other discovered upstream relations | unavailable_to_source_role | Cataloged but not approved for extraction or use |
+| 89 additional economic-pipeline objects | discovered_not_onboarded | Readable for discovery, but not approved for extraction or use |
+| 9 public agent runtime tables | unavailable_to_source_role | Deliberately excluded from the source role |
 
-The complete local-run evidence is in the T-001 source catalog validation report.
+The complete local-run evidence is in the T-001 source catalog validation reports.
 
 ## Support states
 

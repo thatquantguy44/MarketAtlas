@@ -73,6 +73,7 @@ def build_source_catalog(inspection: dict[str, Any]) -> dict[str, Any]:
             "estimated_rows": object_row["estimated_rows"],
             "can_select": object_row["can_select"],
             "can_write": object_row["can_write"],
+            "read_probe_status": object_row.get("read_probe_status", "not_run"),
             "columns": columns_by_object[key],
             "column_fingerprint_sha256": sha256(columns_by_object[key]),
             "key_indexes": indexes_by_object[key],
