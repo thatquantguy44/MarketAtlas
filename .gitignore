@@ -9,3 +9,4 @@ data/generated/
 configs/local.toml
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
