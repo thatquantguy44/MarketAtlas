@@ -1,8 +1,11 @@
 # MarketAtlas agent guidance
 
 Use the pinned role folders in this directory as focused review and implementation
-prompts. Read `docs/spec.md`, `docs/tasks.md`, `docs/handoff.md`, and the relevant
-acceptance rows before acting.
+prompts. For reusable upstream agents, skills, commands, and templates, begin with
+[`agent-skills/AGENTS.md`](agent-skills/AGENTS.md); its exact snapshot and refresh
+instructions are in [`agent-skills/PINNED.md`](agent-skills/PINNED.md). Read
+`docs/spec.md`, `docs/tasks.md`, `docs/handoff.md`, and the relevant acceptance rows
+before acting.
 
 Core constraints apply to every role:
 

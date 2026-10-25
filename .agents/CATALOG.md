@@ -4,6 +4,19 @@ These are focused, repository-local adaptations of roles from the referenced sou
 commit. They are deliberately not symlinked, so MarketAtlas has stable, reviewable
 guidance even when the upstream catalog changes.
 
+## Full reusable catalog
+
+The complete upstream `agent-skills` catalog is vendored in
+[`agent-skills/`](agent-skills/) at commit
+`f63ec56a3cc936408d792956ae583c3c96a825bd`. It is an immutable Git-archive
+snapshot, not a symlink or submodule, so it can be used for future builds without
+depending on the local upstream checkout. See
+[`agent-skills/PINNED.md`](agent-skills/PINNED.md) for provenance and refresh
+guidance.
+
+The focused roles below remain the MarketAtlas-specific entry points. Their safety
+and domain guidance takes precedence if it conflicts with a generic upstream role.
+
 | Local role | Upstream role | Pinned commit | Use in MarketAtlas |
 | --- | --- | --- | --- |
 | `sql-integration` | `agents/sql-integration-agent` | `bc4306062e2873dc6b92a7e20a88dea8afb0e0bf` | PostgreSQL access, schema discovery, and safe queries |
