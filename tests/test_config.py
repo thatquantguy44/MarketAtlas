@@ -7,6 +7,7 @@ from market_atlas.config import (
     load_macro_medallion,
     load_source_database,
     load_target_database,
+    load_upstream_asset,
 )
 
 
@@ -78,6 +79,20 @@ role = "marketatlas_writer"
             )
             config = load_target_database(path)
             self.assertEqual("marketatlas_writer", config.role)
+
+    def test_loads_optional_local_upstream_asset_without_exposing_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = root / "local.toml"
+            config_path.write_text(
+                f'[upstream_asset]\nlocal_repository_path = "{root}"\n',
+                encoding="utf-8",
+            )
+            config = load_upstream_asset(config_path)
+            self.assertEqual(root, config.local_repository_path)
+            self.assertEqual(
+                {"local_repository_configured": True}, config.public_summary()
+            )
 
 
 if __name__ == "__main__":

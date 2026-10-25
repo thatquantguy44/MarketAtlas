@@ -4,7 +4,7 @@ Status: candidate v0.1 specification, prepared for review on 2026-10-24. Early f
 
 ## Request and purpose
 
-Build a general market knowledge graph on PostgreSQL, reuse the user's MacroMedallion / EcoMedallion work where verified, and expose useful market, macro, and relationship views through Power BI before adding securities-finance domains.
+Build a general market knowledge graph on PostgreSQL, reuse the user's local MacroMedallion (also called EcoMedallion) asset where verified, and expose useful market, macro, and relationship views through Power BI before adding securities-finance domains.
 
 MarketAtlas helps a quant follow relationships across instruments, issuers, classifications, and economic series while inspecting where each connection came from and when it was known. Its public demonstration should make that value understandable without access to a private repository, database, or licensed dataset.
 
@@ -29,7 +29,7 @@ Later scope includes beta estimation, timestamped event context and event studie
 
 ## Existing systems and evidence status
 
-The connected GitHub account exposes [thatquantguy44/EcoMedallion](https://github.com/thatquantguy44/EcoMedallion). Its README describes a multi-source Bronze/Silver/Gold economic-data pipeline, point-in-time outputs for vintage-enabled series, and SQLite, PostgreSQL, and Databricks storage paths. An authorized local MacroMedallion PostgreSQL database and a bounded MarketAtlas adapter have now verified series metadata and point-in-time observation interfaces. A distinct **MacroMedallion** repository was not found by repository-name search; whether that name refers to EcoMedallion or another asset remains open. Owners, licenses/redistribution rights, a least-privilege source role, and deployment conventions still require T-001/T-004 work.
+MacroMedallion and EcoMedallion are interchangeable names for one upstream economic-data asset. An operator may point MarketAtlas at a local checkout for discovery and lineage through the git-ignored `configs/local.toml`; MarketAtlas neither clones nor imports that checkout and does not require a remote URL, commit, or branch pin. The primary integration contract is the authorized local `macro_medallion` PostgreSQL database, where a bounded read-only MarketAtlas adapter has verified series metadata and point-in-time observation interfaces. Owners, licenses/redistribution rights, complete source-role review, and deployment conventions still require T-001/T-004 work.
 
 The public fixture path is independently runnable. Verified upstream integrations consume existing interfaces or tables under explicit contracts; adaptation choices belong in the plan. Missing dependencies must produce an honest fixture-only or blocked integration status.
 
@@ -92,7 +92,7 @@ Roles below are proposed assignments, not confirmations of actual people or appr
 
 | Dependency | Owner role | Required before |
 | --- | --- | --- |
-| Repository identity and accessible interfaces | Project maintainer / upstream maintainer | Upstream adapter implementation |
+| Local upstream checkout and approved PostgreSQL interfaces | Project maintainer / upstream maintainer | Upstream adapter implementation |
 | PostgreSQL scope, roles, and migration convention | Database owner | Any integration writes |
 | Source redistribution and usage terms | Source owner / project maintainer | Public real-data fixture or publication |
 | Identity, ontology, and curated mapping rules | Quant/data owner | Reference-map acceptance |

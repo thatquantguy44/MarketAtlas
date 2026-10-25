@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded MacroMedallion adapter, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, and a React fixture demo exist. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-24. The fixture workflow, bounded live MacroMedallion/EcoMedallion macro ingestion, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, and a React fixture demo exist. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -10,7 +10,7 @@ Use ordinary relational tables for the graph. Stable entity IDs, controlled edge
 
 ## P1. Discovery and integration contracts
 
-Identify exact repository URL(s), commits, owners, and whether the two names denote separate repositories or versions. Inventory approved database objects, grains, primary keys, timestamps, source rights, and migration/runtime conventions. Record verified component reuse and unresolved gaps in `reports/discovery.md`; keep private infrastructure details outside public artifacts.
+Treat MacroMedallion and EcoMedallion as interchangeable names for one local upstream asset. Let each operator optionally select its local checkout in git-ignored configuration; do not require a remote URL, commit, branch pin, or source-code import. Inventory the approved PostgreSQL objects, grains, primary keys, timestamps, source rights, and migration/runtime conventions. Record verified component reuse and unresolved gaps in `reports/discovery.md`; keep private infrastructure details outside public artifacts.
 
 Define a common adapter interface before implementation. Each adapter supplies entities, identifier mappings, reference assertions, curated context, and observations plus a manifest of source identity, extraction time, rights, checksums, and coverage. A source may explicitly lack some outputs. Missing fields must remain missing or quarantined rather than fabricated.
 

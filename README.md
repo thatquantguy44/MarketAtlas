@@ -53,6 +53,7 @@ PYTHONPATH=src python -m market_atlas database migrate
 PYTHONPATH=src python -m market_atlas database validate-roles
 PYTHONPATH=src python -m market_atlas adapter verify
 PYTHONPATH=src python -m market_atlas adapter extract --output data/generated/macro_medallion_pilot.json
+PYTHONPATH=src python -m market_atlas adapter ingest --pilot-config configs/pilot.toml
 PYTHONPATH=src python -m market_atlas graph validate-fixture
 PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
 PYTHONPATH=src python -m market_atlas graph validate-observation-fixture

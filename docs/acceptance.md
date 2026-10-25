@@ -1,15 +1,15 @@
 # MarketAtlas — Acceptance Evidence Register
 
-Status: implementation evidence is in progress. AC-003 passes for the fixture track; several checks are partial and the rest remain pending. A task checkbox or planning review does not satisfy an acceptance criterion.
+Status: implementation evidence is in progress. AC-002 through AC-008, AC-010, AC-011, and AC-017 pass for the fixture track; several checks are partial and the rest remain pending. A task checkbox or planning review does not satisfy an acceptance criterion.
 
 | Acceptance | Requirement | Status | Evidence artifact / run / commit | Reviewer and date |
 | --- | --- | --- | --- | --- |
-| AC-001 | REQ-001 | Pending | Not yet produced | Unassigned |
-| AC-002 | REQ-002 | Pending | Not yet produced | Unassigned |
+| AC-001 | REQ-001 | Partial | reports/t004b-live-ingestion-validation.md: bounded local PostgreSQL objects, keys, read-only access, and live manifest/observation ingestion verified; ownership, rights, and broader scope remain open | Implementation agent, 2026-10-24 |
+| AC-002 | REQ-002 | Passed (fixture) | `reports/t002-validation.md`, `reports/t003-validation.md`: credential-free deterministic fixture build, validation, and cutoff inspection pass | Implementation agent, 2026-10-24 |
 | AC-003 | REQ-003 | Passed (fixture) | `reports/t005-validation.md`: stable UUID reload, ticker history, overlap rejection | Implementation agent, 2026-10-24 |
 | AC-004 | REQ-004 | Passed (fixture) | `reports/t006-validation.md`: bounded path, endpoint rules, disputed/retracted state handling, and invalid-type rejection pass | Implementation agent, 2026-10-24 |
 | AC-005 | REQ-005 | Passed (fixture) | `reports/t006-validation.md`: source availability and MarketAtlas record-time replay differ as expected; unsupported history is explicit | Implementation agent, 2026-10-24 |
-| AC-006 | REQ-006 | Passed (fixture) | `reports/t007-validation.md`: market/macro version contracts, macro-vintage cutoff selection, adjustment-history labeling, and input-manifest reproduction | Implementation agent, 2026-10-24 |
+| AC-006 | REQ-006 | Passed (fixture + bounded live macro) | reports/t007-validation.md and reports/t004b-live-ingestion-validation.md: fixture version contracts plus live point-in-time macro metadata/observations, input manifest, and idempotent load pass | Implementation agent, 2026-10-24 |
 | AC-007 | REQ-007 | Passed (fixture) | `reports/t008-validation.md`: source-backed country/concept and curated sector context mappings have rationale, owner, source, dates, taxonomy version, and explicit non-sensitivity label | Implementation agent, 2026-10-24 |
 | AC-008 | REQ-008 | Passed (fixture) | `reports/t009-validation.md`: fixed-window configured-pair return correlations, independent numerical match, undefined statuses, input/cutoff metadata, and no-lookahead validation | Implementation agent, 2026-10-24 |
 | AC-009 | REQ-009 | Partial | `reports/t011-validation.md`, `docs/reporting.md`, `reports/t012-validation.md`: snapshot-pinned reporting outputs and React fixture demo pass; Power BI implementation remains required | Implementation agent, 2026-10-24 |

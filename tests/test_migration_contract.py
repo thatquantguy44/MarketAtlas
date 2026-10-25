@@ -105,6 +105,14 @@ class MigrationContractTests(unittest.TestCase):
         ):
             self.assertIn(required, sql)
 
+    def test_fixture_publisher_excludes_non_synthetic_nodes(self):
+        implementation = Path("src/market_atlas/publishing/fixture_build.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "WHERE provenance->>'source' = 'synthetic-fixture'", implementation
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

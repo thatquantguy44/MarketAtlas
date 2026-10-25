@@ -217,7 +217,8 @@ def extract(
             "source_ingested_at": row["ingested_at"],
             "source_record": (
                 f"{OBSERVATION_OBJECT}:{row['series_id']}:"
-                f"{row['observation_date']}:{row['realtime_start']}"
+                f"{row['observation_date']}:{row['realtime_start']}:"
+                f"{row['revision_number']}"
             ),
         }
         for row in observation_rows
