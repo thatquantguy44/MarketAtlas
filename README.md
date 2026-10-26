@@ -89,6 +89,9 @@ PYTHONPATH=src python -m market_atlas adapter ingest --pilot-config configs/pilo
 PYTHONPATH=src python -m market_atlas context publish --input data/generated/macro_context_pilot.json
 PYTHONPATH=src python -m market_atlas context validate --input data/generated/macro_context_pilot.json
 PYTHONPATH=src python -m market_atlas economic-graph publish --input data/generated/macro_context_pilot.json
+# Full approved-series catalog: taxonomy only by default; coverage is opt-in and bounded.
+PYTHONPATH=src python -m market_atlas adapter extract-series-catalog --output data/generated/macro_series_catalog.json
+PYTHONPATH=src python -m market_atlas economic-graph publish --input data/generated/macro_series_catalog.json
 PYTHONPATH=src python -m market_atlas report serve-macro-economic-graph
 PYTHONPATH=src python -m market_atlas graph validate-fixture
 PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
@@ -101,7 +104,9 @@ PYTHONPATH=src python -m market_atlas report validate-fixture
 
 The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
 
-After the local report API is running, the demo's **Live macro graph** mode uses Vite's local `/api` proxy to request only the snapshot-pinned `macro_economic_graph` publication. It visualizes the approved source-taxonomy projection (`macro series → measures → economic concept`) and labels it `current_only`; it is not point-in-time taxonomy history, a sensitivity estimate, or a browser-to-database connection.
+After the local report API is running, the demo's **Live macro graph** mode uses Vite's local `/api` proxy to request only the snapshot-pinned `macro_economic_graph` publication. The default graph is a catalog hub plus economic-category navigation summaries; selecting a category returns a paged, searchable neighborhood of actual source-backed `macro series → measures → economic concept` assertions. Summary `contains` links are visibly labeled as navigation only, not assertions. The UI labels taxonomy as `current_only`; it is not point-in-time taxonomy history, a sensitivity estimate, or a browser-to-database connection.
+
+`extract-series-catalog` reads every approved `gold.dim_series` record through the contract gate. It omits `gold.v_source_coverage` by default because full-view scans can be costly; pass `--include-coverage` only after confirming a bounded source workload. This distinction is retained in the manifest as `not_selected`, rather than being represented as missing or historical data.
 
 Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The source-reader migration grants read access to the explicitly named economic schemas for metadata discovery, but adapters may use only `supported_live` objects that pass the source-contract gate; it never changes source objects or grants source-write access.
 

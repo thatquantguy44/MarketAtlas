@@ -8,6 +8,9 @@ class ReportApiContractTests(unittest.TestCase):
         self.assertIn("SET LOCAL ROLE marketatlas_report_reader", implementation)
         self.assertIn("atlas_report.current_macro_economic_graph_node", implementation)
         self.assertIn("atlas_report.current_macro_economic_graph_edge", implementation)
+        self.assertIn("concept_neighborhood", implementation)
+        self.assertIn("LIMIT %s OFFSET %s", implementation)
+        self.assertIn("aggregate_navigation", implementation)
         self.assertNotIn("gold.", implementation)
         self.assertNotIn("meta.", implementation)
 

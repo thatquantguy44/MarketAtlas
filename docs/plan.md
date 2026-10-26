@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-25. The fixture workflow, complete local source catalog, bounded live MacroMedallion/EcoMedallion macro ingestion, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, a React fixture demo, and a separate current-only live macro-economic graph projection exist. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-26. The fixture workflow, complete local source catalog, bounded live MacroMedallion/EcoMedallion macro ingestion, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, a React fixture demo, and a separate current-only live macro-economic graph projection exist. The graph now has a full approved-series catalog view with bounded category neighborhoods; it remains descriptive taxonomy rather than historical taxonomy or analytical evidence. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 

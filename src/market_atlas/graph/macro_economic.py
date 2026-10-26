@@ -58,18 +58,25 @@ def project_macro_economic_graph(
             rows = cursor.fetchall()
             if not rows:
                 raise ValueError("macro taxonomy must be ingested before graph projection")
-            cursor.execute(
-                """
-                DELETE FROM atlas.macro_taxonomy_concept_current
-                WHERE series_node_id = ANY(%s)
-                  AND input_manifest_id <> %s
-                """,
-                ([row[0] for row in rows], input_manifest_id),
-            )
+            if manifest.get("selection_scope") == "all_approved_dim_series":
+                cursor.execute(
+                    """DELETE FROM atlas.macro_taxonomy_concept_current
+                       WHERE input_manifest_id <> %s""",
+                    (input_manifest_id,),
+                )
+            else:
+                cursor.execute(
+                    """DELETE FROM atlas.macro_taxonomy_concept_current
+                       WHERE series_node_id = ANY(%s) AND input_manifest_id <> %s""",
+                    ([row[0] for row in rows], input_manifest_id),
+                )
+            projected_edges = 0
+            categories: set[str] = set()
             for series_node_id, series_id, category, taxonomy_record, extracted_at in rows:
                 if not isinstance(category, str) or not category.strip():
-                    raise ValueError(f"macro series {series_id} has no economic category")
+                    continue
                 concept_key = _concept_key(category)
+                categories.add(concept_key)
                 concept_canonical_key = f"economic-concept:macro-category:{concept_key}"
                 concept_node_id = stable_id("economic-concept", concept_canonical_key)
                 cursor.execute(
@@ -126,7 +133,15 @@ def project_macro_economic_graph(
                     (assertion_id, assertion_id, series_node_id, concept_node_id,
                      extracted_at.date(), extracted_at, source_record, provenance),
                 )
-        return {"status": "macro_economic_graph_projected_current_only", "input_manifest_id": str(input_manifest_id), "edge_count": len(rows), "concept_count": len({row[2] for row in rows})}
+                projected_edges += 1
+        return {
+            "status": "macro_economic_graph_projected_current_only",
+            "input_manifest_id": str(input_manifest_id),
+            "series_count": len(rows),
+            "edge_count": projected_edges,
+            "concept_count": len(categories),
+            "unclassified_series_count": len(rows) - projected_edges,
+        }
     except (ValueError, DatabaseUnavailable):
         raise
     except Exception as error:  # noqa: BLE001
@@ -192,7 +207,26 @@ def publish_macro_economic_graph(
             edges = cursor.fetchall()
             if not edges:
                 raise ValueError("macro economic graph has no source-backed measures edges")
-            node_ids = sorted({node_id for edge in edges for node_id in edge[:2]}, key=str)
+            cursor.execute(
+                """
+                SELECT taxonomy.series_node_id, node.node_type, node.display_label,
+                       node.canonical_key, taxonomy.source_record, taxonomy.source,
+                       taxonomy.frequency, taxonomy.units, taxonomy.econ_category,
+                       taxonomy.geo, taxonomy.metric
+                FROM atlas.macro_series_taxonomy_current AS taxonomy
+                JOIN atlas.node AS node ON node.node_id = taxonomy.series_node_id
+                WHERE taxonomy.input_manifest_id = %s
+                ORDER BY taxonomy.series_id
+                """,
+                (input_manifest_id,),
+            )
+            taxonomy_nodes = cursor.fetchall()
+            if not taxonomy_nodes:
+                raise ValueError("macro economic graph has no selected taxonomy nodes")
+            node_ids = sorted(
+                {row[0] for row in taxonomy_nodes} | {edge[1] for edge in edges},
+                key=str,
+            )
             cursor.execute(
                 """
                 SELECT node_id, node_type, display_label, canonical_key
@@ -200,8 +234,28 @@ def publish_macro_economic_graph(
                 """,
                 (node_ids,),
             )
+            concept_nodes = {row[0]: row[1:] for row in cursor.fetchall()}
             node_count = 0
-            for node_id, node_type, display_label, canonical_key in cursor.fetchall():
+            for (
+                node_id, node_type, display_label, canonical_key, taxonomy_record, source,
+                frequency, units, category, geo, metric,
+            ) in taxonomy_nodes:
+                cursor.execute(
+                    """INSERT INTO atlas_report.macro_economic_graph_node_snapshot (
+                           serving_snapshot_id, node_id, node_type, display_label, temporal_status,
+                           input_manifest_id, source_record, details
+                       ) VALUES (%s, %s, %s, %s, 'current_only', %s, %s, %s)
+                       ON CONFLICT DO NOTHING""",
+                    (snapshot_id, node_id, node_type, display_label, input_manifest_id, taxonomy_record,
+                     Jsonb({
+                         "canonical_key": canonical_key, "source": source,
+                         "frequency": frequency, "units": units, "econ_category": category,
+                         "geo": geo, "metric": metric, "temporal_status": "current_only",
+                     })),
+                )
+                node_count += 1
+            for node_id in sorted({edge[1] for edge in edges}, key=str):
+                node_type, display_label, canonical_key = concept_nodes[node_id]
                 source_record = f"macro-economic-graph-node:{canonical_key}"
                 cursor.execute(
                     """INSERT INTO atlas_report.macro_economic_graph_node_snapshot (

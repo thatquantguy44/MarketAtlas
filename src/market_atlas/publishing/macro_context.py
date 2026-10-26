@@ -70,6 +70,13 @@ def _require_string(row: dict[str, Any], field: str, label: str) -> str:
     return value
 
 
+def _series_canonical_key(row: dict[str, Any]) -> str:
+    """Keep identities source-scoped; dim_series is not limited to FRED."""
+    source = _require_string(row, "source", "series_taxonomy").strip().casefold()
+    series_id = _require_string(row, "series_id", "series_taxonomy")
+    return f"macro:{source}:{series_id}"
+
+
 def _release_identifier(value: object) -> str:
     """Canonicalize the source's numeric-or-text release identifier for storage."""
     if isinstance(value, bool) or value is None:
@@ -110,9 +117,15 @@ def validate_context_extract(extract: dict[str, Any]) -> None:
     _as_timestamp(manifest.get("extracted_at"), "manifest.extracted_at")
     if manifest.get("series_taxonomy_temporal_status") != "current_only":
         raise ValueError("series taxonomy must remain explicitly current_only")
-    if manifest.get("coverage_temporal_status") != "current_only":
-        raise ValueError("source coverage must remain explicitly current_only")
-    if manifest.get("release_event_temporal_status") != "scheduled_date_with_source_fetched_at":
+    coverage_temporal_status = manifest.get("coverage_temporal_status")
+    if coverage_temporal_status == "not_selected" and coverage:
+        raise ValueError("unselected source coverage must not contain records")
+    if coverage_temporal_status not in {"current_only", "not_selected"}:
+        raise ValueError("source coverage must be current_only or explicitly not_selected")
+    release_temporal_status = manifest.get("release_event_temporal_status")
+    if release_temporal_status == "not_selected" and releases:
+        raise ValueError("unselected release events must not contain records")
+    if release_temporal_status not in {"scheduled_date_with_source_fetched_at", "not_selected"}:
         raise ValueError("release events require scheduled-date temporal semantics")
     contract_gate = manifest.get("source_contract_verification")
     if not isinstance(contract_gate, dict) or contract_gate.get("status") != "valid":
@@ -125,12 +138,16 @@ def validate_context_extract(extract: dict[str, Any]) -> None:
         raise ValueError("context extract requires a source-contract registry version")
     if not all(isinstance(rows, list) for rows in (taxonomy, releases, coverage)):
         raise TypeError("context extract records must be lists")
-    if not taxonomy or not coverage:
-        raise ValueError("context extract requires taxonomy and coverage records")
+    if not taxonomy:
+        raise ValueError("context extract requires taxonomy records")
 
     selection = {
         key: manifest.get(key)
-        for key in ("source", "objects", "series_ids", "release_start", "release_end")
+        for key in (
+            "source", "objects", "series_ids", "release_start", "release_end",
+            "selection_scope", "page_size", "include_coverage",
+        )
+        if key in manifest
     }
     if sha256(selection) != manifest["input_selection_sha256"]:
         raise ValueError("context extract input selection hash does not match its manifest")
@@ -190,7 +207,13 @@ def load_context_extract(path: Path) -> dict[str, Any]:
     return extract
 
 
-def _node_ids(cursor: Any, series_ids: set[str]) -> dict[str, Any]:
+def _node_ids(cursor: Any, taxonomy: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Resolve or create current-taxonomy identities without fabricating observations."""
+    series_ids = set(taxonomy)
+    canonical_keys = {
+        _series_canonical_key(row)
+        for row in taxonomy.values()
+    }
     cursor.execute(
         """
         SELECT canonical_key, node_id
@@ -198,17 +221,49 @@ def _node_ids(cursor: Any, series_ids: set[str]) -> dict[str, Any]:
         WHERE node_type = 'macro_series'
           AND canonical_key = ANY(%s)
         """,
-        ([f"macro:fred:{series_id}" for series_id in sorted(series_ids)],),
+        (sorted(canonical_keys),),
     )
-    node_ids = {
-        canonical_key.removeprefix("macro:fred:"): node_id
+    existing_by_canonical = {
+        canonical_key: node_id
         for canonical_key, node_id in cursor.fetchall()
+    }
+    node_ids = {
+        series_id: existing_by_canonical[canonical_key]
+        for series_id, row in taxonomy.items()
+        if (canonical_key := _series_canonical_key(row)) in existing_by_canonical
     }
     missing = sorted(series_ids - set(node_ids))
     if missing:
-        raise ValueError(
-            "context requires macro-series identities from T-004B: " + ", ".join(missing)
-        )
+        from psycopg.types.json import Jsonb
+
+        for series_id in missing:
+            row = taxonomy[series_id]
+            canonical_key = _series_canonical_key(row)
+            cursor.execute(
+                """
+                INSERT INTO atlas.node (
+                    node_id, node_type, canonical_key, display_label, entity_status, provenance
+                ) VALUES (%s, 'macro_series', %s, %s, 'active', %s)
+                ON CONFLICT (node_type, canonical_key) DO UPDATE
+                SET display_label = EXCLUDED.display_label,
+                    provenance = EXCLUDED.provenance
+                RETURNING node_id
+                """,
+                (
+                    stable_id("node", canonical_key),
+                    canonical_key,
+                    row.get("title") or series_id,
+                    Jsonb(
+                        {
+                            "source": SOURCE_NAME,
+                            "source_object": "gold.dim_series",
+                            "source_identifier": series_id,
+                            "taxonomy_temporal_status": "current_only",
+                        }
+                    ),
+                ),
+            )
+            node_ids[series_id] = cursor.fetchone()[0]
     return node_ids
 
 
@@ -224,9 +279,8 @@ def ingest_context_extract(
     taxonomy = extract["series_taxonomy"]
     releases = extract["release_events"]
     coverage = extract["source_coverage"]
-    required_series = {
-        row["series_id"] for row in taxonomy
-    } | {row["series_id"] for row in coverage}
+    taxonomy_by_id = {row["series_id"]: row for row in taxonomy}
+    required_series = set(taxonomy_by_id) | {row["series_id"] for row in coverage}
 
     try:
         from psycopg.types.json import Jsonb
@@ -255,7 +309,13 @@ def ingest_context_extract(
                 ),
             )
             input_manifest_id = cursor.fetchone()[0]
-            node_ids = _node_ids(cursor, required_series)
+            missing_taxonomy = sorted(required_series - set(taxonomy_by_id))
+            if missing_taxonomy:
+                raise ValueError(
+                    "source coverage has series absent from the selected taxonomy: "
+                    + ", ".join(missing_taxonomy)
+                )
+            node_ids = _node_ids(cursor, taxonomy_by_id)
 
             for row in taxonomy:
                 series_id = row["series_id"]

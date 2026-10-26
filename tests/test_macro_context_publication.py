@@ -91,6 +91,40 @@ class MacroContextPublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate release"):
             validate_context_extract(extract)
 
+    def test_accepts_taxonomy_only_full_catalog_with_explicitly_unselected_context(self):
+        extract = valid_extract()
+        extract["release_events"] = []
+        extract["source_coverage"] = []
+        manifest = extract["manifest"]
+        manifest.update(
+            {
+                "objects": ["gold.dim_series"],
+                "release_start": None,
+                "release_end": None,
+                "selection_scope": "all_approved_dim_series",
+                "page_size": 500,
+                "include_coverage": False,
+                "release_event_temporal_status": "not_selected",
+                "coverage_temporal_status": "not_selected",
+            }
+        )
+        manifest["input_selection_sha256"] = sha256(
+            {
+                key: manifest[key]
+                for key in (
+                    "source", "objects", "series_ids", "release_start", "release_end",
+                    "selection_scope", "page_size", "include_coverage",
+                )
+            }
+        )
+        manifest["source_rows_sha256"] = sha256(
+            {
+                key: extract[key]
+                for key in ("series_taxonomy", "release_events", "source_coverage")
+            }
+        )
+        validate_context_extract(extract)
+
 
 if __name__ == "__main__":
     unittest.main()
