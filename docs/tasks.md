@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-24. T-002, T-003, and T-005 through T-012 are complete for the synthetic fixture track. T-001 and T-004 remain in progress. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-26. T-002, T-003, T-005 through T-013 are complete for the synthetic fixture track. T-001 and T-004 remain in progress. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -108,11 +108,13 @@ Completed 2026-10-24 for the fixture demo. The independent `frontend/` applicati
 
 ## Phase D — Validate and hand off
 
-### [ ] T-013 — Execute release validation and performance checks
+### [x] T-013 — Execute release validation and performance checks
 
 Owner: validation engineer / quant reviewer. Dependencies: T-010, T-011; T-012 for BI evidence. Maps: NFR-001, NFR-002, NFR-003, NFR-004, NFR-005 → AC-013, AC-014, AC-015, AC-016, AC-017.
 
 Run meaningful role-scope, integrity, temporal, reproducibility, numerical, publication-failure, and recovery checks. Benchmark the documented fixture envelope on declared hardware; retain build time and at least 20 runs per prepared query with cache policy and p95. Proposed targets: build under 5 minutes and query p95 at most 2 seconds. Evidence: actual results/defects in the acceptance register; adjust targets explicitly before release if justified. Never fabricate passing evidence.
+
+Completed 2026-10-26 for the local fixture and approved live-catalog envelope. `market-atlas release validate --samples 20` verifies role boundaries, source-contract drift, graph/temporal/observation/context/numerical fixture guards, deterministic fixture publication, injected-failure recovery, report grains, and the published 290-series/11-concept catalog surface. It benchmarks prepared catalog-summary and 50-series category-neighborhood queries on one warm local PostgreSQL connection. The measured fixture build was 0.188182 seconds; p95 was 0.000161 seconds and 0.000964 seconds respectively, both inside the documented targets. Validation exposed and corrected a fixture-report provenance check that mixed independent publication snapshots; it now pins provenance to the selected fixture snapshot. Evidence: `reports/t013-release-validation.md`, `data/generated/t013_release_validation.json` (local ignored output), and `tests/test_release_validation.py`. This is local-envelope evidence, not a production capacity guarantee; public release-artifact review, Power BI acceptance, named owners, scheduling, and broader source ownership/rights remain open.
 
 ### [ ] T-014 — Finish contributor demo, extension design, and handoff
 

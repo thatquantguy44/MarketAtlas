@@ -93,6 +93,7 @@ PYTHONPATH=src python -m market_atlas economic-graph publish --input data/genera
 PYTHONPATH=src python -m market_atlas adapter extract-series-catalog --output data/generated/macro_series_catalog.json
 PYTHONPATH=src python -m market_atlas economic-graph publish --input data/generated/macro_series_catalog.json
 PYTHONPATH=src python -m market_atlas report serve-macro-economic-graph
+PYTHONPATH=src python -m market_atlas release validate --samples 20 --output data/generated/t013_release_validation.json
 PYTHONPATH=src python -m market_atlas graph validate-fixture
 PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
 PYTHONPATH=src python -m market_atlas graph validate-observation-fixture

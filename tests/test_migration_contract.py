@@ -113,6 +113,13 @@ class MigrationContractTests(unittest.TestCase):
             "WHERE provenance->>'source' = 'synthetic-fixture'", implementation
         )
 
+    def test_fixture_report_validation_pins_provenance_to_its_publication_snapshot(self):
+        implementation = Path("src/market_atlas/publishing/fixture_build.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("provenance.serving_snapshot_id = %s::uuid", implementation)
+        self.assertIn("WHERE serving_snapshot_id = %s::uuid", implementation)
+
     def test_source_catalog_migration_is_read_only_and_excludes_agent_tables(self):
         sql = Path("sql/migrations/008_source_catalog_reader_scope.sql").read_text(
             encoding="utf-8"

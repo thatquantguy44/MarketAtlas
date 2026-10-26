@@ -55,6 +55,7 @@ from .publishing.macro_context import (
     validate_context_publication,
 )
 from .report_api import serve_macro_economic_graph
+from .validation.release import run_release_validation
 from .source_catalog import build_source_catalog
 from .source_contracts import (
     DEFAULT_SOURCE_CONTRACTS_PATH,
@@ -551,6 +552,21 @@ def _validate_fixture_reporting(config_path: Path) -> int:
     return 0 if result["status"] == "valid" else 1
 
 
+def _validate_release(config_path: Path, samples: int, output: Path | None) -> int:
+    try:
+        result = run_release_validation(
+            load_source_database(config_path), load_target_database(config_path), samples
+        )
+    except (ConfigError, DatabaseUnavailable, SourceContractError, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(canonical_bytes(result))
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="market-atlas")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -721,6 +737,12 @@ def main(argv: list[str] | None = None) -> int:
     report_serve.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     report_serve.add_argument("--host", default="127.0.0.1")
     report_serve.add_argument("--port", type=int, default=8765)
+    release = commands.add_parser("release", help="execute bounded release validation")
+    release_commands = release.add_subparsers(dest="release_command", required=True)
+    release_validate = release_commands.add_parser("validate")
+    release_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    release_validate.add_argument("--samples", type=int, default=20)
+    release_validate.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     if args.command == "database":
         if args.database_command == "migrate":
@@ -768,6 +790,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.report_command == "serve-macro-economic-graph":
             return _serve_macro_economic_graph(args.config, args.host, args.port)
         return _validate_fixture_reporting(args.config)
+    if args.command == "release":
+        return _validate_release(args.config, args.samples, args.output)
     if args.command == "graph":
         if args.graph_command == "load-fixture":
             return _load_fixture_graph(args.config)
