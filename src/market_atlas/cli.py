@@ -35,6 +35,7 @@ from .graph.fixture_loader import (
     validate_observation_fixture,
     validate_temporal_fixture,
 )
+from .graph.macro_economic import build_macro_economic_graph
 from .ingestion.macro_medallion import ingest as ingest_macro_medallion
 from .migrations import (
     DEFAULT_MIGRATION_DIRECTORY,
@@ -52,6 +53,7 @@ from .publishing.macro_context import (
     publish_context_snapshot,
     validate_context_publication,
 )
+from .report_api import serve_macro_economic_graph
 from .source_catalog import build_source_catalog
 from .source_contracts import (
     DEFAULT_SOURCE_CONTRACTS_PATH,
@@ -370,6 +372,28 @@ def _validate_context_publication(config_path: Path, input_path: Path) -> int:
     return 0 if result["status"] == "valid" else 1
 
 
+def _publish_macro_economic_graph(config_path: Path, input_path: Path) -> int:
+    try:
+        result = build_macro_economic_graph(
+            load_target_database(config_path), load_context_extract(input_path)
+        )
+    except (ConfigError, DatabaseUnavailable, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    publication = result["publication"]
+    print(json.dumps(result, sort_keys=True))
+    return 0 if publication["status"] != "macro_economic_graph_failed" else 1
+
+
+def _serve_macro_economic_graph(config_path: Path, host: str, port: int) -> int:
+    try:
+        serve_macro_economic_graph(load_target_database(config_path), host, port)
+    except (ConfigError, DatabaseUnavailable, ValueError, OSError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    return 0
+
+
 def _load_fixture_graph(config_path: Path) -> int:
     try:
         result = load_fixture(load_target_database(config_path), build_fixture())
@@ -580,6 +604,17 @@ def main(argv: list[str] | None = None) -> int:
     context_validate = context_commands.add_parser("validate")
     context_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     context_validate.add_argument("--input", type=Path, required=True)
+    economic_graph = commands.add_parser(
+        "economic-graph", help="project and publish the approved live macro knowledge graph"
+    )
+    economic_graph_commands = economic_graph.add_subparsers(
+        dest="economic_graph_command", required=True
+    )
+    economic_graph_publish = economic_graph_commands.add_parser("publish")
+    economic_graph_publish.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
+    economic_graph_publish.add_argument("--input", type=Path, required=True)
     graph = commands.add_parser("graph", help="load or validate graph identities")
     graph_commands = graph.add_subparsers(dest="graph_command", required=True)
     graph_load = graph_commands.add_parser("load-fixture")
@@ -628,6 +663,13 @@ def main(argv: list[str] | None = None) -> int:
     report_commands = report.add_subparsers(dest="report_command", required=True)
     report_validate = report_commands.add_parser("validate-fixture")
     report_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    report_serve = report_commands.add_parser(
+        "serve-macro-economic-graph",
+        help="serve only the snapshot-pinned live macro graph on localhost",
+    )
+    report_serve.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    report_serve.add_argument("--host", default="127.0.0.1")
+    report_serve.add_argument("--port", type=int, default=8765)
     args = parser.parse_args(argv)
     if args.command == "database":
         if args.database_command == "migrate":
@@ -657,6 +699,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.context_command == "validate":
             return _validate_context_publication(args.config, args.input)
         return _publish_context(args.config, args.input)
+    if args.command == "economic-graph":
+        return _publish_macro_economic_graph(args.config, args.input)
     if args.command == "analytics":
         if args.analytics_command == "calculate-fixture":
             return _calculate_fixture_correlations(args.config, args.knowledge_cutoff)
@@ -666,6 +710,8 @@ def main(argv: list[str] | None = None) -> int:
             return _build_fixture_snapshot(args.config, args.knowledge_cutoff)
         return _validate_fixture_build(args.config)
     if args.command == "report":
+        if args.report_command == "serve-macro-economic-graph":
+            return _serve_macro_economic_graph(args.config, args.host, args.port)
         return _validate_fixture_reporting(args.config)
     if args.command == "graph":
         if args.graph_command == "load-fixture":

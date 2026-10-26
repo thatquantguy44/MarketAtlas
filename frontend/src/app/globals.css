@@ -48,9 +48,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .kg-canvas { position: absolute; inset: 0; transform-origin: center; transition: transform .22s ease; }
 .kg-canvas::before { position: absolute; inset: 0; background-image: linear-gradient(rgba(137, 154, 216, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(137, 154, 216, .045) 1px, transparent 1px); background-size: 28px 28px; content: ""; mask-image: linear-gradient(to bottom, black, transparent); }
 .kg-edge-layer { position: absolute; inset: 8% 5% 9%; width: 90%; height: 83%; overflow: visible; }
-.kg-edge line { stroke-width: .32; }
-.kg-edge text { fill: #9ca8cd; font-size: 2.1px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-anchor: middle; paint-order: stroke; stroke: #0c132b; stroke-width: .75px; }
-.kg-edge--source line { stroke: #5ed9f5; stroke-dasharray: .9 .8; opacity: .66; }
+.kg-edge line { stroke-width: .62; }
+.kg-edge text { fill: #c9dcff; font-size: 2.35px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-anchor: middle; paint-order: stroke; stroke: #0c132b; stroke-width: 1px; }
+.kg-edge--source line { stroke: #63e4ff; stroke-width: .88; stroke-dasharray: 1.4 .7; opacity: .96; filter: drop-shadow(0 0 2px rgba(99, 228, 255, .75)); }
 .kg-edge--reviewed line { stroke: #64e7ad; stroke-width: .54; filter: drop-shadow(0 0 2px #64e7ad); }
 .kg-edge--candidate line { stroke: #f47e85; stroke-dasharray: 1.2 .9; opacity: .83; }
 .kg-edge--inferred line { stroke: #f5c45b; stroke-dasharray: .6 .65; opacity: .78; }
@@ -139,7 +139,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .kg-evidence-list button > span:last-child { grid-column: 2; color: #95a4c9; font-size: 11px; }
 
 @media (max-width: 1050px) {
-  .kg-stage { grid-template-columns: minmax(0, 1fr); }
+  .kg-stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "canvas" "drawer"; min-height: 0; }
   .kg-drawer { min-height: 0; }
   .kg-drawer__section { display: inline-block; width: 49%; vertical-align: top; padding-right: 14px; }
   .kg-drawer > .kg-secondary-action { width: auto; }

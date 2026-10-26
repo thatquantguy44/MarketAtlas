@@ -141,6 +141,21 @@ class MigrationContractTests(unittest.TestCase):
         ):
             self.assertIn(required, sql)
 
+    def test_macro_economic_graph_publication_has_separate_snapshot_surface(self):
+        sql = Path("sql/migrations/010_macro_economic_graph_publication.sql").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "atlas.macro_taxonomy_concept_current",
+            "atlas_report.macro_economic_graph_node_snapshot",
+            "atlas_report.macro_economic_graph_edge_snapshot",
+            "edge_type = 'measures'",
+            "'macro_economic_graph'",
+            "current_macro_economic_graph_node",
+            "current_macro_economic_graph_edge",
+        ):
+            self.assertIn(required, sql)
+
 
 if __name__ == "__main__":
     unittest.main()

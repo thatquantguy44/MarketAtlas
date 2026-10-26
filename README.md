@@ -88,6 +88,8 @@ PYTHONPATH=src python -m market_atlas adapter extract-context --output data/gene
 PYTHONPATH=src python -m market_atlas adapter ingest --pilot-config configs/pilot.toml
 PYTHONPATH=src python -m market_atlas context publish --input data/generated/macro_context_pilot.json
 PYTHONPATH=src python -m market_atlas context validate --input data/generated/macro_context_pilot.json
+PYTHONPATH=src python -m market_atlas economic-graph publish --input data/generated/macro_context_pilot.json
+PYTHONPATH=src python -m market_atlas report serve-macro-economic-graph
 PYTHONPATH=src python -m market_atlas graph validate-fixture
 PYTHONPATH=src python -m market_atlas graph validate-temporal-fixture
 PYTHONPATH=src python -m market_atlas graph validate-observation-fixture
@@ -98,6 +100,8 @@ PYTHONPATH=src python -m market_atlas report validate-fixture
 ```
 
 The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
+
+After the local report API is running, the demo's **Live macro graph** mode uses Vite's local `/api` proxy to request only the snapshot-pinned `macro_economic_graph` publication. It visualizes the approved source-taxonomy projection (`macro series → measures → economic concept`) and labels it `current_only`; it is not point-in-time taxonomy history, a sensitivity estimate, or a browser-to-database connection.
 
 Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The source-reader migration grants read access to the explicitly named economic schemas for metadata discovery, but adapters may use only `supported_live` objects that pass the source-contract gate; it never changes source objects or grants source-write access.
 
