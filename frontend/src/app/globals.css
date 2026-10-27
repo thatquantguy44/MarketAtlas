@@ -159,3 +159,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .kg-modal { padding: 22px 17px; }.kg-modal__actions { flex-direction: column-reverse; }.kg-modal__actions .kg-secondary-action, .kg-modal__actions .kg-primary-action { width: 100%; }.kg-edge text { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+.kg-quality p { color: #b6c2e1; font-size: 12px; line-height: 1.55; }
+.kg-quality .kg-quality__notice { color: #8fa1c7; font-size: 11px; margin: 8px 0 12px; }
+.kg-quality__provenance { margin-top: 12px; font-size: 11px; color: #a9bce5; }
+.kg-quality__provenance summary { cursor: pointer; margin-bottom: 10px; }
+.kg-quality__provenance dd { overflow-wrap: anywhere; max-width: 210px; }
