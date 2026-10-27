@@ -116,11 +116,21 @@ Run meaningful role-scope, integrity, temporal, reproducibility, numerical, publ
 
 Completed 2026-10-26 for the local fixture and approved live-catalog envelope. `market-atlas release validate --samples 20` verifies role boundaries, source-contract drift, graph/temporal/observation/context/numerical fixture guards, deterministic fixture publication, injected-failure recovery, report grains, and the published 290-series/11-concept catalog surface. It benchmarks prepared catalog-summary and 50-series category-neighborhood queries on one warm local PostgreSQL connection. The measured fixture build was 0.188182 seconds; p95 was 0.000161 seconds and 0.000964 seconds respectively, both inside the documented targets. Validation exposed and corrected a fixture-report provenance check that mixed independent publication snapshots; it now pins provenance to the selected fixture snapshot. Evidence: `reports/t013-release-validation.md`, `data/generated/t013_release_validation.json` (local ignored output), and `tests/test_release_validation.py`. This is local-envelope evidence, not a production capacity guarantee; public release-artifact review, Power BI acceptance, named owners, scheduling, and broader source ownership/rights remain open.
 
-### [ ] T-014 — Finish contributor demo, extension design, and handoff
+### [x] T-014 — Finish contributor demo, extension design, and handoff
 
 Owner: maintainer / implementation engineer. Dependencies: T-011, T-013; T-012 for a release claiming Power BI completion. Maps: REQ-002, REQ-012, NFR-001, NFR-005, NFR-006 → AC-002, AC-012, AC-013, AC-017, AC-018.
 
 Replace planned setup commands with exercised commands; complete clean-room fixture walkthrough, actual screenshots, license/data notices, owner/refresh/recovery details, and synthetic securities-finance extension contract. Update README, roadmap, and handoff with real status. Evidence: new-contributor walkthrough and reviewed mappings/permissions; all public claims match implemented capabilities.
+
+Completed 2026-10-26 for the portable fixture/design handoff scope. A `git archive` fresh checkout exercised the credential-free fixture build, validate, cutoff inspection, and all 49 Python tests without upstream credentials or a database. Local browser walkthroughs captured the fixture graph, live 290-series/11-concept catalog, and a Regional category page; the live canvas was revised to request 12 visual nodes per page, grid cards, and suppress repeated detail-edge labels while retaining the independently benchmarked 50-row API contract. The handoff adds contributor, license/data, operations/recovery, and restricted securities-finance extension documents. Scheduled-pilot ownership, alerting, source redistribution approval, restricted deployment, and Power BI remain explicitly uncompleted. Evidence: `reports/t014-contributor-handoff.md`, `docs/contributor-demo.md`, `docs/data-and-license-notice.md`, `docs/operations.md`, and `docs/securities-finance-extension.md`.
+
+### [ ] T-015 — Exercise the Power BI fixture report
+
+Owner: BI engineer / report owner. Dependencies: T-011, T-013. Maps: REQ-009, REQ-011 → AC-009, AC-011.
+
+Open the tracked `powerbi/MarketAtlas.model.template.tmdl` in an authorized Power BI Desktop or Power BI service environment, set one captured fixture snapshot UUID, create the five report pages, and retain the PBIP/PBIR source plus screenshots. Prove filter/reset reconciliation, distinct-count grain safety, as-of/freshness labels, and drill-through for sourced relationship `A11`, curated context `CTX3`, and one correlation. Evidence: an executed Power BI report/artifact and reconciliation results; a source template or SQL-only validation does not pass AC-009.
+
+Progress 2026-10-26: a source-controlled TMDL template, report design, snapshot-pinning protocol, fixture reconciliation script, cache ignore rules, and Python contract tests exist. Local macOS has no Power BI Desktop, and the Power BI service requires sign-in, so no Power BI visual/refresh evidence is claimed. Evidence: `powerbi/README.md`, `powerbi/MarketAtlas.model.template.tmdl`, `tests/test_powerbi_contract.py`, and `reports/t015-powerbi-source-package.md`.
 
 ## Completion rules and coverage
 

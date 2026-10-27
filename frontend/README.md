@@ -18,6 +18,8 @@ PYTHONPATH=../src python -m market_atlas economic-graph publish --config ../conf
 PYTHONPATH=../src python -m market_atlas report serve-macro-economic-graph --config ../configs/local.toml
 ```
 
-Select **Live macro graph** in the upper-right mode toggle. If the API is unavailable, the UI stays explicit about the boundary rather than falling back to a database connection.
+Select **Live macro graph** in the upper-right mode toggle. If the API is unavailable, the UI stays explicit about the boundary rather than falling back to a database connection. Category pages intentionally request 12 series for a legible canvas; this presentation limit is separate from the report API's 1–100 row limit and its 50-series performance validation.
+
+For the no-credential fixture walkthrough and the limits of the optional live mode, read [the contributor demo](../docs/contributor-demo.md).
 
 The default screen is a focused MarketAtlas graph workbench rather than a permanent navigation rail. It includes a selected-entity lens, source-aware edge treatments, a bounded expandable cluster, evidence drawer, full scoped-evidence workspace, and an opt-in candidate-review queue. Context links remain visibly distinct from calculated correlation estimates; candidate links explicitly require review and the local fixture decision flow is labeled as non-persistent demo behavior.

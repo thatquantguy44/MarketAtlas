@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-26. The fixture workflow, complete local source catalog, bounded live MacroMedallion/EcoMedallion macro ingestion, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, a React fixture demo, and a separate current-only live macro-economic graph projection exist. The graph now has a full approved-series catalog view with bounded category neighborhoods; it remains descriptive taxonomy rather than historical taxonomy or analytical evidence. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-26. The fixture workflow, complete local source catalog, bounded live MacroMedallion/EcoMedallion macro ingestion, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, a React fixture demo, a separate current-only live macro-economic graph projection, and a contributor/design handoff exist. The graph now has a full approved-series catalog view with bounded category neighborhoods; it remains descriptive taxonomy rather than historical taxonomy or analytical evidence. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -116,7 +116,7 @@ Report pages: market map, macro context, correlation monitor, and provenance/qua
 | `tests/`, `reports/` | Contract/temporal/numeric/integration validation and evidence |
 | `docs/` | Specification chain, decisions, operating handoff |
 
-Existing CLI workflow: `market-atlas fixture build|validate|inspect`, `market-atlas database inspect`, and `market-atlas adapter verify|extract`. Proposed downstream workflow: `market-atlas demo`, `market-atlas build --adapter <name>`, `market-atlas validate --snapshot <id>`, and `market-atlas publish --snapshot <id>`. T-005 through T-014 must implement and document those downstream commands.
+Existing CLI workflow: `market-atlas fixture build|validate|inspect`, `market-atlas database inspect`, and `market-atlas adapter verify|extract`. The contributor walkthrough records the exercised fixture commands; the remaining `market-atlas demo`, `market-atlas build --adapter <name>`, `market-atlas validate --snapshot <id>`, and `market-atlas publish --snapshot <id>` forms are proposed downstream interfaces, not implemented commands.
 
 Validate invalid endpoints, ticker reuse, late corrections, macro revisions, unavailable historical data, constant/missing series, clean-room fixture execution, idempotency, failure retention, provenance, and Power BI filter/grain behavior. Match numerical results against an independent hand-checkable calculation. For AC-016 record hardware, scale, query text, cache policy, build duration, and at least 20 runs per prepared query; target build under 5 minutes and query p95 at most 2 seconds. These are unmeasured proposed targets, not database or Power BI guarantees.
 

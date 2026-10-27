@@ -27,3 +27,14 @@ For provenance drill-through, use `provenance_kind` plus `subject_id`:
 - `rolling_correlation` joins `subject_id` to `rolling_correlation_estimate_version_id`.
 
 The fixture validation proves a sourced relationship, a curated context, and a correlation each resolve to their expected evidence. These PostgreSQL views are the contract for the later React demo and Power BI implementation; they are not themselves Power BI acceptance evidence.
+
+## Power BI source package
+
+`powerbi/MarketAtlas.model.template.tmdl` is the source-controlled fixture
+semantic-model template. It intentionally captures one `pSnapshotId` before a
+refresh and filters every imported `atlas_report.*_snapshot` table by that UUID.
+It does not import the moving `current_*` fact views. The model package,
+report-page design, and fixture reconciliation script are in
+[`powerbi/README.md`](../powerbi/README.md). They are validated as source
+contracts only; visual/filter/drill-through acceptance remains pending until
+the package runs in an authorized Power BI environment.

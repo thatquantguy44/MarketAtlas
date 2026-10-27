@@ -2,7 +2,7 @@
 
 **A temporal market knowledge graph connecting instruments, macro data, and measurable relationships through PostgreSQL and Power BI.**
 
-Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, temporal assertion replay, versioned synthetic observation loading, curated macro-context mappings, bounded rolling correlations, and atomic fixture publication work. Power BI remains planned.
+Status: early implementation. The deterministic fixture contract, bounded MacroMedallion PostgreSQL adapter, identity/ontology graph, temporal assertion replay, versioned synthetic observation loading, curated macro-context mappings, bounded rolling correlations, atomic fixture publication, contributor walkthrough, and handoff design work. Power BI remains planned.
 
 MarketAtlas gives market data a relationship layer. Start with a security, issuer, currency, country, index, or economic series; follow the links; inspect the source and the date each link was known. Compare those sourced relationships with time-bounded statistical estimates without treating correlation as causality.
 
@@ -64,7 +64,12 @@ support states.
 
 ## Working slices
 
-The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations, versioned fixture loading into the dedicated `atlas` schema, a bounded rolling-correlation fixture calculator, and an atomic fixture-serving publication. It does not yet create a Power BI report. Python 3.11 or newer is required.
+The repository has a standard-library Python CLI for generating and validating deterministic **synthetic inputs**. It also has an optional PostgreSQL adapter for verified MacroMedallion series metadata and point-in-time observations, versioned fixture loading into the dedicated `atlas` schema, a bounded rolling-correlation fixture calculator, and an atomic fixture-serving publication. A source-controlled Power BI semantic-model template exists, but no Power BI report has yet been exercised. Python 3.11 or newer is required.
+
+For the exercised credential-free contributor path, follow [the contributor
+demo walkthrough](docs/contributor-demo.md). It needs no database or local
+configuration and explicitly labels every input synthetic. The commands below
+are the same fixture contract path:
 
 ```bash
 PYTHONPATH=src python -m market_atlas fixture build --output /tmp/marketatlas-fixture
@@ -105,7 +110,7 @@ PYTHONPATH=src python -m market_atlas report validate-fixture
 
 The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
 
-After the local report API is running, the demo's **Live macro graph** mode uses Vite's local `/api` proxy to request only the snapshot-pinned `macro_economic_graph` publication. The default graph is a catalog hub plus economic-category navigation summaries; selecting a category returns a paged, searchable neighborhood of actual source-backed `macro series → measures → economic concept` assertions. Summary `contains` links are visibly labeled as navigation only, not assertions. The UI labels taxonomy as `current_only`; it is not point-in-time taxonomy history, a sensitivity estimate, or a browser-to-database connection.
+After the local report API is running, the demo's **Live macro graph** mode uses Vite's local `/api` proxy to request only the snapshot-pinned `macro_economic_graph` publication. The default graph is a catalog hub plus economic-category navigation summaries; selecting a category returns a paged, searchable neighborhood of actual source-backed `macro series → measures → economic concept` assertions. The interactive canvas intentionally shows 12 series per page to keep nodes and links legible; the API itself stays separately bounded at 1–100 rows and is performance-tested at 50 rows. Summary `contains` links are visibly labeled as navigation only, not assertions. The UI labels taxonomy as `current_only`; it is not point-in-time taxonomy history, a sensitivity estimate, or a browser-to-database connection.
 
 `extract-series-catalog` reads every approved `gold.dim_series` record through the contract gate. It omits `gold.v_source_coverage` by default because full-view scans can be costly; pass `--include-coverage` only after confirming a bounded source workload. This distinction is retained in the manifest as `not_selected`, rather than being represented as missing or historical data.
 
@@ -122,7 +127,7 @@ Read in order:
 1. [Specification](docs/spec.md): user questions, scope, requirements, and acceptance criteria.
 2. [Implementation plan](docs/plan.md): architecture, contracts, build order, and requirement coverage.
 3. [Tasks](docs/tasks.md): dependencies, owners, completion evidence, and acceptance mapping.
-4. [Handoff](docs/handoff.md): current state, next action, integration questions, and operating expectations.
+4. [Handoff](docs/handoff.md): current state, completed handoff, integration questions, and operating expectations.
 5. [Roadmap](docs/roadmap.md): capability milestones and the securities-finance extension.
 6. [Review and traceability](docs/review.md): changes from the original spec and the requirement-to-task map.
 7. [Acceptance evidence register](docs/acceptance.md): the 18 implementation checks, currently pending.
@@ -131,12 +136,17 @@ Read in order:
 10. [Reporting contract](docs/reporting.md): snapshot-pinned dimensions, facts, paths, and provenance drill-through.
 11. [React demo validation](reports/t012-validation.md): frontend scope, build evidence, and known dependency/security follow-up.
 12. [Source catalog](docs/source-catalog.md): local relation/view inventory and object-promotion rules.
+13. [Contributor demo](docs/contributor-demo.md): exercised clean-room fixture and browser walkthrough.
+14. [Operations handoff](docs/operations.md): manual refresh and controlled recovery posture.
+15. [Data and license notice](docs/data-and-license-notice.md): code license versus source-data rights.
+16. [Securities-finance extension contract](docs/securities-finance-extension.md): future restricted-domain boundary.
+17. [Power BI source package](powerbi/README.md): pinned-snapshot semantic-model template and required in-product reconciliation.
 
 The individual documents are canonical. Preserve requirement IDs when revising scope so the plan, tasks, and acceptance evidence stay aligned.
 
 ## Extending to securities finance
 
-The later domain layer can reuse instruments, issuers, countries, currencies, and markets to add agreement rules, collateral eligibility, borrower/lender relationships, and exception dependencies. A public example will remain synthetic. Any internal integration requires an authorized environment and domain-specific data contracts.
+The later domain layer can reuse stable instrument IDs to relate restricted agreement rules, collateral eligibility, borrower/lender relationships, and exception dependencies. A public example will remain synthetic. Restricted client/trade facts must stay in a separately authorized deployment and cannot be exposed through `atlas_report` or the browser API. See the [extension contract](docs/securities-finance-extension.md).
 
 ## Portfolio presentation
 
@@ -148,4 +158,4 @@ Suggested repository description:
 
 Suggested topics: `knowledge-graph`, `market-data`, `macroeconomics`, `quantitative-finance`, `postgresql`, `python`, `powerbi`, `data-lineage`, `point-in-time`.
 
-Before pinning an implemented release, add a real demo screenshot, a short reproducible walkthrough, and the measured release evidence. Screenshots, tests, and performance badges should describe work that actually exists. The project uses the [MIT License](LICENSE). Data sources and redistributed datasets require their own usage and redistribution review.
+The T-014 task retained actual local screenshot evidence and an exercised clean-room walkthrough; see [the handoff report](reports/t014-contributor-handoff.md). Screenshots, tests, and performance badges should describe work that actually exists. The project uses the [MIT License](LICENSE). Data sources and redistributed datasets require their own usage and redistribution review; see the [data and license notice](docs/data-and-license-notice.md).

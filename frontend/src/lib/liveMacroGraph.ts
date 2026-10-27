@@ -37,6 +37,10 @@ export interface LiveMacroGraph {
 
 const graphUrl = "/api/v1/macro-economic-graph";
 
+// The report API is validated at a larger bounded page size. The interactive
+// canvas intentionally requests fewer nodes so a category remains readable.
+export const LIVE_GRAPH_VISUAL_PAGE_SIZE = 12;
+
 export interface LiveGraphRequest {
   conceptId?: string | null;
   query?: string;
