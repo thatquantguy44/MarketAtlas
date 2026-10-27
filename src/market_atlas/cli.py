@@ -8,11 +8,15 @@ import json
 import sys
 from pathlib import Path
 
+from .adapters.macro_context import extract as extract_macro_context
+from .adapters.macro_context import (
+    extract_revision_summary,
+    extract_series_catalog,
+    verify_revision_summary_contract,
+)
+from .adapters.macro_context import verify_contract as verify_macro_context
 from .adapters.macro_medallion import extract as extract_macro_medallion
 from .adapters.macro_medallion import verify_contract as verify_macro_medallion
-from .adapters.macro_context import extract as extract_macro_context
-from .adapters.macro_context import extract_series_catalog
-from .adapters.macro_context import verify_contract as verify_macro_context
 from .analytics.fixture_correlations import (
     calculate_fixture_correlations,
     validate_rolling_correlation_fixture,
@@ -20,8 +24,8 @@ from .analytics.fixture_correlations import (
 from .config import (
     DEFAULT_CONFIG_PATH,
     ConfigError,
-    load_macro_medallion,
     load_macro_context,
+    load_macro_medallion,
     load_source_database,
     load_target_database,
     load_upstream_asset,
@@ -55,7 +59,6 @@ from .publishing.macro_context import (
     validate_context_publication,
 )
 from .report_api import serve_macro_economic_graph
-from .validation.release import run_release_validation
 from .source_catalog import build_source_catalog
 from .source_contracts import (
     DEFAULT_SOURCE_CONTRACTS_PATH,
@@ -63,6 +66,7 @@ from .source_contracts import (
     load_source_contract_registry,
     verify_source_contracts,
 )
+from .validation.release import run_release_validation
 
 
 def _build(output: Path) -> int:
@@ -360,6 +364,65 @@ def _extract_series_catalog_adapter(
     return 0
 
 
+def _verify_revision_summary_adapter(config_path: Path) -> int:
+    try:
+        database = load_source_database(config_path)
+        gate = verify_source_contracts(build_source_catalog(inspect_source(database)))
+        adapter_result = verify_revision_summary_contract(database)
+    except (ConfigError, DatabaseUnavailable, SourceContractError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    result = {
+        "status": (
+            "valid"
+            if gate["status"] == "valid" and adapter_result["status"] == "valid"
+            else "invalid"
+        ),
+        "source_contract_gate": gate,
+        "adapter": adapter_result,
+    }
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["status"] == "valid" else 1
+
+
+def _extract_revision_summary_adapter(
+    config_path: Path, context_path: Path, output: Path, page_size: int
+) -> int:
+    try:
+        database = load_source_database(config_path)
+        gate = verify_source_contracts(build_source_catalog(inspect_source(database)))
+        if gate["status"] != "valid":
+            print(json.dumps(gate, sort_keys=True), file=sys.stderr)
+            return 1
+        result = extract_revision_summary(
+            database, list(load_macro_context(context_path).series_ids), page_size
+        )
+    except (ConfigError, DatabaseUnavailable, SourceContractError, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    result["manifest"]["source_contract_verification"] = {
+        "catalog_fingerprint_sha256": gate["catalog_fingerprint_sha256"],
+        "registry_version": gate["registry_version"],
+        "status": gate["status"],
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(canonical_bytes(result))
+    print(
+        json.dumps(
+            {
+                "status": result["manifest"]["status"],
+                "selection_scope": result["manifest"]["selection_scope"],
+                "revision_summary_count": len(result["revision_summaries"]),
+                "missing_series_count": len(result["missing_series_ids"]),
+                "input_selection_sha256": result["manifest"]["input_selection_sha256"],
+                "output": str(output),
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
 def _ingest_adapter(config_path: Path, pilot_path: Path) -> int:
     """Read an approved source contract, then write only MarketAtlas schemas."""
     try:
@@ -621,6 +684,13 @@ def main(argv: list[str] | None = None) -> int:
     adapter_context_verify.add_argument(
         "--config", type=Path, default=DEFAULT_CONFIG_PATH
     )
+    adapter_revision_summary_verify = adapter_commands.add_parser(
+        "verify-revision-summary",
+        help="verify the current-only revision-quality adapter",
+    )
+    adapter_revision_summary_verify.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
     adapter_extract = adapter_commands.add_parser("extract")
     adapter_extract.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     adapter_extract.add_argument(
@@ -651,6 +721,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     adapter_catalog_extract.add_argument("--page-size", type=int, default=500)
     adapter_catalog_extract.add_argument("--output", type=Path, required=True)
+    adapter_revision_summary_extract = adapter_commands.add_parser(
+        "extract-revision-summary",
+        help="page through approved current per-series revision-quality summaries",
+    )
+    adapter_revision_summary_extract.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
+    adapter_revision_summary_extract.add_argument(
+        "--context-config", type=Path, default=Path("configs/context_pilot.toml")
+    )
+    adapter_revision_summary_extract.add_argument("--page-size", type=int, default=500)
+    adapter_revision_summary_extract.add_argument("--output", type=Path, required=True)
     adapter_ingest = adapter_commands.add_parser(
         "ingest", help="ingest the bounded upstream macro extract into atlas"
     )
@@ -759,6 +841,8 @@ def main(argv: list[str] | None = None) -> int:
             return _verify_adapter(args.config)
         if args.adapter_command == "verify-context":
             return _verify_context_adapter(args.config)
+        if args.adapter_command == "verify-revision-summary":
+            return _verify_revision_summary_adapter(args.config)
         if args.adapter_command == "extract-context":
             return _extract_context_adapter(
                 args.config, args.context_config, args.output
@@ -766,6 +850,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.adapter_command == "extract-series-catalog":
             return _extract_series_catalog_adapter(
                 args.config, args.output, args.page_size, args.include_coverage
+            )
+        if args.adapter_command == "extract-revision-summary":
+            return _extract_revision_summary_adapter(
+                args.config, args.context_config, args.output, args.page_size
             )
         if args.adapter_command == "ingest":
             return _ingest_adapter(args.config, args.pilot_config)

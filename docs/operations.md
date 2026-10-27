@@ -8,16 +8,15 @@ runbook for a scheduled pilot.
 
 | Responsibility | Current status | Required before scheduling |
 | --- | --- | --- |
-| Local demo execution | Repository maintainer / implementation engineer | Confirm a named accountable operator |
-| Upstream data rights and freshness | Unassigned | Data-owner acceptance and documented source terms |
-| Target PostgreSQL ownership | Unassigned | Database owner, backup/restore authority, and migration window |
-| Report/API ownership | Unassigned | Report owner, API host, consumer/SLA, and access review |
-| Quant methodology | Unassigned | Quant owner and method-change approval |
-| Incident and alert recipient | Unassigned | Alert destination and on-call/escalation path |
+| Local demo execution | Josh / project owner | Define a separate operator if scheduling is introduced |
+| Upstream data rights and freshness | Josh / source and data owner; restricted internal-only | Document any external-provider terms before non-local sharing |
+| Target PostgreSQL ownership | Josh / database owner | Define backup/restore authority and migration window before scheduling |
+| Report/API ownership | Josh / report owner | Define host, consumers/SLA, and access review before scheduling |
+| Quant methodology | Josh / methodology owner | Record method-change approval before analytical expansion |
+| Incident and alert recipient | Josh / incident owner | Define alert destination and on-call/escalation path before scheduling |
 
-`Josh / repository owner` remains the contact for the optional local checkout
-selection described in the repository handoff. That does not assign source
-rights, database, report, or methodology accountability.
+This assignment is limited to the manual local pilot. It does not authorize
+external redistribution or replace any third-party source terms.
 
 ## Safe manual refresh
 

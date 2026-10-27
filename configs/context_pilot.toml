@@ -3,4 +3,4 @@
 series_ids = ["CPIAUCSL", "GDP", "UNRATE"]
 release_start = "2026-10-01"
 release_end = "2026-12-31"
-redistribution_status = "unresolved"
+redistribution_status = "restricted"

@@ -5,8 +5,8 @@ schema_name = "meta"
 object_name = "fred_series"
 object_type = "table"
 lifecycle_state = "supported_live"
-owner = "marketatlas-integration-maintainer"
-source_owner_status = "pending"
+owner = "josh-project-owner"
+source_owner_status = "approved by Josh as project and source owner for restricted internal use (2026-10-26)"
 purpose = "macro-series identity and metadata"
 declared_grain = "one row per series_id"
 business_key = ["series_id"]
@@ -22,8 +22,8 @@ required_columns = [
   "updated_at",
 ]
 expected_column_fingerprint_sha256 = "18d820a6860a583332b5d2d6dfe51f01d7c874e1ac50f9da05e4a92a00b9741b"
-data_classification = "restricted_pending_rights"
-redistribution_status = "unresolved"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
 temporal_semantics = "Current metadata only; updated_at records source metadata recency, not historical reconstruction."
 adapter = "macro_medallion_ecomedallion"
 
@@ -32,8 +32,8 @@ schema_name = "gold"
 object_name = "dim_series"
 object_type = "table"
 lifecycle_state = "supported_live"
-owner = "marketatlas-integration-maintainer"
-source_owner_status = "user-approved; formal source owner pending"
+owner = "josh-project-owner"
+source_owner_status = "approved by Josh as project and source owner for restricted internal use (2026-10-26)"
 purpose = "macro-series taxonomy and current descriptive metadata"
 declared_grain = "one row per series_id"
 business_key = ["series_id"]
@@ -53,8 +53,8 @@ required_columns = [
   "metric",
 ]
 expected_column_fingerprint_sha256 = "24986fd7cee20edeeab1516ba20aff3ef4c22c62cb48be08a086a28146b01370"
-data_classification = "restricted_pending_rights"
-redistribution_status = "unresolved"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
 temporal_semantics = "Current descriptive taxonomy only; it does not reconstruct prior classifications."
 adapter = "macro_medallion_ecomedallion_context"
 
@@ -63,8 +63,8 @@ schema_name = "gold"
 object_name = "release_calendar"
 object_type = "table"
 lifecycle_state = "supported_live"
-owner = "marketatlas-integration-maintainer"
-source_owner_status = "user-approved; formal source owner pending"
+owner = "josh-project-owner"
+source_owner_status = "approved by Josh as project and source owner for restricted internal use (2026-10-26)"
 purpose = "scheduled macroeconomic release events and representative-series context"
 declared_grain = "one row per release_id and release_date"
 business_key = ["release_id", "release_date"]
@@ -79,8 +79,8 @@ required_columns = [
   "fetched_at",
 ]
 expected_column_fingerprint_sha256 = "25e7844a1d7228c4b492b8c728ebe64d9308d59ab17802b56fa6155b9cd2f19b"
-data_classification = "restricted_pending_rights"
-redistribution_status = "unresolved"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
 temporal_semantics = "release_date is a scheduled event date; fetched_at is the source-observation time and is_future is an integer status flag."
 adapter = "macro_medallion_ecomedallion_context"
 
@@ -89,8 +89,8 @@ schema_name = "gold"
 object_name = "v_source_coverage"
 object_type = "view"
 lifecycle_state = "supported_live"
-owner = "marketatlas-integration-maintainer"
-source_owner_status = "user-approved; formal source owner pending"
+owner = "josh-project-owner"
+source_owner_status = "approved by Josh as project and source owner for restricted internal use (2026-10-26)"
 purpose = "current source-series freshness and coverage status"
 declared_grain = "one row per source and series_id"
 business_key = ["source", "series_id"]
@@ -106,8 +106,8 @@ required_columns = [
 ]
 expected_column_fingerprint_sha256 = "8709f2a30d04dc0e035c7794f958db2335b98caeaa064d1a3a1e2aceb5826547"
 expected_view_definition_md5 = "1473b4757e5eb3df188efce7be45e32c"
-data_classification = "restricted_pending_rights"
-redistribution_status = "unresolved"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
 temporal_semantics = "Current-state coverage view only; latest_observation_date and is_stale are not a historical availability record."
 adapter = "macro_medallion_ecomedallion_context"
 
@@ -116,8 +116,8 @@ schema_name = "gold"
 object_name = "fred_point_in_time"
 object_type = "view"
 lifecycle_state = "supported_live"
-owner = "marketatlas-integration-maintainer"
-source_owner_status = "pending"
+owner = "josh-project-owner"
+source_owner_status = "approved by Josh as project and source owner for restricted internal use (2026-10-26)"
 purpose = "point-in-time macro observation versions"
 declared_grain = "one row per series_id, observation_date, realtime_start"
 business_key = ["series_id", "observation_date", "realtime_start"]
@@ -133,7 +133,32 @@ required_columns = [
 ]
 expected_column_fingerprint_sha256 = "004f5d3d2de122d493be429bd21133f941d19fb1227b20e6d274d50d69818b99"
 expected_view_definition_md5 = "15b1045fa6695f651b335c413a224328"
-data_classification = "restricted_pending_rights"
-redistribution_status = "unresolved"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
 temporal_semantics = "FRED real-time dates define source availability; realtime_end is inclusive and date-precision."
 adapter = "macro_medallion_ecomedallion"
+
+[[contracts]]
+schema_name = "gold"
+object_name = "v_series_revision_summary"
+object_type = "view"
+lifecycle_state = "supported_live"
+owner = "josh-project-owner"
+source_owner_status = "approved by Josh as project and source owner for restricted internal use (2026-10-26)"
+purpose = "current per-series revision-quality statistics"
+declared_grain = "one row per series_id"
+business_key = ["series_id"]
+required_columns = [
+  "series_id",
+  "observation_count",
+  "avg_revision_count",
+  "max_revision_count",
+  "avg_abs_revision_pct",
+  "max_abs_revision_pct",
+]
+expected_column_fingerprint_sha256 = "a1d56f56f798e39225e47026f12e87691f4212caea5d837732d524074f258a51"
+expected_view_definition_md5 = "ea26b587ad4c8d0ccd4ef153478c7108"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
+temporal_semantics = "Current revision-quality summary only; it does not reconstruct historical vintages or point-in-time revision states."
+adapter = "macro_medallion_ecomedallion_context"

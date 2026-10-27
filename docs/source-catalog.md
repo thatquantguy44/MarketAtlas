@@ -35,7 +35,7 @@ not read source rows or promote an undeclared object.
 
 ## Current catalog result
 
-The 2026-10-25 catalog found 100 upstream relations and 31 MarketAtlas-owned relations. The source reader can execute zero-row probes against 91 economic-pipeline objects. Five are approved as `supported_live`:
+The 2026-10-26 catalog found 102 upstream relations and 41 MarketAtlas-owned relations. The source reader can execute zero-row probes against the approved economic-pipeline surface. Six are approved as `supported_live`:
 
 | Object | Status | MarketAtlas support |
 | --- | --- | --- |
@@ -44,8 +44,9 @@ The 2026-10-25 catalog found 100 upstream relations and 31 MarketAtlas-owned rel
 | gold.dim_series | supported_live | Current macro taxonomy and descriptive metadata |
 | gold.release_calendar | supported_live | Scheduled macro release events at `(release_id, release_date)` grain |
 | gold.v_source_coverage | supported_live | Current source-series coverage and freshness status |
-| 86 additional economic-pipeline objects | discovered_not_onboarded | Readable for discovery, but not approved for extraction or use |
-| 9 public agent runtime tables | unavailable_to_source_role | Deliberately excluded from the source role |
+| gold.v_series_revision_summary | supported_live | Current per-series revision-quality context; configured-ID extraction only |
+| 85 additional economic-pipeline objects | discovered_not_onboarded | Readable for discovery, but not approved for extraction or use |
+| 11 public agent runtime tables | unavailable_to_source_role | Deliberately excluded from the source role |
 
 The complete local-run evidence is in the T-001 source catalog validation reports.
 
@@ -66,4 +67,6 @@ T-004C validated the initial two FRED contracts on 2026-10-25 against catalog
 fingerprint `5bfa333e909f483aeee4873511e1d2c68cf03b67ad8a50da0a8de3b1a51f12e4`.
 T-004C.2 added and verified the three bounded macro-context interfaces against
 catalog fingerprint `6dcaa1fc2c1881823bcde8d9e874d1b652cc76f55f2864c8f67143253ae843ab`.
-The remaining 86 readable economic objects remain `discovered_not_onboarded`.
+T-016 added `gold.v_series_revision_summary` against catalog fingerprint
+`983c665d16384309fe3c8ef7b3d9dbd15ab8423e0e87ad0ec3886d633929999e`.
+The remaining 85 readable economic objects remain `discovered_not_onboarded`.

@@ -17,15 +17,17 @@ CLI output label it `synthetic: true`.
 
 MacroMedallion and EcoMedallion name the same optional local upstream asset.
 The configured `macro_medallion` database is read only through the scoped
-source-reader role. The five `supported_live` interfaces are approved for the
-local technical contract only; that approval is not redistribution permission.
+source-reader role. The six `supported_live` interfaces are approved for the
+local technical contract only; they are classified restricted internal-only and
+that approval is not redistribution permission.
 All other readable relations are not onboarded.
 
 Do not commit, publish, screenshot for public use, or attach to an issue any
 raw source rows, credentials, connection strings, private hostnames, source
 extracts, or unreviewed derived outputs. `configs/local.toml` and generated
-local data remain ignored. A data owner must record source terms and approve
-the intended audience before any non-synthetic artifact is shared.
+local data remain ignored. Josh is the local source/data owner and has approved
+internal-only use; a separate external terms decision is required before any
+non-synthetic artifact is shared.
 
 ## Dependency and branding notice
 

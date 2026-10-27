@@ -43,8 +43,8 @@ class SourceContractTests(unittest.TestCase):
         result = verify_source_contracts(valid_catalog())
 
         self.assertEqual("valid", result["status"])
-        self.assertEqual(5, result["contract_count"])
-        self.assertEqual(5, result["supported_live_count"])
+        self.assertEqual(6, result["contract_count"])
+        self.assertEqual(6, result["supported_live_count"])
         self.assertEqual([], result["errors"])
 
     def test_registry_declares_the_three_promoted_macro_context_interfaces(self):
@@ -60,6 +60,18 @@ class SourceContractTests(unittest.TestCase):
             contracts["gold.release_calendar"]["business_key"],
         )
         self.assertEqual("view", contracts["gold.v_source_coverage"]["object_type"])
+
+    def test_registry_promotes_the_restricted_revision_quality_view(self):
+        registry = load_source_contract_registry()
+        contracts = {
+            f"{contract['schema_name']}.{contract['object_name']}": contract
+            for contract in registry["contracts"]
+        }
+
+        revision_summary = contracts["gold.v_series_revision_summary"]
+        self.assertEqual("supported_live", revision_summary["lifecycle_state"])
+        self.assertEqual(["series_id"], revision_summary["business_key"])
+        self.assertEqual("restricted", revision_summary["redistribution_status"])
 
     def test_schema_fingerprint_drift_blocks_a_live_contract(self):
         catalog = valid_catalog()
