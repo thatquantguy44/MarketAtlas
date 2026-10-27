@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-26. T-002, T-003, T-005 through T-013 are complete for the synthetic fixture track. T-001 and T-004 remain in progress. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-26. T-001–T-003, T-005–T-014, T-016 and T-017 are complete at their stated fixture, design or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -139,6 +139,26 @@ Owner: Josh / project owner. Dependencies: T-001, T-004C.1. Maps: REQ-001, REQ-0
 Promote a current revision-quality interface only after an explicit local-owner and restricted-use decision. Verify schema drift and source read-only access; extract only configured IDs in bounded batches and never treat a missing summary as zero revisions.
 
 Completed 2026-10-26. `gold.v_series_revision_summary` is the sixth supported-live source contract. The read-only verification passed with no write privileges, and the configured three-series extract returned three summaries and no missing IDs. The output is a generated ignored file; nothing was loaded to `atlas` or published. Evidence: `docs/t016-revision-quality-spec.md`, `reports/t016-source-governance-discovery.md`, `docs/source-onboarding-decision.md`, and `tests/test_revision_summary_contract.py`.
+
+### [x] T-017 — Publish restricted revision-quality context
+
+Owner: Josh / project owner. Dependencies: T-016, T-004C.3–.5. Maps: REQ-006, REQ-010, REQ-011, NFR-001, NFR-003, NFR-005 → AC-006, AC-010, AC-011, AC-013, AC-015, AC-017.
+
+Completed 2026-10-26 for the configured local internal-only scope. Migration 011
+adds captured quality versions and a separate snapshot-pinned publication.
+Checksum/contract/rights/temporal validation precedes writes. Missing source
+summaries produce explicit unknown rows with null metrics. The selected-series
+API reads only report surfaces; the live workspace shows quality and separate
+snapshot/input/build provenance. A three-series extract published successfully
+and an identical rerun reused its snapshot. Rollback-isolated PostgreSQL tests
+prove idempotency, missingness, failure retention/recovery, old snapshot replay,
+publication isolation and reader permissions. Browser checks cover metrics,
+provenance, unselected coverage and outage/recovery. No source interface or
+public redistribution right was added. Evidence:
+`docs/t017-revision-quality-publication-spec.md`,
+`reports/t017-revision-quality-publication-validation.md`,
+`tests/test_revision_quality_publication.py`,
+`tests/test_revision_quality_database.py`.
 
 ## Completion rules and coverage
 

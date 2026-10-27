@@ -12,6 +12,15 @@ T-002, T-003, and T-005 through T-016 are complete for the fixture/design handof
 
 ## Gate Status
 
+T-017 is complete for configured restricted-local revision quality. Migration
+`011_revision_quality_publication.sql` adds append-only captured versions and the
+separate `macro_revision_quality` publication. The report-only API and live
+selected-series drawer expose current metrics/unknowns and independent capture,
+snapshot, input and build provenance. Three approved summaries were published;
+an identical rerun reused its snapshot. Failure rollback/recovery and browser
+coverage/outage states passed. Evidence and exact commands:
+[`reports/t017-revision-quality-publication-validation.md`](../reports/t017-revision-quality-publication-validation.md).
+
 **Satisfied for documentation handoff:** the package defines a candidate scope, downstream design, task dependencies, and required evidence. The documents are reviewable planning artifacts.
 
 **Implementation readiness established through T-016 for fixtures and handoff design:** the upstream interfaces, vintage semantics, dedicated write schemas, role boundaries, temporal reference replay, versioned observation selection, curated context semantics, bounded analytical estimates, atomic fixture publication, report/provenance contract, React demo, clean-room walkthrough, operational boundary, restricted-extension design, and revision-quality context are verified or documented at their stated scope. The named local pilot owner and restricted internal-only redistribution decision are recorded; public redistribution review, Power BI validation, scheduled deployment, and dependency-major upgrade decisions remain open. This is not an end-to-end release gate pass.

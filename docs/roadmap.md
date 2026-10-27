@@ -18,6 +18,11 @@ The fixture track supports a portable public demonstration. An upstream integrat
 
 ## v0.2 — Richer macro and event context
 
+T-016/T-017 completed the configured restricted-local current revision-quality
+contract, immutable publication and live workspace context on 2026-10-26. This
+supplies captured-current summaries, with explicit unknowns and independent
+provenance; historical revision/event reconstruction remains future work.
+
 Add timestamped event calendars, revisions/vintages where licensed and available, release observations, and clearer event-to-series context. Support event-window charts with explicit market calendars. Measured event responses require a documented sampling, timestamp, and estimation design; curated relevance links remain visibly distinct.
 
 Exit evidence: event availability and vintage tests, timezone/calendar checks, worked examples, and report reconciliation. Without release-vintage metadata, show descriptive latest-vintage context with a clear label and withhold historical availability claims.

@@ -22,4 +22,13 @@ Select **Live macro graph** in the upper-right mode toggle. If the API is unavai
 
 For the no-credential fixture walkthrough and the limits of the optional live mode, read [the contributor demo](../docs/contributor-demo.md).
 
+For revision-quality context, publish an approved T-016 extract from the repository
+root with `PYTHONPATH=src python -m market_atlas revision-quality publish --input data/generated/revision_summary_catalog.json`.
+Selecting a series requests one row from
+`/api/v1/macro-revision-quality?series_node_id=<uuid>`. Its panel shows the
+independent quality snapshot, capture/publication times, source record, input
+and build. Unknown summaries, unselected series, unpublished quality and API
+failures are distinct states. This is restricted current context; historical
+source availability is unsupported.
+
 The default screen is a focused MarketAtlas graph workbench rather than a permanent navigation rail. It includes a selected-entity lens, source-aware edge treatments, a bounded expandable cluster, evidence drawer, full scoped-evidence workspace, and an opt-in candidate-review queue. Context links remain visibly distinct from calculated correlation estimates; candidate links explicitly require review and the local fixture decision flow is labeled as non-persistent demo behavior.
