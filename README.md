@@ -8,6 +8,10 @@ MarketAtlas gives market data a relationship layer. Start with a security, issue
 
 The project consumes verified MacroMedallion PostgreSQL outputs through small read-only adapters and uses dedicated PostgreSQL schemas for graph storage and reporting views. Josh owns the local restricted-use pilot across source/data, database, report, methodology, refresh/recovery, and incident roles. No external redistribution is authorized.
 
+**Resuming work later?** Start with [the next-session checkpoint](docs/handoff.md#start-here-next-session)
+for the merged baseline, validation evidence, exact next task and a ready-to-paste
+prompt for the next agent.
+
 ## The first demonstration
 
 A reviewer should be able to select a fixture instrument, follow its issuer and classifications, inspect the evidence for a macro context link, and examine how a rolling correlation changed across selected dates. Every statistical edge should show its transformation, sample size, window, and data cutoff.
@@ -149,7 +153,7 @@ Read in order:
 4. [Handoff](docs/handoff.md): current state, completed handoff, integration questions, and operating expectations.
 5. [Roadmap](docs/roadmap.md): capability milestones and the securities-finance extension.
 6. [Review and traceability](docs/review.md): changes from the original spec and the requirement-to-task map.
-7. [Acceptance evidence register](docs/acceptance.md): the 18 implementation checks, currently pending.
+7. [Acceptance evidence register](docs/acceptance.md): the 18 implementation checks and their passed, partial or pending scope.
 8. [Naming notes](docs/naming.md): repository name, alternatives, and positioning.
 9. [Frontend scaffold decision](docs/decisions/001-quantmeridian-react-scaffold.md): QuantMeridian-based React demo architecture and boundaries.
 10. [Reporting contract](docs/reporting.md): snapshot-pinned dimensions, facts, paths, and provenance drill-through.

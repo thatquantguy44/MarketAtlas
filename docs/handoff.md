@@ -2,13 +2,131 @@
 
 Updated: 2026-10-26. This is an early implementation handoff, not a completed pilot or production release.
 
+## Start here next session
+
+**Safe stopping point:** T-017 is implemented, validated and merged in
+[PR #10](https://github.com/thatquantguy44/MarketAtlas/pull/10). There is no
+partially implemented T-017 slice to finish. The next task is **T-015 — Power BI
+fixture execution / AC-009**, owned by Josh / project owner. Begin by checking
+the available authorized Power BI authoring environment; its absence was the
+last recorded blocker. A source template, SQL checks or React demonstration
+alone cannot close that acceptance gap.
+
+Read this checkpoint, then [the specification](spec.md),
+[tasks](tasks.md), [acceptance register](acceptance.md),
+[Power BI instructions](../powerbi/README.md), and
+[T-017 evidence](../reports/t017-revision-quality-publication-validation.md).
+Read `.agents/AGENTS.md` before acting. The broader history below is reference;
+the checkpoint and next-task instructions are the restart path.
+
+| Checkpoint | Last verified value |
+| --- | --- |
+| Merged T-017 baseline | `5b59210628d66ba832df3c8853bbd042dc041d5c` on `main` |
+| Implementation commits | `eda2a60` publication/API/tests; `aab0ac5` workspace; `de537bb` documentation/evidence |
+| Migration level | 011, `011_revision_quality_publication.sql` |
+| Validation baseline | 66 Python tests including PostgreSQL; 11 frontend tests; TypeScript/Vite build; browser metrics/provenance/coverage/outage recovery |
+| Credential-free baseline | 65 Python tests passed with `-S`; one opt-in database test skipped |
+| Synthetic fixture SHA-256 | `15e24cebf895af4e58b1c5a4dfe5712ba28b473ca64ee6c4f4df2f5bac0877da` |
+| Local quality publication | `macro_revision_quality`, 3 selected summaries and 3 provenance rows |
+| Last quality snapshot | `4cc8f4fc-0d26-518c-be0e-b5723b2ae060` |
+| Quality input manifest | `de3df312-8b4f-5fbc-95eb-980984427e70` |
+| Quality build run | `3a578092-9c79-5506-b72b-fd729e7d542b` |
+| Quality output SHA-256 | `a8265353122167f2d5fd7d81baf79e7d501f872a0c9c8a67d6082cda3be3b970` |
+| Last synthetic `default` snapshot | `bd0ff55e-db73-5196-81c9-066da5523348`; re-resolve before a Power BI refresh |
+| Remaining release gaps | T-015/AC-009; broader T-004 adapters; public source rights/artifact review; scheduled deployment and operational readiness |
+
+These are retained observations, not promises about a future machine or live
+publication pointer. The quality snapshot was built from the validated worktree
+before the merge; its recorded code revision need not equal the merge commit.
+Raw extracts and `data/generated/t017_validation.json` are ignored local files,
+so a fresh checkout may not contain them. Source configuration belongs only in
+ignored `configs/local.toml`. Source-derived data remain restricted internal-only.
+
+### First actions after reopening
+
+1. Inspect `git status --short`, the current branch and recent history. Fetch
+   `origin` and verify the merged baseline is in the intended base branch before
+   creating a new task branch. Preserve any new local work; this handoff does not
+   authorize resetting it or merging another PR.
+2. Use the retained validation above as the baseline. Re-run relevant checks
+   when code, dependencies, data or environment have changed. For a fresh
+   credential-free check, run `PYTHONPATH=src python3 -S -m unittest discover -s tests -v`.
+   Frontend commands are `npm --prefix frontend test` and
+   `npm --prefix frontend run build`; install from the existing lockfile with
+   `npm --prefix frontend ci` if dependencies are absent.
+3. For an authorized local integration check, use
+   `MARKETATLAS_TEST_DATABASE=1 PYTHONPATH=src python3 -m unittest discover -s tests -v`.
+   Its synthetic T-017 database writes roll back. Consult
+   [operations](operations.md) before migrations, refreshes or publication.
+4. If reviewing the UI, start the report API and frontend from the repository
+   root in separate terminals:
+
+   ```sh
+   PYTHONPATH=src python3 -m market_atlas report serve-macro-economic-graph
+   npm --prefix frontend run dev -- --host 127.0.0.1
+   ```
+
+   The last session used ports 8765 and 3000. Check existing listeners before
+   starting duplicates; session process IDs and temporary scripts are not
+   durable dependencies. Open **Live macro graph → Inflation → CPI**, inspect
+   quality provenance, then select a series outside the quality selection to
+   check its coverage label. Graph taxonomy and quality have independent snapshots.
+
+### Execute T-015 next
+
+Use [the Power BI package](../powerbi/README.md) and
+[T-015 source-package evidence](../reports/t015-powerbi-source-package.md).
+Confirm an authorized Windows Power BI Desktop environment or suitable service
+authoring workflow, plus a dedicated report login provisioned by the database
+owner. The template is TMDL source, not a ready-made PBIX/PBIP; record the actual
+import/project workflow used in that environment. The prior local macOS session
+had neither Desktop nor an authenticated service workspace available.
+
+Resolve the synthetic publication immediately before refresh, using the report
+reader, and set the same UUID in every template import through `pSnapshotId`:
+
+```sql
+SELECT serving_snapshot_id, published_at
+FROM atlas_report.current_snapshot_metadata
+WHERE publication_name = 'default';
+```
+
+Build the five documented pages. Reconcile 15 nodes, 14 relationship facts,
+3 curated contexts and 32 correlation estimates; prove node/macro/pair filtering
+and reset, distinct-count safety, pinned/as-of/freshness labels, and provenance
+for relationship `A11`, context `CTX3`, and one correlation. Retain permitted
+PBIP/PBIR source, synthetic screenshots, refresh results and reconciliation
+evidence. Update `docs/tasks.md`, `docs/acceptance.md`, and this handoff only to
+the extent supported by those artifacts.
+
+If authoring access is still unavailable, record the exact missing capability
+and ask Josh for that environment. Keep T-015 open and AC-009 partial; a repeated
+SQL/template validation does not resolve the blocker. Broader source onboarding
+requires its own explicit contract and owner/rights decision.
+
+### Ready-to-paste prompt for the next agent
+
+```text
+Resume MarketAtlas from docs/handoff.md, starting with "Start here next session".
+Read .agents/AGENTS.md and the linked spec/task/acceptance and Power BI documents.
+T-017 was validated and merged in PR #10; verify current Git state before acting.
+The next task is T-015: execute the pinned synthetic report in an authorized
+Power BI environment and retain report, refresh, filter/count and provenance
+evidence. Check authoring access first. If it is unavailable, identify the exact
+blocker and ask Josh for the needed environment; do not mark AC-009 passed from
+SQL, template or React checks. Preserve source read-only access, dedicated
+MarketAtlas write schemas, restricted local data and independent publication
+snapshots. Continue within the documented task scope, then update the handoff
+with actual results, artifacts and the exact next task.
+```
+
 ## Current state
 
 The original market knowledge graph specification has been reviewed and reorganized into specification, architecture plan, tasks, roadmap, and traceability documents. The product name is MarketAtlas. The repository is [thatquantguy44/MarketAtlas](https://github.com/thatquantguy44/MarketAtlas), default branch `main`.
 
 MacroMedallion and EcoMedallion are interchangeable names for the same upstream asset. Operators may configure an optional local checkout for discovery and lineage in git-ignored `configs/local.toml`; MarketAtlas neither requires a remote repository pin nor imports its source code. The fixture implementation provides a Python CLI, deterministic synthetic records, validation, manifest, and availability-cutoff inspection. The authorized local `macro_medallion` PostgreSQL database is the primary integration contract, connected through a scoped source-reader role. T-004B loads `meta.fred_series` plus `gold.fred_point_in_time` into `atlas` as 3 macro identities and 151 versioned observations under one immutable input manifest; an identical rerun writes zero rows. T-004C.1 adds `contracts/source_contracts.toml` and a metadata-only verifier. T-004C.2 promotes `gold.dim_series`, `gold.release_calendar`, and `gold.v_source_coverage` as read-only, bounded macro-context interfaces. T-004C.3 stores their latest approved records only in dedicated `atlas` current-context tables and publishes a separate immutable `macro_context` report snapshot. T-004C.4 projects the approved current taxonomy into source-backed `measures` assertions and publishes the separate `macro_economic_graph` snapshot. T-004C.5 adds a full approved-series catalog extractor: the validated local run published 290 source-scoped series, 11 taxonomy concepts, and 290 `measures` assertions. The report API returns category-hub navigation first and a bounded, searchable, paged series neighborhood only after category selection; navigation `contains` links are not assertions. The local report API reads only its report views under `marketatlas_report_reader`; the React workspace has an explicit Live macro graph mode. This is descriptive current taxonomy, not historical taxonomy, causality, or sensitivity. Evidence: `reports/t004c-full-series-catalog-validation.md` and the T-004C.1–.4 reports.
 
-T-002, T-003, and T-005 through T-016 are complete for the fixture/design handoff track. T-002 established the credential-free CLI/configuration path and T-003 established the deterministic synthetic fixture contract. Migration `001_identity_ontology.sql` created the `atlas` and `atlas_report` schemas, three scoped NOLOGIN roles, identity/ontology tables, endpoint constraints, identifier-overlap protection, and quarantine storage. Migration `002_temporal_assertions.sql` adds correction/retraction versions, effective/knowledge/system cutoff queries, and bounded traversal. Migration `003_observation_versions.sql` adds input manifests, calendar sessions, and market/macro observation versions with cutoff-aware selectors. Migration `004_curated_macro_context.sql` adds versioned series-country/concept and market-context mappings with owner, evidence basis, taxonomy version, and mandatory context-only semantics. Migration `005_rolling_correlation_estimates.sql` adds versioned fixed-window rolling correlations with explicit undefined states and cutoff/input metadata. Migration `006_build_publication.sql` adds immutable build/snapshot identities, a pinned correlation serving fact, and transactional publication. Migration `007_reporting_provenance.sql` adds snapshot-pinned report dimensions, facts, and drill-through provenance. T-013 adds a reproducible release gate with 20-run prepared-query p95 measurements, role/contract/integrity validation, and injected-failure recovery. It corrected fixture provenance validation to pin to the default publication snapshot when independent live publications exist. T-014 exercised a fresh-checkout fixture walkthrough (49 Python tests), captured fixture/live browser evidence, improved the live canvas to 12 legible nodes per page, and added data/license, operational, and restricted-extension documents. T-016 promoted `gold.v_series_revision_summary` as a sixth restricted internal-only contract and validated a three-series read-only extract without a graph/report write. The React fixture demo provides the evidence-first workspace. Power BI remains unimplemented.
+T-001–T-003, T-005–T-014, T-016 and T-017 are complete at their stated fixture, design or restricted-local scope; T-004 and T-015 remain open. T-002 established the credential-free CLI/configuration path and T-003 established the deterministic synthetic fixture contract. Migration `001_identity_ontology.sql` created the `atlas` and `atlas_report` schemas, three scoped NOLOGIN roles, identity/ontology tables, endpoint constraints, identifier-overlap protection, and quarantine storage. Migration `002_temporal_assertions.sql` adds correction/retraction versions, effective/knowledge/system cutoff queries, and bounded traversal. Migration `003_observation_versions.sql` adds input manifests, calendar sessions, and market/macro observation versions with cutoff-aware selectors. Migration `004_curated_macro_context.sql` adds versioned series-country/concept and market-context mappings with owner, evidence basis, taxonomy version, and mandatory context-only semantics. Migration `005_rolling_correlation_estimates.sql` adds versioned fixed-window rolling correlations with explicit undefined states and cutoff/input metadata. Migration `006_build_publication.sql` adds immutable build/snapshot identities, a pinned correlation serving fact, and transactional publication. Migration `007_reporting_provenance.sql` adds snapshot-pinned report dimensions, facts, and drill-through provenance. T-013 adds a reproducible release gate with 20-run prepared-query p95 measurements, role/contract/integrity validation, and injected-failure recovery. It corrected fixture provenance validation to pin to the default publication snapshot when independent live publications exist. T-014 exercised a fresh-checkout fixture walkthrough (49 Python tests), captured fixture/live browser evidence, improved the live canvas to 12 legible nodes per page, and added data/license, operational, and restricted-extension documents. T-016 promoted `gold.v_series_revision_summary` as a sixth restricted internal-only contract and validated a three-series read-only extract without a graph/report write. The React fixture demo provides the evidence-first workspace. A Power BI source package exists, but its report/refresh exercise remains uncompleted.
 
 ## Gate Status
 
@@ -23,7 +141,7 @@ coverage/outage states passed. Evidence and exact commands:
 
 **Satisfied for documentation handoff:** the package defines a candidate scope, downstream design, task dependencies, and required evidence. The documents are reviewable planning artifacts.
 
-**Implementation readiness established through T-016 for fixtures and handoff design:** the upstream interfaces, vintage semantics, dedicated write schemas, role boundaries, temporal reference replay, versioned observation selection, curated context semantics, bounded analytical estimates, atomic fixture publication, report/provenance contract, React demo, clean-room walkthrough, operational boundary, restricted-extension design, and revision-quality context are verified or documented at their stated scope. The named local pilot owner and restricted internal-only redistribution decision are recorded; public redistribution review, Power BI validation, scheduled deployment, and dependency-major upgrade decisions remain open. This is not an end-to-end release gate pass.
+**Implementation readiness established through T-017 at the stated fixture, design and restricted-local scope:** the upstream interfaces, vintage semantics, dedicated write schemas, role boundaries, temporal reference replay, versioned observation selection, curated context semantics, bounded analytical estimates, atomic fixture publication, report/provenance contract, React demo, clean-room walkthrough, operational boundary, restricted-extension design, and revision-quality context are verified or documented at their stated scope. The named local pilot owner and restricted internal-only redistribution decision are recorded; public redistribution review, Power BI validation, scheduled deployment, and dependency-major upgrade decisions remain open. This is not an end-to-end release gate pass.
 
 ## Next Action
 
@@ -31,7 +149,7 @@ coverage/outage states passed. Evidence and exact commands:
 
 The handoff inputs are the completed identity, temporal, observation, context, analytical, publication, reporting, frontend, and release-validation artifacts, `spec.md`, `plan.md`, `tasks.md`, `reporting.md`, ADR-001, the verified adapter contract, the fixture contract, [contributor walkthrough](contributor-demo.md), [operations handoff](operations.md), and [extension contract](securities-finance-extension.md). Do not write into `meta`, `silver`, `gold`, `bronze`, or `audit`; upstream access remains through `marketatlas_source_reader`.
 
-The frontend baseline is now decided: [ADR-001](decisions/001-quantmeridian-react-scaffold.md) adopts the QuantMeridian React/Vite/TypeScript/Tailwind/Router/Zustand scaffold pattern for the separate MarketAtlas demo app. T-011 must provide snapshot-pinned report/provenance contracts for that frontend; T-012 will implement it without copying QuantMeridian source modules or exposing database credentials.
+The implemented frontend follows [ADR-001](decisions/001-quantmeridian-react-scaffold.md): the QuantMeridian React/Vite/TypeScript/Tailwind/Router/Zustand scaffold pattern, with independent MarketAtlas modules and no browser database credentials. T-011/T-012 delivered snapshot-pinned fixture report/provenance contracts and the React workspace; T-017 adds selected-series live quality context.
 
 ## Access and integration checklist
 
@@ -71,4 +189,4 @@ Recovery should disable the graph job and restore the prior serving snapshot or 
 
 ## Resuming after a handoff
 
-The next implementer should record the last completed task ID, code commit, migration level, fixture/data snapshot hash, run ID, serving snapshot, open defects, and exact next task. Replace proposed commands with actual commands only after they exist and work.
+Use the checkpoint and ready-to-paste prompt at the top of this document. After the next session, replace its observations with the last completed task, actual code/PR baseline, migration level, fixture/data hashes, run and serving snapshot IDs, validation evidence, open blockers, and one exact next task with owner. Keep historical validation dates and live versus fixture scopes explicit.

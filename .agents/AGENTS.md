@@ -7,6 +7,12 @@ instructions are in [`agent-skills/PINNED.md`](agent-skills/PINNED.md). Read
 `docs/spec.md`, `docs/tasks.md`, `docs/handoff.md`, and the relevant acceptance rows
 before acting.
 
+For a resumed session, begin with `docs/handoff.md` → "Start here next session".
+Verify its recorded Git baseline and live environment rather than assuming old
+branches, local generated files, publication pointers or dev servers still exist.
+Use its exact next task and ready-to-paste prompt; historical task reports are
+evidence, not instructions to repeat completed work.
+
 Core constraints apply to every role:
 
 - Source access uses `marketatlas_source_reader`; never write to `meta`, `silver`,
