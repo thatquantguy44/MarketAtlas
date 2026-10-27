@@ -658,8 +658,10 @@ def validate_fixture_reporting(
                     (SELECT count(*) FROM atlas_report.current_relationship_fact),
                     (SELECT count(*) FROM atlas_report.current_macro_context_fact),
                     (SELECT count(*) FROM atlas_report.current_bounded_path_bridge),
-                    (SELECT count(*) FROM atlas_report.current_provenance)
-                """
+                    (SELECT count(*) FROM atlas_report.current_provenance
+                     WHERE serving_snapshot_id = %s::uuid)
+                """,
+                (snapshot_id,),
             )
             (
                 node_count,
@@ -699,6 +701,7 @@ def validate_fixture_reporting(
                         WHERE provenance.provenance_kind = 'relationship'
                           AND relationship.source_record = 'synthetic-fixture:A11'
                           AND provenance.source_record = relationship.source_record
+                          AND provenance.serving_snapshot_id = %s::uuid
                     ),
                     EXISTS (
                         SELECT 1
@@ -709,6 +712,7 @@ def validate_fixture_reporting(
                           AND context.source_record = 'synthetic-fixture:CTX3'
                           AND provenance.supporting_assertion_id
                               = context.supporting_assertion_id
+                          AND provenance.serving_snapshot_id = %s::uuid
                     ),
                     EXISTS (
                         SELECT 1
@@ -717,10 +721,12 @@ def validate_fixture_reporting(
                           AND provenance.method_version IS NOT NULL
                           AND provenance.configuration_sha256 IS NOT NULL
                           AND provenance.input_selection_sha256 IS NOT NULL
+                          AND provenance.serving_snapshot_id = %s::uuid
                     ),
                     (SELECT max(depth) <= 4
                      FROM atlas_report.current_bounded_path_bridge)
-                """
+                """,
+                (snapshot_id, snapshot_id, snapshot_id),
             )
             relationship_trace, context_trace, estimate_trace, paths_bounded = (
                 cursor.fetchone()
@@ -738,8 +744,10 @@ def validate_fixture_reporting(
                     SELECT serving_snapshot_id FROM atlas_report.current_rolling_correlation_estimate
                     UNION ALL
                     SELECT serving_snapshot_id FROM atlas_report.current_provenance
+                    WHERE serving_snapshot_id = %s::uuid
                 ) AS report_rows
-                """
+                """,
+                (snapshot_id,),
             )
             snapshot_count = cursor.fetchone()[0]
 

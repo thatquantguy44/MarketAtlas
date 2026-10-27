@@ -1,0 +1,91 @@
+// Power BI TMDL source template. Open/import only in an authorized Desktop environment.
+// No credentials, host, database name, or source-schema object is tracked here.
+database MarketAtlas
+    compatibilityLevel: 1601
+
+model Model
+    culture: en-US
+    defaultPowerBIDataSourceVersion: powerBI_V3
+
+expression pServer = "REPLACE_WITH_APPROVED_POSTGRES_HOST_AND_PORT"
+
+expression pDatabase = "REPLACE_WITH_APPROVED_TARGET_DATABASE"
+
+expression pPublicationName = "default"
+
+// Capture this value once before refresh; never independently resolve the pointer per table.
+expression pSnapshotId = "00000000-0000-0000-0000-000000000000"
+
+table 'Snapshot Metadata'
+    partition 'Snapshot Metadata' = m
+        mode: import
+        source =
+            let
+                Source = PostgreSQL.Database(pServer, pDatabase),
+                SnapshotId = Text.From(pSnapshotId),
+                Sql = "SELECT publication_name, published_at, serving_snapshot_id, build_run_id, input_manifest_id, knowledge_cutoff, output_sha256, row_count FROM atlas_report.current_snapshot_metadata WHERE publication_name = '" & Text.Replace(Text.From(pPublicationName), "'", "''") & "' AND serving_snapshot_id = '" & Text.Replace(SnapshotId, "'", "''") & "'::uuid"
+            in
+                Value.NativeQuery(Source, Sql, null, [EnableFolding = true])
+
+table Node
+    partition Node = m
+        mode: import
+        source =
+            let
+                Source = PostgreSQL.Database(pServer, pDatabase),
+                SnapshotId = Text.From(pSnapshotId),
+                Sql = "SELECT serving_snapshot_id, node_id, node_type, canonical_key, display_label, entity_status FROM atlas_report.node_snapshot WHERE serving_snapshot_id = '" & Text.Replace(SnapshotId, "'", "''") & "'::uuid"
+            in
+                Value.NativeQuery(Source, Sql, null, [EnableFolding = true])
+
+table Relationship
+    partition Relationship = m
+        mode: import
+        source =
+            let
+                Source = PostgreSQL.Database(pServer, pDatabase),
+                SnapshotId = Text.From(pSnapshotId),
+                Sql = "SELECT serving_snapshot_id, assertion_id, edge_type, source_node_id, source_node_type, target_node_id, target_node_type, relationship_kind, assertion_status, rationale, source_record, history_support FROM atlas_report.relationship_snapshot WHERE serving_snapshot_id = '" & Text.Replace(SnapshotId, "'", "''") & "'::uuid"
+            in
+                Value.NativeQuery(Source, Sql, null, [EnableFolding = true])
+
+table 'Macro Context'
+    partition 'Macro Context' = m
+        mode: import
+        source =
+            let
+                Source = PostgreSQL.Database(pServer, pDatabase),
+                SnapshotId = Text.From(pSnapshotId),
+                Sql = "SELECT serving_snapshot_id, curated_macro_context_version_id, macro_series_node_id, target_node_id, target_node_type, mapping_kind, evidence_basis, semantic_label, rationale, mapping_owner, source_reference, taxonomy_provider, taxonomy_version, supporting_assertion_id, input_manifest_id, source_record, history_support FROM atlas_report.macro_context_snapshot WHERE serving_snapshot_id = '" & Text.Replace(SnapshotId, "'", "''") & "'::uuid"
+            in
+                Value.NativeQuery(Source, Sql, null, [EnableFolding = true])
+
+table 'Rolling Correlation'
+    partition 'Rolling Correlation' = m
+        mode: import
+        source =
+            let
+                Source = PostgreSQL.Database(pServer, pDatabase),
+                SnapshotId = Text.From(pSnapshotId),
+                Sql = "SELECT serving_snapshot_id, rolling_correlation_estimate_version_id, instrument_low_node_id, instrument_high_node_id, endpoint_session_date, window_start_session_date, paired_return_count, correlation, estimate_status, knowledge_cutoff, method_version, configuration_sha256, input_selection_sha256, input_manifest_id FROM atlas_report.rolling_correlation_estimate_snapshot WHERE serving_snapshot_id = '" & Text.Replace(SnapshotId, "'", "''") & "'::uuid"
+            in
+                Value.NativeQuery(Source, Sql, null, [EnableFolding = true])
+
+table Provenance
+    partition Provenance = m
+        mode: import
+        source =
+            let
+                Source = PostgreSQL.Database(pServer, pDatabase),
+                SnapshotId = Text.From(pSnapshotId),
+                Sql = "SELECT serving_snapshot_id, provenance_kind, subject_id, build_run_id, input_manifest_id, source_record, supporting_assertion_id, method_version, configuration_sha256, input_selection_sha256, knowledge_cutoff FROM atlas_report.provenance_snapshot WHERE serving_snapshot_id = '" & Text.Replace(SnapshotId, "'", "''") & "'::uuid"
+            in
+                Value.NativeQuery(Source, Sql, null, [EnableFolding = true])
+
+// Add these measures after Desktop imports table columns from the declared queries.
+// Snapshot count = DISTINCTCOUNT('Snapshot Metadata'[serving_snapshot_id])
+// Pinned snapshot status = IF([Snapshot count] = 1, "Pinned", "Invalid — stop refresh")
+// Instrument count = CALCULATE(DISTINCTCOUNT(Node[node_id]), Node[node_type] = "instrument")
+// Relationship count = DISTINCTCOUNT(Relationship[assertion_id])
+// Curated context count = DISTINCTCOUNT('Macro Context'[curated_macro_context_version_id])
+// Correlation estimate count = DISTINCTCOUNT('Rolling Correlation'[rolling_correlation_estimate_version_id])

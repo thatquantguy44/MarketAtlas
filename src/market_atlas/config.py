@@ -183,6 +183,16 @@ class MacroMedallionConfig:
     redistribution_status: str
 
 
+@dataclass(frozen=True)
+class MacroContextConfig:
+    """Bounded selection for current macro taxonomy, releases, and coverage."""
+
+    series_ids: tuple[str, ...]
+    release_start: str
+    release_end: str
+    redistribution_status: str
+
+
 def load_macro_medallion(
     path: Path = Path("configs/pilot.toml"),
 ) -> MacroMedallionConfig:
@@ -226,5 +236,47 @@ def load_macro_medallion(
         observation_start=section["observation_start"],
         observation_end=section["observation_end"],
         knowledge_cutoff=section["knowledge_cutoff"],
+        redistribution_status=section["redistribution_status"],
+    )
+
+
+def load_macro_context(
+    path: Path = Path("configs/context_pilot.toml"),
+) -> MacroContextConfig:
+    """Load bounded context-adapter inputs without connection credentials."""
+    try:
+        document = tomllib.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ConfigError(
+            f"cannot read context configuration at {path}: {error}"
+        ) from error
+    except tomllib.TOMLDecodeError as error:
+        raise ConfigError(f"invalid TOML configuration at {path}: {error}") from error
+    section = document.get("macro_context")
+    if not isinstance(section, dict):
+        raise ConfigError("configuration requires a [macro_context] table")
+    series_ids = section.get("series_ids")
+    if (
+        not isinstance(series_ids, list)
+        or not series_ids
+        or any(not isinstance(value, str) or not value.strip() for value in series_ids)
+    ):
+        raise ConfigError("macro_context.series_ids must be a nonempty string array")
+    if len(series_ids) != len(set(series_ids)):
+        raise ConfigError("macro_context.series_ids must not contain duplicates")
+    required = ("release_start", "release_end", "redistribution_status")
+    missing = [
+        key
+        for key in required
+        if not isinstance(section.get(key), str) or not section[key]
+    ]
+    if missing:
+        raise ConfigError(
+            f"macro_context is missing required fields: {', '.join(missing)}"
+        )
+    return MacroContextConfig(
+        series_ids=tuple(series_ids),
+        release_start=section["release_start"],
+        release_end=section["release_end"],
         redistribution_status=section["redistribution_status"],
     )

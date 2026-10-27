@@ -69,6 +69,13 @@ class SourceCatalogTests(unittest.TestCase):
             "supported_live", objects["gold.fred_point_in_time"]["support_state"]
         )
         self.assertEqual(
+            "supported_live", objects["gold.fred_point_in_time"]["contract_state"]
+        )
+        self.assertEqual(
+            "macro_medallion_ecomedallion",
+            objects["gold.fred_point_in_time"]["adapter"],
+        )
+        self.assertEqual(
             "unavailable_to_source_role",
             objects["silver.fred_observation"]["support_state"],
         )

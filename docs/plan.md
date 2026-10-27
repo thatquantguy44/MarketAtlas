@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Plan
 
-Status: active design for the v0.1 specification, 2026-10-25. The fixture workflow, complete local source catalog, bounded live MacroMedallion/EcoMedallion macro ingestion, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, and a React fixture demo exist. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
+Status: active design for the v0.1 specification, 2026-10-26. The fixture workflow, complete local source catalog, bounded live MacroMedallion/EcoMedallion macro ingestion, identity/ontology graph, temporal reference replay, versioned fixture observations, curated-context mappings, bounded rolling correlations, atomic fixture publication, snapshot-pinned reporting outputs, a React fixture demo, a separate current-only live macro-economic graph projection, and a contributor/design handoff exist. The graph now has a full approved-series catalog view with bounded category neighborhoods; it remains descriptive taxonomy rather than historical taxonomy or analytical evidence. Power BI remains proposed. This document does not assert specification approval or a release gate pass.
 
 ## Design overview
 
@@ -13,6 +13,13 @@ Use ordinary relational tables for the graph. Stable entity IDs, controlled edge
 Treat MacroMedallion and EcoMedallion as interchangeable names for one local upstream asset. Let each operator optionally select its local checkout in git-ignored configuration; do not require a remote URL, commit, branch pin, or source-code import. Inventory the approved PostgreSQL objects, grains, primary keys, timestamps, source rights, and migration/runtime conventions. Record verified component reuse and unresolved gaps in `reports/discovery.md`; keep private infrastructure details outside public artifacts.
 
 Define a common adapter interface before implementation. Each adapter supplies entities, identifier mappings, reference assertions, curated context, and observations plus a manifest of source identity, extraction time, rights, checksums, and coverage. A source may explicitly lack some outputs. Missing fields must remain missing or quarantined rather than fabricated.
+
+The tracked `contracts/source_contracts.toml` registry is the promotion gate for
+upstream objects. It records contract ownership, source-owner status, purpose,
+grain/key, required schema fingerprints, temporal semantics, rights status,
+lifecycle, and adapter. A fresh metadata-only source catalog must verify against
+that registry before a `supported_live` adapter runs; readable but undeclared
+objects remain non-ingestible.
 
 Fixture mode supplies all contracts deterministically from labeled synthetic files. Upstream mode uses versioned database views or repository interfaces identified during discovery. Upstream adapters must not import guessed module paths or alter source schemas. Select existing migration and scheduling conventions where suitable; keep the public demo independent of private packages. (REQ-001, REQ-002, NFR-001, NFR-006)
 
@@ -109,7 +116,7 @@ Report pages: market map, macro context, correlation monitor, and provenance/qua
 | `tests/`, `reports/` | Contract/temporal/numeric/integration validation and evidence |
 | `docs/` | Specification chain, decisions, operating handoff |
 
-Existing CLI workflow: `market-atlas fixture build|validate|inspect`, `market-atlas database inspect`, and `market-atlas adapter verify|extract`. Proposed downstream workflow: `market-atlas demo`, `market-atlas build --adapter <name>`, `market-atlas validate --snapshot <id>`, and `market-atlas publish --snapshot <id>`. T-005 through T-014 must implement and document those downstream commands.
+Existing CLI workflow: `market-atlas fixture build|validate|inspect`, `market-atlas database inspect`, and `market-atlas adapter verify|extract`. The contributor walkthrough records the exercised fixture commands; the remaining `market-atlas demo`, `market-atlas build --adapter <name>`, `market-atlas validate --snapshot <id>`, and `market-atlas publish --snapshot <id>` forms are proposed downstream interfaces, not implemented commands.
 
 Validate invalid endpoints, ticker reuse, late corrections, macro revisions, unavailable historical data, constant/missing series, clean-room fixture execution, idempotency, failure retention, provenance, and Power BI filter/grain behavior. Match numerical results against an independent hand-checkable calculation. For AC-016 record hardware, scale, query text, cache policy, build duration, and at least 20 runs per prepared query; target build under 5 minutes and query p95 at most 2 seconds. These are unmeasured proposed targets, not database or Power BI guarantees.
 

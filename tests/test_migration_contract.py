@@ -113,6 +113,13 @@ class MigrationContractTests(unittest.TestCase):
             "WHERE provenance->>'source' = 'synthetic-fixture'", implementation
         )
 
+    def test_fixture_report_validation_pins_provenance_to_its_publication_snapshot(self):
+        implementation = Path("src/market_atlas/publishing/fixture_build.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("provenance.serving_snapshot_id = %s::uuid", implementation)
+        self.assertIn("WHERE serving_snapshot_id = %s::uuid", implementation)
+
     def test_source_catalog_migration_is_read_only_and_excludes_agent_tables(self):
         sql = Path("sql/migrations/008_source_catalog_reader_scope.sql").read_text(
             encoding="utf-8"
@@ -124,6 +131,37 @@ class MigrationContractTests(unittest.TestCase):
         self.assertIn("marketatlas_source_reader", sql)
         self.assertNotIn("public", sql.split("GRANT USAGE")[1])
         self.assertNotIn("ALTER DEFAULT PRIVILEGES", sql)
+
+    def test_macro_context_publication_preserves_current_only_semantics(self):
+        sql = Path("sql/migrations/009_macro_context_publication.sql").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "atlas.macro_series_taxonomy_current",
+            "atlas.macro_release_event_current",
+            "atlas.macro_source_coverage_current",
+            "atlas_report.macro_source_context_snapshot",
+            "temporal_status = 'current_only'",
+            "temporal_status = 'scheduled_event'",
+            "'macro_source_context'",
+            "current_macro_source_context",
+        ):
+            self.assertIn(required, sql)
+
+    def test_macro_economic_graph_publication_has_separate_snapshot_surface(self):
+        sql = Path("sql/migrations/010_macro_economic_graph_publication.sql").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "atlas.macro_taxonomy_concept_current",
+            "atlas_report.macro_economic_graph_node_snapshot",
+            "atlas_report.macro_economic_graph_edge_snapshot",
+            "edge_type = 'measures'",
+            "'macro_economic_graph'",
+            "current_macro_economic_graph_node",
+            "current_macro_economic_graph_edge",
+        ):
+            self.assertIn(required, sql)
 
 
 if __name__ == "__main__":

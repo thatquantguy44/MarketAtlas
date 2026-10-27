@@ -4,6 +4,7 @@ from pathlib import Path
 
 from market_atlas.config import (
     ConfigError,
+    load_macro_context,
     load_macro_medallion,
     load_source_database,
     load_target_database,
@@ -62,6 +63,22 @@ redistribution_status = "unresolved"
             )
             config = load_macro_medallion(path)
             self.assertEqual(("GDP", "UNRATE"), config.series_ids)
+
+    def test_loads_bounded_macro_context_pilot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "context.toml"
+            path.write_text(
+                """[macro_context]
+series_ids = ["GDP", "UNRATE"]
+release_start = "2026-10-01"
+release_end = "2026-12-31"
+redistribution_status = "unresolved"
+""",
+                encoding="utf-8",
+            )
+            config = load_macro_context(path)
+            self.assertEqual(("GDP", "UNRATE"), config.series_ids)
+            self.assertEqual("2026-12-31", config.release_end)
 
     def test_loads_separate_target_database_configuration(self):
         with tempfile.TemporaryDirectory() as directory:
