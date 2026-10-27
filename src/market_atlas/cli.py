@@ -58,6 +58,7 @@ from .publishing.macro_context import (
     publish_context_snapshot,
     validate_context_publication,
 )
+from .publishing.revision_quality import load_revision_extract, publish_revision_quality
 from .report_api import serve_macro_economic_graph
 from .source_catalog import build_source_catalog
 from .source_contracts import (
@@ -362,6 +363,17 @@ def _extract_series_catalog_adapter(
         )
     )
     return 0
+
+
+def _publish_revision_quality(config_path: Path, input_path: Path) -> int:
+    try:
+        extract = load_revision_extract(input_path)
+        result = publish_revision_quality(load_target_database(config_path), extract)
+    except (ConfigError, DatabaseUnavailable, TypeError, ValueError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(result, sort_keys=True))
+    return 1 if result["status"] == "revision_quality_snapshot_failed" else 0
 
 
 def _verify_revision_summary_adapter(config_path: Path) -> int:
@@ -740,6 +752,15 @@ def main(argv: list[str] | None = None) -> int:
     adapter_ingest.add_argument(
         "--pilot-config", type=Path, default=Path("configs/pilot.toml")
     )
+    revision_quality = commands.add_parser(
+        "revision-quality", help="publish restricted current revision-quality context"
+    )
+    revision_quality_commands = revision_quality.add_subparsers(
+        dest="revision_quality_command", required=True
+    )
+    revision_quality_publish = revision_quality_commands.add_parser("publish")
+    revision_quality_publish.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    revision_quality_publish.add_argument("--input", type=Path, required=True)
     context = commands.add_parser(
         "context", help="load and publish approved macro-source context extracts"
     )
@@ -858,6 +879,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.adapter_command == "ingest":
             return _ingest_adapter(args.config, args.pilot_config)
         return _extract_adapter(args.config, args.pilot_config, args.output)
+    if args.command == "revision-quality":
+        return _publish_revision_quality(args.config, args.input)
     if args.command == "context":
         if args.context_command == "ingest":
             return _ingest_context(args.config, args.input)
