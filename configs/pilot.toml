@@ -4,4 +4,4 @@ series_ids = ["CPIAUCSL", "GDP", "UNRATE"]
 observation_start = "2024-01-01"
 observation_end = "2026-10-24"
 knowledge_cutoff = "2026-10-24"
-redistribution_status = "unresolved"
+redistribution_status = "restricted"

@@ -3,16 +3,25 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from math import isfinite
+from numbers import Number
 from typing import Any
 
-from market_atlas.adapters.macro_medallion import _read_only_connection, _validate_iso_date
+from market_atlas.adapters.macro_medallion import (
+    _read_only_connection,
+    _validate_iso_date,
+)
 from market_atlas.config import MacroContextConfig, SourceDatabaseConfig
 from market_atlas.contracts import sha256
-from market_atlas.source_contracts import contracts_by_object, load_source_contract_registry
+from market_atlas.source_contracts import (
+    contracts_by_object,
+    load_source_contract_registry,
+)
 
 SERIES_DIMENSION_OBJECT = "gold.dim_series"
 RELEASE_CALENDAR_OBJECT = "gold.release_calendar"
 SOURCE_COVERAGE_OBJECT = "gold.v_source_coverage"
+REVISION_SUMMARY_OBJECT = "gold.v_series_revision_summary"
 CONTEXT_OBJECTS = (
     SERIES_DIMENSION_OBJECT,
     RELEASE_CALENDAR_OBJECT,
@@ -23,6 +32,7 @@ REQUIRED_COLUMNS = {
     object_name: set(_CONTRACTS[object_name]["required_columns"])
     for object_name in CONTEXT_OBJECTS
 }
+REVISION_SUMMARY_COLUMNS = set(_CONTRACTS[REVISION_SUMMARY_OBJECT]["required_columns"])
 
 
 def verify_contract(database: SourceDatabaseConfig) -> dict[str, Any]:
@@ -238,7 +248,7 @@ def extract_series_catalog(
                 }
             ),
             "extracted_at": datetime.now(UTC).isoformat(),
-            "redistribution_status": "unresolved",
+            "redistribution_status": "restricted",
             "series_taxonomy_temporal_status": "current_only",
             "release_event_temporal_status": "not_selected",
             "coverage_temporal_status": "current_only" if include_coverage else "not_selected",
@@ -247,4 +257,167 @@ def extract_series_catalog(
         "series_taxonomy": series_taxonomy,
         "release_events": [],
         "source_coverage": coverage,
+    }
+
+
+def verify_revision_summary_contract(database: SourceDatabaseConfig) -> dict[str, Any]:
+    """Verify the isolated current-only revision-quality source interface."""
+    with _read_only_connection(database) as connection, connection.cursor() as cursor:
+        cursor.execute(
+            """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'gold'
+                  AND table_name = 'v_series_revision_summary'
+            """
+        )
+        found_columns = {row[0] for row in cursor.fetchall()}
+        cursor.execute("SHOW transaction_read_only")
+        read_only = cursor.fetchone()[0] == "on"
+        cursor.execute(
+            """
+                SELECT has_table_privilege(
+                    current_user,
+                    'gold.v_series_revision_summary',
+                    'INSERT,UPDATE,DELETE'
+                )
+            """
+        )
+        role_has_source_write_privileges = bool(cursor.fetchone()[0])
+
+    missing_columns = sorted(REVISION_SUMMARY_COLUMNS - found_columns)
+    return {
+        "status": "valid" if not missing_columns and read_only else "invalid",
+        "acceptance_ready": not role_has_source_write_privileges,
+        "read_only_session": read_only,
+        "role_has_source_write_privileges": role_has_source_write_privileges,
+        "object": REVISION_SUMMARY_OBJECT,
+        "required_columns": sorted(REVISION_SUMMARY_COLUMNS),
+        "missing_columns": missing_columns,
+    }
+
+
+def extract_revision_summary(
+    database: SourceDatabaseConfig, series_ids: list[str], page_size: int = 500
+) -> dict[str, Any]:
+    """Extract selected approved current revision-quality summaries in bounded pages."""
+    if not 1 <= page_size <= 1_000:
+        raise ValueError("revision summary page_size must be between 1 and 1000")
+    if not series_ids or len(series_ids) != len(set(series_ids)):
+        raise ValueError("revision summary requires unique selected series IDs")
+    with _read_only_connection(database) as connection, connection.cursor() as cursor:
+        cursor.execute(
+            """
+                SELECT series_id
+                FROM gold.dim_series
+                WHERE series_id = ANY(%s)
+                ORDER BY series_id
+            """,
+            (series_ids,),
+        )
+        approved_series_ids = [row[0] for row in cursor.fetchall()]
+        missing_approved_ids = sorted(set(series_ids) - set(approved_series_ids))
+        if missing_approved_ids:
+            raise ValueError(
+                "revision summary series IDs are not approved in gold.dim_series: "
+                + ", ".join(missing_approved_ids)
+            )
+
+        revision_summaries: list[dict[str, Any]] = []
+        for start in range(0, len(approved_series_ids), page_size):
+            cursor.execute(
+                """
+                    SELECT series_id, observation_count, avg_revision_count,
+                           max_revision_count, avg_abs_revision_pct,
+                           max_abs_revision_pct
+                    FROM gold.v_series_revision_summary
+                    WHERE series_id = ANY(%s)
+                    ORDER BY series_id
+                """,
+                (approved_series_ids[start : start + page_size],),
+            )
+            columns = [column.name for column in cursor.description]
+            revision_summaries.extend(
+                dict(zip(columns, row, strict=True)) for row in cursor.fetchall()
+            )
+    return build_revision_summary_extract(approved_series_ids, revision_summaries, page_size)
+
+
+def build_revision_summary_extract(
+    series_ids: list[str], revision_summaries: list[dict[str, Any]], page_size: int = 500
+) -> dict[str, Any]:
+    """Build a checksum-backed, current-only revision-quality extract."""
+    if not 1 <= page_size <= 1_000:
+        raise ValueError("revision summary page_size must be between 1 and 1000")
+    if not series_ids or any(not isinstance(series_id, str) or not series_id for series_id in series_ids):
+        raise ValueError("revision summary requires nonempty selected series IDs")
+    if len(series_ids) != len(set(series_ids)):
+        raise ValueError("revision summary selected series IDs must not contain duplicates")
+
+    selected = set(series_ids)
+    required = (
+        "series_id",
+        "observation_count",
+        "avg_revision_count",
+        "max_revision_count",
+        "avg_abs_revision_pct",
+        "max_abs_revision_pct",
+    )
+    seen: set[str] = set()
+    normalized: list[dict[str, Any]] = []
+    for row in revision_summaries:
+        if not isinstance(row, dict) or any(field not in row for field in required):
+            raise ValueError("revision summary rows require every declared field")
+        series_id = row["series_id"]
+        if not isinstance(series_id, str) or series_id not in selected:
+            raise ValueError("revision summary row references an unselected series")
+        if series_id in seen:
+            raise ValueError(f"revision summary has duplicate series_id: {series_id}")
+        if not isinstance(row["observation_count"], int) or row["observation_count"] < 0:
+            raise ValueError("revision summary observation_count must be a nonnegative integer")
+        if not isinstance(row["max_revision_count"], int) or row["max_revision_count"] < 0:
+            raise ValueError("revision summary max_revision_count must be a nonnegative integer")
+        for field in ("avg_revision_count", "avg_abs_revision_pct", "max_abs_revision_pct"):
+            if (
+                not isinstance(row[field], Number)
+                or isinstance(row[field], bool)
+                or not isfinite(row[field])
+                or row[field] < 0
+            ):
+                raise ValueError(f"revision summary {field} must be nonnegative")
+        seen.add(series_id)
+        normalized.append(
+            {
+                "series_id": series_id,
+                "observation_count": row["observation_count"],
+                "avg_revision_count": float(row["avg_revision_count"]),
+                "max_revision_count": row["max_revision_count"],
+                "avg_abs_revision_pct": float(row["avg_abs_revision_pct"]),
+                "max_abs_revision_pct": float(row["max_abs_revision_pct"]),
+            }
+        )
+    normalized.sort(key=lambda row: row["series_id"])
+    missing_series_ids = sorted(selected - seen)
+    input_selection = {
+        "source": "macro_medallion_postgresql",
+        "objects": [SERIES_DIMENSION_OBJECT, REVISION_SUMMARY_OBJECT],
+        "series_ids": list(series_ids),
+        "selection_scope": "configured_approved_dim_series",
+        "page_size": page_size,
+    }
+    source_rows = {
+        "revision_summaries": normalized,
+        "missing_series_ids": missing_series_ids,
+    }
+    return {
+        "manifest": {
+            **input_selection,
+            "input_selection_sha256": sha256(input_selection),
+            "source_rows_sha256": sha256(source_rows),
+            "extracted_at": datetime.now(UTC).isoformat(),
+            "redistribution_status": "restricted",
+            "temporal_status": "current_only_revision_quality",
+            "status": "source_contract_extracted; not_loaded_to_marketatlas_graph",
+        },
+        **source_rows,
     }

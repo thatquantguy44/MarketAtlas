@@ -60,7 +60,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(0, status)
         result = json.loads(output.getvalue())
         self.assertEqual("valid", result["status"])
-        self.assertEqual(5, result["supported_live_count"])
+        self.assertEqual(6, result["supported_live_count"])
 
 
 if __name__ == "__main__":
