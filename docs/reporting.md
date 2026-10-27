@@ -11,6 +11,7 @@ Every report query begins with `atlas_report.current_snapshot_metadata`. The pub
 | `current_macro_source_context` | Macro-context publication snapshot × source context record | Current source taxonomy/coverage or scheduled release event, its exact input manifest, source record, and explicit temporal status |
 | `current_macro_economic_graph_node` | Macro-economic-graph snapshot × node | Current source-taxonomy macro series and economic-concept nodes, with manifest lineage |
 | `current_macro_economic_graph_edge` | Macro-economic-graph snapshot × `measures` assertion | Source-backed series-to-concept edges, with source record, taxonomy provenance, and explicit `current_only` treatment |
+| `current_macro_revision_quality` | Revision-quality snapshot × selected series node | Separate restricted publication; current metrics or explicit unknown, capture time, input/build and source provenance |
 | `current_rolling_correlation_estimate` | Snapshot × correlation estimate version | Canonical pair, endpoint, fixed window, sample count, correlation/undefined status, cutoff, and calculation identity |
 | `current_bounded_path_bridge` | Snapshot × bounded directed path | Start/end node, depth (maximum four), ordered node/assertion/edge arrays |
 | `current_provenance` | Snapshot × displayed subject | Build, input manifest, source record, support assertion, method/configuration/input-selection identity, cutoff, and details |
@@ -30,6 +31,9 @@ The fixture validation proves a sourced relationship, a curated context, and a c
 
 ## Power BI source package
 
+The independent revision-quality API is documented below; this Power BI package
+continues to use only the synthetic fixture publication.
+
 `powerbi/MarketAtlas.model.template.tmdl` is the source-controlled fixture
 semantic-model template. It intentionally captures one `pSnapshotId` before a
 refresh and filters every imported `atlas_report.*_snapshot` table by that UUID.
@@ -38,3 +42,26 @@ report-page design, and fixture reconciliation script are in
 [`powerbi/README.md`](../powerbi/README.md). They are validated as source
 contracts only; visual/filter/drill-through acceptance remains pending until
 the package runs in an authorized Power BI environment.
+
+## Revision-quality context (T-017)
+
+`macro_revision_quality` is independent of the fixture, source-context and graph
+publications. Its `macro_revision_quality_snapshot` rows are keyed by snapshot
+and series node, with an additional unique snapshot/series-ID constraint. Each
+row references an append-only `atlas.macro_revision_quality_version` captured
+under one immutable input manifest. The `macro_revision_quality` provenance kind
+joins `subject_id` to `revision_quality_version_id` within the same snapshot.
+
+`GET /api/v1/macro-revision-quality?series_node_id=<uuid>` reads the report-only
+view/table in a single statement under `marketatlas_report_reader`, so metadata
+and metrics cannot straddle a concurrent publication. It returns at most one
+selected series. `not_published`, `not_selected`, and a selected summary with
+`quality_status=unknown` are distinct. Unknown metrics are null, never zero.
+Invalid UUIDs return 400; database failures return a safe 503 response.
+
+The panel reports average/maximum revision counts and absolute revision
+percentages as supplied, without rescaling or calculating a risk score. Capture
+time is MarketAtlas extraction time; source availability time remains unknown.
+This supports captured-current context only, never historical-as-known answers.
+Do not join this moving publication to graph facts as though their snapshots or
+capture times were equal. No Power BI model was expanded in this slice.

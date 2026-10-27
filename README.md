@@ -101,6 +101,7 @@ PYTHONPATH=src python -m market_atlas economic-graph publish --input data/genera
 # Full approved-series catalog: taxonomy only by default; coverage is opt-in and bounded.
 PYTHONPATH=src python -m market_atlas adapter extract-series-catalog --output data/generated/macro_series_catalog.json
 PYTHONPATH=src python -m market_atlas economic-graph publish --input data/generated/macro_series_catalog.json
+PYTHONPATH=src python -m market_atlas revision-quality publish --input data/generated/revision_summary_catalog.json
 PYTHONPATH=src python -m market_atlas report serve-macro-economic-graph
 PYTHONPATH=src python -m market_atlas release validate --samples 20 --output data/generated/t013_release_validation.json
 PYTHONPATH=src python -m market_atlas graph validate-fixture
@@ -122,6 +123,15 @@ After the local report API is running, the demo's **Live macro graph** mode uses
 `gold.dim_series` and reads current quality summaries in batches of at most
 1,000 IDs. Missing summaries are explicit unknowns. It never scans the
 20.5-million-row revision-history table or claims point-in-time reconstruction.
+
+T-017 publishes that bounded extract separately as `macro_revision_quality`.
+Select a macro-series node in **Live macro graph** to see current quality context,
+capture time and expandable snapshot/input/build provenance. Missing summaries
+are unknown with null metrics; series outside the selection are labeled
+separately. The quality publication has its own snapshot and capture time,
+independent of graph taxonomy. Results remain restricted internal context with
+unsupported historical availability. See the
+[T-017 validation](reports/t017-revision-quality-publication-validation.md).
 
 Source connections force `default_transaction_read_only=on` and switch to the NOLOGIN `marketatlas_source_reader` role. Migrations switch to `marketatlas_writer`; report consumers use `marketatlas_report_reader`. Generated inspection and extract files are ignored. The source-reader migration grants read access to the explicitly named economic schemas for metadata discovery, but adapters may use only `supported_live` objects that pass the source-contract gate; it never changes source objects or grants source-write access.
 

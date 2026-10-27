@@ -7,11 +7,56 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
+from uuid import UUID
 
 from market_atlas.config import TargetDatabaseConfig
 from market_atlas.database import DatabaseUnavailable
 
 REPORT_READER_ROLE = "marketatlas_report_reader"
+
+
+def load_revision_quality(config: TargetDatabaseConfig, series_node_id: str) -> dict[str, Any]:
+    """Read one selected series from a single, independent quality snapshot."""
+    try:
+        series_node_id = str(UUID(series_node_id))
+    except (ValueError, TypeError, AttributeError) as error:
+        raise ValueError("series_node_id must be a UUID") from error
+    try:
+        import psycopg
+
+        kwargs = config.connection_kwargs() | {
+            "application_name": "marketatlas-quality-report-api",
+            "options": "-c default_transaction_read_only=on -c statement_timeout=5000",
+        }
+        with psycopg.connect(**kwargs) as connection, connection.cursor() as cursor:
+            cursor.execute("SET LOCAL ROLE marketatlas_report_reader")
+            # A single SQL statement pins metadata and the selected row to one
+            # MVCC snapshot even if another transaction publishes concurrently.
+            cursor.execute(
+                """WITH published AS (
+                    SELECT serving_snapshot_id, published_at
+                    FROM atlas_report.current_macro_revision_quality LIMIT 1
+                )
+                SELECT published.serving_snapshot_id::text, published.published_at::text,
+                       selected.input_manifest_id::text, selected.build_run_id::text,
+                       selected.series_node_id::text, selected.series_id,
+                       selected.source_record, selected.details
+                FROM published LEFT JOIN atlas_report.macro_revision_quality_snapshot AS selected
+                  ON selected.serving_snapshot_id = published.serving_snapshot_id
+                 AND selected.series_node_id = %s::uuid""", (series_node_id,),
+            )
+            result = cursor.fetchone()
+    except Exception as error:
+        raise DatabaseUnavailable("revision quality report is unavailable") from error
+    if result is None:
+        return {"publication": "macro_revision_quality", "status": "not_published",
+                "series_node_id": series_node_id, "summary": None}
+    snapshot_id, published_at, input_id, build_id, node_id, series_id, source_record, details = result
+    return {"publication": "macro_revision_quality", "status": "selected" if node_id else "not_selected",
+            "snapshot_id": snapshot_id, "published_at": published_at,
+            "series_node_id": series_node_id, "input_manifest_id": input_id,
+            "build_run_id": build_id, "source_record": source_record,
+            "summary": {"series_id": series_id, **details} if details is not None else None}
 
 
 def load_macro_economic_graph(
@@ -195,7 +240,7 @@ def load_macro_economic_graph(
                 view = "catalog_summary"
     except (DatabaseUnavailable, ValueError):
         raise
-    except Exception as error:  # noqa: BLE001
+    except Exception as error:
         diagnostic = getattr(error, "diag", None)
         message = getattr(diagnostic, "message_primary", None) or str(error)
         raise DatabaseUnavailable(f"report API query failed: {message}") from error
@@ -230,10 +275,20 @@ def serve_macro_economic_graph(
             self.end_headers()
             self.wfile.write(body)
 
-        def do_GET(self) -> None:  # noqa: N802 - stdlib handler contract
+        def do_GET(self) -> None:
             request = urlparse(self.path)
             if request.path == "/healthz":
                 self._send_json(HTTPStatus.OK, {"status": "ok", "service": "marketatlas-report-api"})
+                return
+            if request.path == "/api/v1/macro-revision-quality":
+                params = parse_qs(request.query, keep_blank_values=True)
+                try:
+                    payload = load_revision_quality(config, params.get("series_node_id", [""])[0])
+                    self._send_json(HTTPStatus.OK, payload)
+                except ValueError as error:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
+                except DatabaseUnavailable as error:
+                    self._send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": str(error)})
                 return
             if request.path != "/api/v1/macro-economic-graph":
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "not_found"})

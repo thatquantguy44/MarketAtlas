@@ -33,6 +33,18 @@ For the public fixture, the exercised no-database commands are in
 [contributor-demo.md](contributor-demo.md). This project has no configured
 automatic refresh cadence.
 
+For the restricted quality publication, extract only the configured approved IDs,
+then run `revision-quality publish --input <ignored-extract-path>`. It writes
+captured versions and report rows in dedicated schemas, retaining the original
+manifest. Reusing the same extract and implementation reuses its snapshot. A
+fresh capture receives a new manifest even when its metrics are unchanged.
+Snapshot materialization failures retain a safe stage/type diagnostic and leave
+the prior pointer unchanged; correcting the issue and replaying the same input
+retries that failed build. Previously superseded snapshots are returned as
+retained snapshots and are not silently republished. Graph and fixture pointers
+are independent. The workspace displays the quality capture/publication times;
+it has no automated freshness SLA or historical source-availability claim.
+
 ## Failure and recovery
 
 The publication contract is atomic: a failed build must not move the current
