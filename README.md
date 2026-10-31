@@ -175,6 +175,7 @@ Read in order:
 
 24. [Local daily automation](docs/local-automation.md): supervised Dagster startup, schedule state and failure-safe report delivery.
 25. [Series coverage and eligibility](docs/series-coverage.md): all eligible approved FRED selections, temporal gates and expansion limits.
+26. [Source-health diagnosis and recovery](docs/source-health-recovery.md)
 
 The individual documents are canonical. Preserve requirement IDs when revising scope so the plan, tasks, and acceptance evidence stay aligned.
 

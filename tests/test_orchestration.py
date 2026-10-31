@@ -223,6 +223,25 @@ password="secret-test-password"
 
 @unittest.skipUnless(HAS_DAGSTER, "optional Dagster runtime")
 class DagsterRefreshTests(unittest.TestCase):
+    def test_source_health_job_reports_findings_without_running_upstream(self):
+        from market_atlas.orchestration.definitions import fred_source_health
+
+        with patch(
+            "market_atlas.source_health.run_diagnostics",
+            return_value={
+                "status": "diagnosis_complete",
+                "summary": {
+                    "stale_series": 181,
+                    "stale_latest_attempt_skipped": 179,
+                    "undated_versions": 35433,
+                },
+            },
+        ) as diagnose:
+            result = fred_source_health.execute_in_process()
+        self.assertTrue(result.success)
+        self.assertEqual(diagnose.call_count, 1)
+        self.assertEqual(diagnose.call_args.kwargs["start"], "2024-01-01")
+
     def test_definitions_load_without_database_access_and_schedule_has_local_date(self):
         from dagster import Definitions, build_schedule_context
 

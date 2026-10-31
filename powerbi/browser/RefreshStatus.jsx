@@ -25,8 +25,9 @@ export function RefreshStatus() {
   return <DataComponent id="report-refresh-status" queryId="refresh_status" kind="metric"
     title="Report refresh and source freshness" sourceRows={[embedded]} displayRows={[embedded]}>
     <div role="status" aria-live="polite" data-reviewed-rows>
-      <p>Report refreshed {stamp(embedded.refreshed_at)} · {embedded.stale_coverage_records} stale
-        source/series records out of {embedded.source_coverage_records} · {embedded.unknown_coverage_records} unknown.</p>
+      <p>Report refreshed {stamp(embedded.refreshed_at)} · {embedded.stale_coverage_records} records
+        flagged stale by upstream age rules out of {embedded.source_coverage_records} · {embedded.unknown_coverage_records} unknown.</p>
+      <p>Age rules use observation periods. A flag can remain when the database matches the latest provider release.</p>
       <p>Upstream ingestion: {embedded.upstream_ingestion.replaceAll("_", " ")}.</p>
       {failed && <p>Refresh attempt failed at {monitor.last_attempt.stage} ({stamp(monitor.last_attempt.at)}).
         The last successful report is still available.</p>}

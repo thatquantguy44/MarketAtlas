@@ -60,3 +60,21 @@ to 268 FRED series with separate temporal eligibility. These extend local scope
 under AC-006/007/009/010/011/013/014/015/017/018. Source availability is not invented
 for 170 vintage-unknown series, source APIs remain unrefreshed, and AC-009 remains
 partial pending actual Power BI execution. Production/always-on hosting is not claimed.
+
+## T-026 source-health evidence (2026-10-31)
+
+The bounded read-only diagnosis/manual Dagster job supplies supplementary evidence
+for AC-006/010/013/015/018: independent clocks, verified age rules, explicit
+current-only policy and source-write isolation. See [T-026 evidence](../reports/t026-source-health-validation.md).
+Provider probes and the tested upstream patch do not close source-repair tasks,
+certify PostgreSQL freshness, expand admitted PIT coverage or satisfy AC-009.
+
+## T-027 staged source repair (2026-10-31)
+
+Explicitly authorized local source repair adds evidence for AC-006/010/013/014/015/017/018:
+267 admitted series / 127,907 versions, authoritative source dates, reversible
+source backups, independent clocks, system-time corrections and zero-change replay.
+All 23 remaining age flags matched provider periods. See [T-027 evidence](../reports/t027-source-repair-validation.md).
+The current-only exception, bounded history and four baseline upstream test
+failures are retained limitations. No broader Gold, production, public-data or
+native Power BI acceptance is claimed.
