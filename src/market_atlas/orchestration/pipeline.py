@@ -40,6 +40,7 @@ STAGES = (
     "publish_quality",
     "export_powerbi",
     "validate_powerbi",
+    "refresh_browser_report",
     "complete_refresh",
 )
 LIVE_PUBLICATIONS = ("macro_economic_graph", "macro_context", "macro_revision_quality")
@@ -68,6 +69,10 @@ class RefreshPlan:
     max_export_rows: int
     upstream_success_file: str
     upstream_max_age_hours: int
+    browser_report_directory: str = ""
+    series_selection_mode: str = "configured"
+    max_observation_rows: int = 250000
+    max_series: int = 1000
 
     def document(self):
         return asdict(self)
@@ -97,9 +102,25 @@ def load_settings(path=DEFAULT_SETTINGS, root=REPOSITORY_ROOT):
     ):
         if type(section.get(key)) is not int or not low <= section[key] <= high:
             raise ValueError(f"invalid pipeline setting: {key}")
+    if section.get("series_selection_mode", "configured") not in {
+        "configured",
+        "all_eligible",
+    }:
+        raise ValueError("invalid series_selection_mode")
+    for key, default, limit in (
+        ("max_observation_rows", 250000, 1000000),
+        ("max_series", 1000, 10000),
+    ):
+        value = section.get(key, default)
+        if type(value) is not int or not 1 <= value <= limit:
+            raise ValueError(f"invalid pipeline setting: {key}")
     ZoneInfo(section["timezone"])
     _output(root, section["output_directory"])
     _output(root, section["pack_directory"])
+    if type(section.get("refresh_browser_report", False)) is not bool:
+        raise ValueError("refresh_browser_report must be boolean")
+    if section.get("refresh_browser_report"):
+        _output(root, section["browser_report_directory"])
     return section
 
 
@@ -148,6 +169,12 @@ def make_plan(
         settings["max_export_rows"],
         str(_resolve(root, marker)) if marker else "",
         settings["upstream_max_age_hours"],
+        str(_output(root, settings["browser_report_directory"]))
+        if settings.get("refresh_browser_report")
+        else "",
+        settings.get("series_selection_mode", "configured"),
+        settings.get("max_observation_rows", 250000),
+        settings.get("max_series", 1000),
     )
 
 
@@ -313,6 +340,17 @@ class LiveBackend:
             }
         }
 
+    def record_report_failure(self, stage, error_type):
+        if self.plan.browser_report_directory:
+            from market_atlas.reporting.refresh import record_failure
+
+            record_failure(
+                self.plan.browser_report_directory,
+                run_id=self.plan.run_id,
+                stage=stage,
+                error_type=error_type,
+            )
+
     def run_stage(self, name, state):
         from market_atlas.adapters import macro_context, macro_medallion
         from market_atlas.database import inspect_source
@@ -347,6 +385,33 @@ class LiveBackend:
                     )
                 },
             )
+            if self.plan.series_selection_mode == "all_eligible":
+                from .series import select_eligible_series
+
+                selection = select_eligible_series(
+                    self.source,
+                    self.plan.observation,
+                    max_series=self.plan.max_series,
+                    max_observations=self.plan.max_observation_rows,
+                )
+                ids = tuple(selection["selected_series_ids"])
+                self.plan = replace(
+                    self.plan,
+                    observation=replace(self.plan.observation, series_ids=ids),
+                    context=replace(
+                        self.plan.context,
+                        series_ids=tuple(selection["context_series_ids"]),
+                    ),
+                )
+                write_json(self.directory / "series_selection.json", selection)
+            else:
+                write_json(
+                    self.directory / "series_selection.json",
+                    {
+                        "mode": "configured",
+                        "selected_series_ids": list(self.plan.observation.series_ids),
+                    },
+                )
             return {
                 "status": "valid",
                 "upstream": upstream,
@@ -355,7 +420,11 @@ class LiveBackend:
         if name == "extract_observations":
             payload = self._capture(
                 "observations",
-                lambda: macro_medallion.extract(self.source, self.plan.observation),
+                lambda: macro_medallion.extract(
+                    self.source,
+                    self.plan.observation,
+                    max_rows=self.plan.max_observation_rows,
+                ),
             )
             return {
                 "status": "captured",
@@ -443,6 +512,17 @@ class LiveBackend:
             ):
                 raise ValueError("export coverage differs from the configured captures")
             return result
+        if name == "refresh_browser_report":
+            if not self.plan.browser_report_directory:
+                return {"status": "disabled"}
+            from market_atlas.reporting.refresh import refresh_report
+
+            return refresh_report(
+                self.plan.browser_report_directory,
+                self._read("export")["pack"],
+                run_id=self.plan.run_id,
+                upstream=state["stages"]["source_gate"]["result"].get("upstream"),
+            )
         if name == "complete_refresh":
             return {"status": "complete", "pack_id": self._read("export")["pack_id"]}
         raise ValueError("unknown refresh stage")
@@ -509,6 +589,29 @@ class RefreshSession:
             self.save()
             raise
         finally:
+            if self.state["status"] == "failed":
+                if hasattr(self.backend, "record_report_failure"):
+                    failed = next(
+                        (
+                            name
+                            for name in STAGES
+                            if self.state["stages"].get(name, {}).get("status")
+                            == "failed"
+                        ),
+                        "prepare",
+                    )
+                    error_type = (
+                        self.state["stages"]
+                        .get(failed, {})
+                        .get(
+                            "error_type", self.state.get("error_type", "RefreshFailure")
+                        )
+                    )
+                    try:
+                        self.backend.record_report_failure(failed, error_type)
+                    except Exception:  # noqa: BLE001 - monitoring must not mask the pipeline failure
+                        self.state["report_status_warning"] = "could_not_record_failure"
+                self.save()
             if self.state["status"] not in {"complete", "failed"}:
                 self.state["status"] = "incomplete"
                 self.save()
@@ -538,6 +641,13 @@ class RefreshSession:
                 type(error).__name__,
                 isinstance(error, (DatabaseUnavailable, OSError, RuntimeError)),
             ) from None
+        if (
+            name == "source_gate"
+            and getattr(self.backend, "plan", self.plan) != self.plan
+        ):
+            self.plan = self.backend.plan
+            write_json(self.directory / "plan.json", self.plan.document())
+            self.state["plan_sha256"] = sha256(self.plan.document())
         from .recovery import PUBLICATION_STAGES
 
         if name in PUBLICATION_STAGES and result.get("snapshot_id"):

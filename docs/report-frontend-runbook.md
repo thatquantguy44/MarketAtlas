@@ -86,11 +86,29 @@ cover native Power BI project generation.
 
 ## Show newer pipeline data
 
-Starting/restarting the web server serves the existing snapshot. Dagster creates
-new immutable packs independently; the browser report does not automatically
-switch to the latest pack. To view a newer pack, build a new report project using
-the commands above and start its preview. This preserves the existing report's
-personal edits and pinned data. No automatic browser-report refresh is configured.
+The configured daily Dagster pipeline now updates the existing report after its
+PostgreSQL publications and immutable pack pass validation. The report stays at
+the same URL and preserves its app identity. The status panel shows the last
+successful report update, source stale/unknown counts and failed attempts.
+Already-open tabs offer **Reload report** when a newer pack is available;
+reload after preserving unsaved edits. A failed update keeps the preceding report.
+
+Use [the local automation runbook](local-automation.md) to start/check/restart
+Dagster and inspect its 18:30 New York daily schedule. The report preview and
+Dagster are separate user services: opening the report does not start a database
+refresh. The Mac must be running and logged in for local daily automation.
+
+To refresh manually from an already validated pack without rerunning PostgreSQL:
+
+```sh
+PYTHONPATH=src python3 scripts/refresh-browser-report.py \
+  --project data/generated/reports/browser \
+  --pack data/generated/powerbi-real/IMMUTABLE_PACK_ID \
+  --run-id operator-refresh
+```
+
+The optional new-project build commands above remain available for an independent
+pinned report. Starting/restarting a preview only serves its existing files.
 
 The default Data plugin location used by the launch/build scripts is:
 
@@ -127,7 +145,7 @@ Python package alone does not install it. Keep generated app runtime files intac
 | Data preview runtime missing | Verify the Data plugin installation and set `MARKETATLAS_DATA_PLUGIN`. |
 | Assigned port occupied | Inspect the specific listener with `lsof -nP -iTCP:60114 -sTCP:LISTEN` (use the reported port). Do not terminate an unrelated process or change the registered port blindly. |
 | Login-service permission/startup failure | Read the error and the `logs` path returned by `status`. Retry `start` with the installed Node runtime; do not change machine security policies. |
-| Page loads with old data | Check publication/source timestamps in the report. Build from a newer validated pack; restarting the server does not refresh data. |
+| Page loads with old data | Check the last refresh/failure notice and Dagster run status. Reload when newer data are offered, or refresh from a validated pack; restarting the server alone does not refresh data. |
 | Old appearance after a deliberate rebuild | Reload the existing browser tab after preserving any unsaved personal edits. |
 
 If user login service registration is unavailable on another host, a temporary

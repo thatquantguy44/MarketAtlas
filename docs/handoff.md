@@ -4,7 +4,55 @@ Updated: 2026-10-30. This is an early implementation handoff, not a completed pi
 
 ## Start here next session
 
-**Latest T-021/T-022 checkpoint (2026-10-30):** native Dagster downstream recovery
+**Latest T-023–T-025 checkpoint (2026-10-30):** work is on
+`feat/automated-report-refresh`, created from merged main `f2ea0d8` (PR #12).
+This checkpoint is prepared for branch review; use Git and the branch PR for the
+final commit and remote state. The 14-stage pipeline now updates the existing
+browser report after pack validation, preserving its app ID/URL and prior build
+on failure. Checkpoint v3 includes the frozen series selection; older checkpoints
+need a fresh full run. Read [automation/series evidence](../reports/t023-t025-automation-series-validation.md).
+
+The macOS user-login Dagster service is installed and verified at
+http://127.0.0.1:3001/. Manage it with `scripts/dagster-service.sh`.
+The existing daily 18:30 New York schedule was found RUNNING and its state was
+retained; next verified tick: 2026-10-31 at 18:30 EDT. Scheduler/run-coordinator
+heartbeats had no errors. A normal runtime-directory Node supervisor avoids the
+failed direct shell launch from `Documents`; no privacy/security settings or
+source credentials were changed/copied. This is a supervised local pilot: the
+Mac must be running/logged in and PostgreSQL reachable. See [local automation](local-automation.md).
+
+The user selected **all eligible series already in PostgreSQL**. Within the
+approved 290-series catalog, discovery admits **94 point-in-time series / 35,576
+observation versions** and an independent **268-series current coverage/quality**
+selection. 170 series have blank source-vintage dates, four have no usable window
+observations, and 22 are BLS/ECB entries outside the FRED observation adapter.
+The graph retains all 290 series/11 concepts. [Eligibility rules](series-coverage.md)
+explain these populations; availability is never inferred from capture time.
+
+Direct expanded success: `b0ac9e7c-8f95-463a-81fd-8b8564bf13cd` (about 54.5s).
+Service/API success: `65b5a995-69c5-4d93-b3b1-de1683cf2d01`; rerun inserted zero
+duplicates. The final validated pack is
+`data/generated/powerbi-real/183ecd4962fcc5281901392af185522424d2a144f03d4b7cca5ad0a8993df3f3/`.
+The report remains at http://127.0.0.1:60114/, app
+`dashboard:b31d5d91-39e6-4d2a-8719-4888de544244`. It shows 181 stale source/series
+records out of 268 and zero unknown stale flags; upstream ingestion is not verified.
+Its polling monitor offers an explicit reload for newer packs and preserves the
+working report on failure. The controlled failure-status test was restored to the
+actual successful service run afterward.
+
+Final suites: 109 tests, 105 passed/four opt-in database skips in the Dagster
+environment; core-only 97 passed/12 optional/database skips. Shell/JavaScript
+syntax, Ruff, hard SQL extraction bounds and browser reload/filter/evidence/failure
+checks passed. Generated restricted data remain ignored.
+
+**Exact next engineering task:** Josh / maintainer reviews the T-023–T-025 PR
+and its CI results before merging. Subsequent onboarding should address missing source availability
+for the 170 current-only series and source-specific BLS/ECB adapters, without
+writing to upstream schemas from MarketAtlas. **Next release acceptance remains
+T-015 / AC-009** if Power BI access becomes available; the user has no access,
+so do not repeat that request or claim Power BI execution from browser checks.
+
+**Historical T-021/T-022 checkpoint (2026-10-30):** native Dagster downstream recovery
 is fixed and exercised against PostgreSQL. Parent
 `1600569b-a641-4e30-aaeb-8815feef00b0` deliberately failed before graph publication;
 child `86359104-cf40-4c3b-9667-c21fa760b3ac` resumed only the six remaining stages
@@ -205,16 +253,16 @@ requires its own explicit contract and owner/rights decision.
 
 ```text
 Resume MarketAtlas from docs/handoff.md, starting with "Start here next session".
-Read .agents/AGENTS.md and the linked spec/task/acceptance/report documents.
-Verify branch, Git state, current publications and local services. Preserve the
-T-021 native-recovery and T-022 report-generator/browser work on top of 84291c4.
-The exact next acceptance task is T-015 / AC-009. The user has no Power BI access;
-do not repeatedly ask or claim native execution from schema/browser evidence.
-Use the existing local browser report for actual-data access. If an authorized
-Power BI environment becomes available, execute the pinned PostgreSQL fixture
-refresh, visual/filter reconciliation and provenance drill-through. Preserve
-source read-only access, scoped writes and restricted-local data. Update this
-checkpoint with actual evidence and current operating state after any changes.
+Read .agents/AGENTS.md, local-automation.md, series-coverage.md, and the spec/task/
+acceptance/evidence documents. Verify Git state before editing: T-023–T-025 work
+is on feat/automated-report-refresh based on merged main f2ea0d8. Preserve local
+changes. Review/commit this branch, then plan source availability remediation or
+BLS/ECB onboarding under explicit contracts. The active local Dagster service
+executes this checkout; verify/restart after branch or settings changes. Keep the
+report's app ID/URL and last-good-build protection, read-only source role, scoped
+writes, distinct temporal meanings, private captures and independent publications.
+The user has no Power BI access; T-015/AC-009 remains open without repeated access
+requests. Update the checkpoint with actual evidence and runtime state.
 ```
 
 ## Current state

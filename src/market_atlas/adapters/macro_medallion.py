@@ -133,6 +133,10 @@ def verify_contract(database: SourceDatabaseConfig) -> dict[str, Any]:
 def extract(
     database: SourceDatabaseConfig,
     pilot: MacroMedallionConfig,
+    *,
+    max_rows: int = 250000,
+    batch_size: int = 25,
+    page_size: int = 500,
 ) -> dict[str, Any]:
     """Extract configured series and their eligible point-in-time observation versions."""
     start = _validate_iso_date(pilot.observation_start, "observation_start")
@@ -163,29 +167,39 @@ def extract(
                 f"configured MacroMedallion series not found: {', '.join(missing_ids)}"
             )
 
-        cursor.execute(
-            """
-                SELECT series_id, observation_date, realtime_start, realtime_end,
-                       value, revision_number, is_missing, ingested_at
-                FROM gold.fred_point_in_time
-                WHERE series_id = ANY(%s)
-                  AND observation_date >= %s
-                  AND observation_date <= %s
-                  AND realtime_start <= %s
-                ORDER BY series_id, observation_date, realtime_start
+        if (
+            not 1 <= batch_size <= 1000
+            or not 1 <= page_size <= 1000
+            or not 1 <= max_rows <= 1000000
+        ):
+            raise ValueError("invalid observation extraction limits")
+        observation_rows = []
+        for batch_start in range(0, len(pilot.series_ids), batch_size):
+            cursor.execute(
+                """
+                    SELECT series_id, observation_date, realtime_start, realtime_end,
+                           value, revision_number, is_missing, ingested_at
+                    FROM gold.fred_point_in_time
+                    WHERE series_id = ANY(%s) AND observation_date >= %s
+                      AND observation_date <= %s AND realtime_start <= %s
+                    ORDER BY series_id, observation_date, realtime_start
+                    LIMIT %s
                 """,
-            (
-                list(pilot.series_ids),
-                start.isoformat(),
-                min(end, cutoff).isoformat(),
-                cutoff.isoformat(),
-            ),
-        )
-        observation_columns = [column.name for column in cursor.description]
-        observation_rows = [
-            dict(zip(observation_columns, row, strict=True))
-            for row in cursor.fetchall()
-        ]
+                (
+                    list(pilot.series_ids[batch_start : batch_start + batch_size]),
+                    start.isoformat(),
+                    min(end, cutoff).isoformat(),
+                    cutoff.isoformat(),
+                    max_rows - len(observation_rows) + 1,
+                ),
+            )
+            observation_columns = [column.name for column in cursor.description]
+            while rows := cursor.fetchmany(page_size):
+                if len(observation_rows) + len(rows) > max_rows:
+                    raise ValueError("observation extract exceeds configured row limit")
+                observation_rows.extend(
+                    dict(zip(observation_columns, row, strict=True)) for row in rows
+                )
 
     entities = [
         {
