@@ -20,6 +20,7 @@ from dagster import (
     resource,
     schedule,
 )
+
 from market_atlas.orchestration.pipeline import (
     DEFAULT_SETTINGS,
     REPOSITORY_ROOT,
@@ -46,21 +47,50 @@ CONFIG_PATH = os.environ.get(
 )
 def refresh_session(context):
     try:
+        from .recovery import RecoveryError, restore_checkpoint, selected_stages
+
         config = context.resource_config
-        plan = make_plan(
-            context.run_id, config["pipeline_settings"], as_of=config["as_of"] or None
-        )
+        run = context.run
+        selection = selected_stages(run)
+        restored, captures = None, None
+        if selection[0] != STAGES[0]:
+            if not run.parent_run_id:
+                raise RecoveryError(
+                    "downstream selection requires a parent run; use Re-execute from failure"
+                )
+            parent = context.instance.get_run_by_id(run.parent_run_id)
+            directory = parent.tags.get("marketatlas/checkpoint") if parent else None
+            if not directory:
+                raise RecoveryError(
+                    "parent has no resumable checkpoint; launch a full fresh run"
+                )
+            plan, restored, captures = restore_checkpoint(
+                directory, parent.run_id, run.run_id, selection[0]
+            )
+            if config["as_of"] and config["as_of"] != plan.run_date:
+                raise RecoveryError("resume must retain the original run date")
+        else:
+            plan = make_plan(
+                run.run_id, config["pipeline_settings"], as_of=config["as_of"] or None
+            )
         path = Path(config["local_config"])
         if not path.is_absolute():
             path = REPOSITORY_ROOT / path
         backend = LiveBackend(plan, path)
+    except RecoveryError as error:
+        raise Failure(str(error), allow_retries=False) from None
     except Exception as error:  # noqa: BLE001 - hide driver/config details at the orchestration boundary
         raise Failure(
             f"refresh configuration failed ({type(error).__name__})",
             allow_retries=False,
         ) from None
     try:
-        with RefreshSession(plan, backend).open() as session:
+        with RefreshSession(
+            plan, backend, restored=restored, captures=captures
+        ).open() as session:
+            context.instance.add_run_tags(
+                run.run_id, {"marketatlas/checkpoint": plan.run_directory}
+            )
             yield session
     except RefreshError as error:
         raise Failure(str(error), allow_retries=False) from None

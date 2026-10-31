@@ -126,6 +126,9 @@ Completed 2026-10-26 for the portable fixture/design handoff scope. A `git archi
 
 ### [ ] T-015 — Exercise the Power BI fixture report
 
+T-022 adds generated native projects and a working actual-data browser report;
+the Power BI refresh/render/drill-through acceptance exercise is still open.
+
 Owner: BI engineer / report owner. Dependencies: T-011, T-013. Maps: REQ-009, REQ-011 → AC-009, AC-011.
 
 Open the tracked `powerbi/MarketAtlas.model.template.tmdl` in an authorized Power BI Desktop or Power BI service environment, set one captured fixture snapshot UUID, create the five report pages, and retain the PBIP/PBIR source plus screenshots. Prove filter/reset reconciliation, distinct-count grain safety, as-of/freshness labels, and drill-through for sourced relationship `A11`, curated context `CTX3`, and one correlation. Evidence: an executed Power BI report/artifact and reconciliation results; a source template or SQL-only validation does not pass AC-009.
@@ -215,6 +218,32 @@ refresh, alerts and production service installation remain outside this work.
 See [the runbook](dagster-orchestration.md),
 [T-020 evidence](../reports/t020-dagster-orchestration-validation.md), and
 `tests/test_orchestration.py`. T-015/AC-009 remains open.
+
+### [x] T-021 — Recover native Dagster downstream re-execution
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-020.
+Maps: REQ-010/011, NFR-002/003/005 → AC-010/011/014/015/017.
+
+Completed 2026-10-30 for local recovery scope. Parent checkpoints restore verified
+captures and completed prerequisites, preserve original dates, and retain child/root
+lineage. Database/publication changes and incompatible/missing captures fail safely.
+Native Dagster failure-to-child re-execution passed against the real PostgreSQL
+pipeline without repeating the completed seven stages. Evidence:
+[T-021 validation](../reports/t021-dagster-recovery-validation.md).
+
+### [x] T-022 — Author native report projects and provide browser access
+
+Owner: Josh / report owner; implementation: Codex. Dependencies: T-018, T-020.
+Maps: REQ-009/011 → AC-009/011 (supplementary; AC-009 remains partial).
+
+Completed 2026-10-30 at source-generation and local-browser scope. A reproducible
+PBIP/PBIR/model generator authors five pages for fixture or actual macro packs.
+Both native projects passed official report JSON schemas and binding checks.
+An actual-data browser report passed concept/quality filter-reset and evidence
+checks and runs locally without a Power BI account. No native Power BI engine
+execution or cross-page drill-through is claimed. Evidence:
+[T-022 validation](../reports/t022-report-project-validation.md),
+[usage instructions](../powerbi/guides/generated-reports.md). T-015 remains open.
 
 ## Completion rules and coverage
 

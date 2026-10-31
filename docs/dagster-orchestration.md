@@ -116,8 +116,8 @@ PYTHONPATH=src .venv-dagster/bin/python -m market_atlas refresh run
 This standalone route writes the same private checkpoint records and acquires
 the same database lock, but has no Dagster run history or automatic op retries.
 Use a fresh run ID for each invocation. An existing run directory is never
-silently reused or overwritten. Dagster re-execution creates a new run; automatic
-op retries within the same run reuse the already captured extract.
+silently reused or overwritten. Automatic op retries within the same run reuse
+the already captured extract. Native downstream recovery is described below.
 
 ## Credentials, freshness and run artifacts
 
@@ -171,6 +171,22 @@ surfaces may remain updated: each publication is atomic independently, not the
 whole 13-stage job. A failed publication retains its prior serving pointer under
 the existing publisher contract. A new report pack is handed off only after all
 publish stages succeed and pack validation passes.
+
+### Resume a failed run
+
+Open the failed `fred_daily_refresh` run in Dagster and choose **Re-execute from
+failure**. Version-2 checkpoints restore the successful prefix and its verified
+captures into the child run. Original dates and selection windows are preserved;
+only selected contiguous downstream stages run. Captures and parent checkpoints
+must remain available under `data/generated/daily/`; keep Dagster run metadata too.
+A fresh downstream-only launch without a parent is rejected.
+
+Recovery takes the database lock, revalidates source contracts, and rejects changed
+connection identities or publication pointers advanced by another run. Modified,
+missing, incompatible or pre-version-2 checkpoints require a **new full run**.
+Do not select a later stage to skip an uncompleted prerequisite. If a resumed run
+fails again, re-execute from that child run. A full re-execution starts a fresh
+plan. See [T-021 evidence](../reports/t021-dagster-recovery-validation.md).
 
 The pipeline prepares the Power BI data pack; it does not invoke Power BI service
 refresh. Select that validated immutable folder as `pPackFolder` and refresh the

@@ -169,6 +169,10 @@ Read in order:
 20. [PostgreSQL publication access](docs/publication-access.md): browse all four named report snapshots, their views, and reader access.
 21. [Dagster refresh jobs](docs/dagster-orchestration.md): rolling daily PostgreSQL refreshes, run checkpoints, local UI, schedule activation, and deployment limits.
 
+22. [Generated reports](powerbi/guides/generated-reports.md): editable Power BI projects plus a local actual-data browser report that needs no Power BI account.
+
+23. [Report front-end runbook](docs/report-frontend-runbook.md): open/start/stop the local report, recover after reboot, and rebuild from a new data pack.
+
 The individual documents are canonical. Preserve requirement IDs when revising scope so the plan, tasks, and acceptance evidence stay aligned.
 
 ## Extending to securities finance

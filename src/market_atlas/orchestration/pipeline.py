@@ -23,7 +23,7 @@ from market_atlas.config import (
     load_source_database,
     load_target_database,
 )
-from market_atlas.contracts import canonical_bytes
+from market_atlas.contracts import canonical_bytes, sha256
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_SETTINGS = Path("configs/orchestration.toml")
@@ -202,6 +202,60 @@ class LiveBackend:
                 }
             )
         self.lock_connection = None
+
+    @property
+    def identity(self):
+        return sha256(
+            {
+                name: {
+                    key: getattr(config, key)
+                    for key in ("host", "port", "database", "username", "role")
+                }
+                for name, config in (
+                    ("source", self.source),
+                    ("target", self.target),
+                    ("report", self.report),
+                )
+            }
+        )
+
+    def publication_state(self):
+        import psycopg
+
+        kwargs = self.report.connection_kwargs() | {
+            "options": "-c default_transaction_read_only=on -c statement_timeout=5000"
+        }
+        with psycopg.connect(**kwargs) as connection, connection.cursor() as cursor:
+            cursor.execute("SET LOCAL ROLE marketatlas_report_reader")
+            cursor.execute(
+                "SELECT publication_name, serving_snapshot_id::text FROM atlas_report.current_snapshot_metadata WHERE publication_name = ANY(%s)",
+                (list(LIVE_PUBLICATIONS),),
+            )
+            return dict(cursor.fetchall())
+
+    def validate_resume(self):
+        from market_atlas.database import inspect_source
+        from market_atlas.source_catalog import build_source_catalog
+        from market_atlas.source_contracts import verify_source_contracts
+
+        upstream = check_upstream(self.plan)
+        gate = verify_source_contracts(
+            build_source_catalog(inspect_source(self.source))
+        )
+        if gate["status"] != "valid":
+            raise RefreshError("resume", "SourceContractChanged")
+        write_json(
+            self.directory / "contract_gate.json",
+            {
+                k: gate[k]
+                for k in ("status", "registry_version", "catalog_fingerprint_sha256")
+            },
+        )
+        return {
+            "status": "valid",
+            "upstream": upstream,
+            "catalog_fingerprint_sha256": gate["catalog_fingerprint_sha256"],
+        }
 
     @contextmanager
     def lock(self):
@@ -395,26 +449,57 @@ class LiveBackend:
 
 
 class RefreshSession:
-    def __init__(self, plan, backend):
+    def __init__(self, plan, backend, *, restored=None, captures=None):
+        from .recovery import CHECKPOINT_VERSION
+
         self.plan, self.backend = plan, backend
+        self.captures = captures or {}
         self.state = {
             "run_id": plan.run_id,
             "status": "prepared",
             "completed_stages": [],
             "stages": {},
+            "checkpoint_version": CHECKPOINT_VERSION,
+            "plan_sha256": sha256(plan.document()),
+            "stage_order": list(STAGES),
+            "root_run_id": plan.run_id,
+            "backend_identity": getattr(backend, "identity", None),
         }
+        if restored:
+            if restored["backend_identity"] != self.state["backend_identity"]:
+                raise RefreshError("resume", "DatabaseConnectionChanged")
+            self.state.update(restored)
         self.directory = Path(plan.run_directory)
 
     def save(self):
+        from .recovery import artifact_hashes
+
+        self.state["artifacts"] = artifact_hashes(self.directory)
         write_json(self.directory / "run.json", self.state)
 
     @contextmanager
     def open(self):
+        from .recovery import copy_captures
+
         self.directory.mkdir(parents=True, exist_ok=False)
+        copy_captures(self.captures, self.directory)
         write_json(self.directory / "plan.json", self.plan.document())
         self.save()
         try:
             with self.backend.lock():
+                if hasattr(self.backend, "publication_state"):
+                    current = self.backend.publication_state()
+                    if self.state.get(
+                        "resumed_from_run_id"
+                    ) and current != self.state.get("publication_state"):
+                        raise RefreshError(
+                            "resume", "PublicationsAdvancedStartFreshRun"
+                        )
+                    self.state["publication_state"] = current
+                if self.state.get("resumed_from_run_id") and hasattr(
+                    self.backend, "validate_resume"
+                ):
+                    self.state["recovery_validation"] = self.backend.validate_resume()
                 self.state["status"] = "running"
                 self.save()
                 yield self
@@ -453,6 +538,12 @@ class RefreshSession:
                 type(error).__name__,
                 isinstance(error, (DatabaseUnavailable, OSError, RuntimeError)),
             ) from None
+        from .recovery import PUBLICATION_STAGES
+
+        if name in PUBLICATION_STAGES and result.get("snapshot_id"):
+            self.state.setdefault("publication_state", {})[PUBLICATION_STAGES[name]] = (
+                result["snapshot_id"]
+            )
         self.state["stages"][name].update(status="complete", result=result)
         self.state["completed_stages"].append(name)
         if name == STAGES[-1]:

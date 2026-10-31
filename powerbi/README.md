@@ -1,6 +1,6 @@
 # Power BI semantic-model source package
 
-This folder contains a source-controlled TMDL template for the synthetic fixture report. It deliberately contains no database credential, local configuration path, or source-schema object. It is not a PBIX or PBIP, and it has not been opened in Power BI Desktop from this macOS environment.
+This folder contains a source-controlled TMDL template for the synthetic fixture report. It deliberately contains no database credential, local configuration path, or source-schema object. A [native project generator and local browser report](guides/generated-reports.md) now complement this template. Generated PBIP/PBIR source has not been refreshed or rendered in Power BI from this macOS environment.
 
 ## Data generation jobs and report guides
 

@@ -4,7 +4,51 @@ Updated: 2026-10-30. This is an early implementation handoff, not a completed pi
 
 ## Start here next session
 
-**Latest T-020 checkpoint (2026-10-30):** optional Dagster orchestration now runs
+**Latest T-021/T-022 checkpoint (2026-10-30):** native Dagster downstream recovery
+is fixed and exercised against PostgreSQL. Parent
+`1600569b-a641-4e30-aaeb-8815feef00b0` deliberately failed before graph publication;
+child `86359104-cf40-4c3b-9667-c21fa760b3ac` resumed only the six remaining stages
+and completed. Version-2 checkpoints verify captures, original dates,
+connection identities and publication pointers before resume. Older checkpoints
+require a fresh full run. See [recovery evidence](../reports/t021-dagster-recovery-validation.md)
+and [runbook](dagster-orchestration.md#resume-a-failed-run).
+
+The final validated real-data pack is
+`data/generated/powerbi-real/fb860c24507b9b0fdd66a449ba49b64d0457d2887558fd38d0e68332ba1d170d/`.
+Native report projects are generated at
+`data/generated/reports/fixture-project/MarketAtlas.pbip` and
+`data/generated/reports/real-project-validated/MarketAtlas.pbip`.
+Each has five pages; official PBIP/PBIR JSON schemas and model-binding checks
+passed. These are **unexecuted Power BI source**, with direct evidence selection
+but no configured cross-page drill-through. The user has no Power BI access;
+Desktop is unavailable on this Mac, and the discovered Power BI plugin has only
+been suggested, not connected. Do not repeatedly request the same unavailable
+access or mark T-015/AC-009 passed.
+
+The actual-data browser report is open at [MarketAtlas macro research](http://127.0.0.1:60114/).
+It has four verified views and concept/quality filter-reset/evidence checks.
+Use `scripts/report-preview.sh start` to reopen it; the
+[front-end runbook](report-frontend-runbook.md) covers startup, status, stop and
+clean-checkout recovery. Its loopback-only preview restarts after user login, but its data are frozen to
+the pack above. It neither publishes externally nor automatically refreshes.
+[Report instructions](../powerbi/guides/generated-reports.md) reproduce both
+native projects and the browser report. [T-022 evidence](../reports/t022-report-project-validation.md)
+records scope and remaining gates.
+
+Final Python checks: 100 tests, 96 passed/four opt-in database skips in the Dagster
+environment; core-only: 89 passed/11 optional skips. Dagster UI remains at port
+3001 and the daily 18:30 New York schedule remains STOPPED. Upstream ingestion,
+production Dagster hosting and automatic Power BI/browser refresh are separate.
+The branch is `feat/powerbi-dagster-refresh`, based on pushed commit `84291c4`;
+T-021/T-022 and the report startup runbook follow `84291c4` on this branch.
+Inspect Git and the branch PR for the final commit and remote state.
+
+**Exact next acceptance task: T-015 / AC-009**, owner Josh / report owner. If an
+authorized Power BI environment becomes available, execute the pinned PostgreSQL
+fixture refresh, native visual/filter reconciliation and provenance drill-through.
+Until then, use the local browser report and preserve the open acceptance gate.
+
+**Historical T-020 checkpoint (2026-10-30):** optional Dagster orchestration now runs
 13 ordered PostgreSQL-to-MarketAtlas stages, with rolling dates, contract gates,
 private checkpoints, retries and database lock exclusion. The user selected
 PostgreSQL-only input; upstream FRED ingestion is not launched. The local
@@ -16,7 +60,7 @@ See [the Dagster runbook](dagster-orchestration.md) and
 The live run `dc8d2735-a568-409b-99c9-a1f83ee99d30` completed all stages. Its
 validated real-data pack is
 `data/generated/powerbi-real/f8130b91601b18a60a16ddfdc167ebb2f75aa1fe5ca64a46321252af664d4264/`.
-Current snapshots: context `e98b634d-0571-5406-a3fc-5d56e8d2c43f`, graph
+Historical T-020 snapshots: context `e98b634d-0571-5406-a3fc-5d56e8d2c43f`, graph
 `0428f123-c947-51ef-884a-91ad7672aca4`, quality
 `0782c4b0-b090-59cc-bd3c-6f73fdedea69`. The T-017 values below are historical.
 The Dagster-environment suite passed 87 tests with four opt-in database skips;
@@ -129,9 +173,10 @@ Use [the Power BI package](../powerbi/README.md) and
 [T-015 source-package evidence](../reports/t015-powerbi-source-package.md).
 Confirm an authorized Windows Power BI Desktop environment or suitable service
 authoring workflow, plus a dedicated report login provisioned by the database
-owner. The template is TMDL source, not a ready-made PBIX/PBIP; record the actual
-import/project workflow used in that environment. The prior local macOS session
-had neither Desktop nor an authenticated service workspace available.
+owner. A five-page native project generator now complements the original TMDL source;
+record the actual import/project workflow used. Generated CSV projects remain
+unexecuted and do not replace the PostgreSQL connector/refresh exercise. The
+user has confirmed no Power BI access; the local browser report is usable now.
 
 Resolve the synthetic publication immediately before refresh, using the report
 reader, and set the same UUID in every template import through `pSnapshotId`:
@@ -150,27 +195,26 @@ PBIP/PBIR source, synthetic screenshots, refresh results and reconciliation
 evidence. Update `docs/tasks.md`, `docs/acceptance.md`, and this handoff only to
 the extent supported by those artifacts.
 
-If authoring access is still unavailable, record the exact missing capability
-and ask Josh for that environment. Keep T-015 open and AC-009 partial; a repeated
-SQL/template validation does not resolve the blocker. Broader source onboarding
+If authoring access is still unavailable, retain the known access blocker and
+keep T-015 open and AC-009 partial. Do not repeat the access request without a
+new capability or user direction; SQL/template/browser validation does not
+resolve Power BI acceptance. Broader source onboarding
 requires its own explicit contract and owner/rights decision.
 
 ### Ready-to-paste prompt for the next agent
 
 ```text
 Resume MarketAtlas from docs/handoff.md, starting with "Start here next session".
-Read .agents/AGENTS.md and the linked spec/task/acceptance and Power BI documents.
-T-017 was validated and merged in PR #10; verify current Git state before acting.
-Preserve the local T-018 export-job/report-guide work and spec reconciliation;
-read reports/t018-powerbi-data-jobs-validation.md for its verified scope.
-The next task is T-015: execute the pinned synthetic report in an authorized
-Power BI environment and retain report, refresh, filter/count and provenance
-evidence. Check authoring access first. If it is unavailable, identify the exact
-blocker and ask Josh for the needed environment; do not mark AC-009 passed from
-SQL, template or React checks. Preserve source read-only access, dedicated
-MarketAtlas write schemas, restricted local data and independent publication
-snapshots. Continue within the documented task scope, then update the handoff
-with actual results, artifacts and the exact next task.
+Read .agents/AGENTS.md and the linked spec/task/acceptance/report documents.
+Verify branch, Git state, current publications and local services. Preserve the
+T-021 native-recovery and T-022 report-generator/browser work on top of 84291c4.
+The exact next acceptance task is T-015 / AC-009. The user has no Power BI access;
+do not repeatedly ask or claim native execution from schema/browser evidence.
+Use the existing local browser report for actual-data access. If an authorized
+Power BI environment becomes available, execute the pinned PostgreSQL fixture
+refresh, visual/filter reconciliation and provenance drill-through. Preserve
+source read-only access, scoped writes and restricted-local data. Update this
+checkpoint with actual evidence and current operating state after any changes.
 ```
 
 ## Current state

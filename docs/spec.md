@@ -1,6 +1,6 @@
 # MarketAtlas — Product Specification
 
-Status: candidate v0.1 specification, prepared for review on 2026-10-24; reconciled with the current handoff on 2026-10-30 against retained evidence through 2026-10-30. T-001–T-003, T-005–T-014, T-016–T-020 are complete at their stated fixture, design, or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open; the v0.1 release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work. Actual acceptance status is recorded in [acceptance.md](acceptance.md).
+Status: candidate v0.1 specification, prepared for review on 2026-10-24; reconciled with the current handoff on 2026-10-30 against retained evidence through 2026-10-30. T-001–T-003, T-005–T-014, T-016–T-022 are complete at their stated fixture, design, or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open; the v0.1 release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work. Actual acceptance status is recorded in [acceptance.md](acceptance.md).
 
 ## Request and purpose
 
@@ -21,7 +21,7 @@ The engineering deliverable is a reusable graph foundation and report-ready outp
 
 ## Scope and release boundary
 
-The v0.1 pilot includes a market entity map, curated macro context, one bounded family of rolling instrument-return correlations, PostgreSQL serving outputs, a reproducible synthetic demonstration in the React workspace, and a Power BI semantic/report package to be exercised in an authorized authoring environment. The React fixture demonstration and restricted-local live macro graph are implemented. The Power BI package is a source-controlled TMDL template with report-page and reconciliation instructions, not an exercised PBIX/PBIP report. Fixture and React execution are independent of Power BI availability; AC-009 remains partial until actual Power BI execution supplies the required evidence.
+The v0.1 pilot includes a market entity map, curated macro context, one bounded family of rolling instrument-return correlations, PostgreSQL serving outputs, a reproducible synthetic demonstration in the React workspace, and a Power BI semantic/report package to be exercised in an authorized authoring environment. The React fixture demonstration and restricted-local live macro graph are implemented. The Power BI package includes a TMDL template, a five-page PBIP/PBIR project generator and a verified local actual-data browser report. Generated native source remains unexecuted in Power BI. Fixture and React execution are independent of Power BI availability; AC-009 remains partial until actual Power BI execution supplies the required evidence.
 
 The proposed analytical sizing envelope remains up to 50 instruments, 25 macro series, two years of daily market history, and at most 300 configured instrument pairs. These are design targets, not verified analytical coverage. Macro history may have a lower frequency and different revision structure. The validated synthetic report has 15 nodes, 14 relationship facts, 3 curated contexts, and 32 correlation estimates. Separately, the restricted descriptive catalog has 290 series and 11 taxonomy concepts; the bounded live observation ingestion has evidence for 3 series and 151 observation versions, and revision-quality publication for 3 selected summaries. Catalog membership does not imply observation ingestion, analytical eligibility, or quality-summary selection for every series. See [tasks](tasks.md), [Power BI reconciliation](../powerbi/README.md#ac-009-reconciliation-script), and [the handoff](handoff.md).
 
@@ -61,6 +61,13 @@ run passed on 2026-10-30. The development UI/daemon is available with a stopped
 18:30 New York schedule definition; upstream API ingestion, Power BI service
 refresh and production scheduling remain separate. See [the runbook](dagster-orchestration.md)
 and [evidence](../reports/t020-dagster-orchestration-validation.md).
+
+T-021 validates native Dagster recovery from a failed stage using verified parent
+captures and completed prerequisites. T-022 authors native fixture/actual-data
+report projects and provides an actual-data browser report without requiring a
+Power BI account. Native JSON Schema and browser checks passed; Power BI refresh,
+rendering and drill-through remain unexecuted. See [recovery evidence](../reports/t021-dagster-recovery-validation.md)
+and [report evidence](../reports/t022-report-project-validation.md).
 
 ## v0.1 review scenario
 
