@@ -12,7 +12,11 @@ upstream operator workflow. Primary branch: `feat/source-freshness-vintages`,
 from main/merged PR #13 `e6aa4d2`. Upstream branch:
 `fix/fred-pagination-source-recovery`, base `e6cbe645`, local commits
 `647f086` paging/intervals, `7c0deae` stale gating, `e3e48e3` staged repair/restore,
-`5f416b4` validated policies. No repair branch has been pushed or merged.
+`5f416b4` validated policies. Those hashes identify the executed repair. For PR
+review, the four upstream commits were rebased onto main `9ca1694` without
+conflicts: `5d4fc57`, `d9eca40`, `a7685fa`, `7ed2af5`. Both branches are pushed;
+neither is merged. Paired PRs: [MarketAtlas #14](https://github.com/thatquantguy44/MarketAtlas/pull/14)
+and [EcoMedallion #95](https://github.com/thatquantguy44/EcoMedallion/pull/95).
 
 Read [repair runbook](source-health-recovery.md) and
 [T-027 evidence](../reports/t027-source-repair-validation.md). The 227-candidate
@@ -48,7 +52,7 @@ zero console errors. No cloud publication occurred.
 
 MarketAtlas: 120 tests, 115 passed/five opt-in database skips, plus both tests in
 the explicit rollback-only correction regression passed (history/as-of/value/
-interval/exact precision/idempotence). Upstream full suite: 1,525 passed, one
+interval/exact precision/idempotence). Upstream PR-base full suite: 1,531 passed, one
 skipped and four **pre-existing** failures, reproduced against clean HEAD:
 three Spark-schema parser assertions and missing mmkt_rate_snapshot catalog entry.
 Source commit hooks passed. Detailed captures, audits, provider comparisons and
@@ -60,9 +64,9 @@ read-only diagnostic job. Its successful completion does not certify all age fla
 clear. The generic upstream-success marker is still unconfigured; do not equate
 that UI label with the separately verified operator repair.
 
-**Exact next engineering task:** review the two local branches and their scoped
-validation, then push/open PRs if requested. Retain the four baseline upstream test
-findings as separate work. T-015/AC-009 remains open; the user lacks Power BI access,
+**Exact next engineering task:** review the paired PRs and their CI/validation.
+Merge only when requested. Retain the four baseline upstream test findings as
+separate work. T-015/AC-009 remains open; the user lacks Power BI access,
 so do not repeatedly request it. Broader BLS/ECB adapters and analytical series
 exploration remain later work, not part of this completed source repair.
 
@@ -364,9 +368,9 @@ explicitly authorized the staged upstream repair; do not ask again. Preserve the
 267-series / 127,907-version repaired source and its reversible backups. Read
 source-health-recovery.md and T-027 evidence, then verify both Git branches and the
 current app/schedule before acting. Source branch fix/fred-pagination-source-recovery
-has four local commits ending 5f416b4; primary branch is feat/source-freshness-vintages.
-No repair branch is pushed or merged. The next task is review/push/PR only if
-requested. Four upstream full-suite failures reproduce on the baseline; retain
+has four rebased commits ending 7ed2af5; primary branch is feat/source-freshness-vintages.
+Both are pushed as EcoMedallion #95 and MarketAtlas #14; neither is merged. The
+next task is PR/CI review; merge only if requested. Four upstream full-suite failures reproduce on the baseline; retain
 that distinction. Existing Home Sales remains current-only without ALFRED history;
 all 23 remaining age flags matched provider latest periods at validation. Routine
 MarketAtlas reads stay scoped and corrections preserve system-time history.

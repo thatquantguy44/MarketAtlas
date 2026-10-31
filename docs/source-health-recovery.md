@@ -76,7 +76,11 @@ The separate checkout is
 The [retained client patch](../patches/upstream-fred-observation-pagination.patch)
 uses zero-context hunks (`git apply --check --unidiff-zero`) and covers paging/interval
 fixes; the upstream branch also contains cadence,
-staging/rollback and canonical-policy commits. It has not been pushed or merged.
+staging/rollback and canonical-policy commits. It is pushed as
+[EcoMedallion #95](https://github.com/thatquantguy44/EcoMedallion/pull/95), rebased
+onto current main. The companion downstream changes are
+[MarketAtlas #14](https://github.com/thatquantguy44/MarketAtlas/pull/14). Neither PR
+has been merged.
 
 Staging uses authoritative FRED responses, keeps captures private and quarantines
 invalid/empty results. Each applied series/window is independently transactional:

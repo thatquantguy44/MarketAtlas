@@ -73,7 +73,7 @@ runtime, without cloud publication or native Power BI claims.
 - MarketAtlas: 120 tests, 115 passed/five opt-in database skips. The explicit
   rollback-only correction regression passed both tests, including as-of history,
   changed intervals/values and exact-precision replay.
-- Upstream final full suite: 1,525 passed, one skipped, **four pre-existing failures**.
+- Upstream PR-base full suite: 1,531 passed, one skipped, **four pre-existing failures**.
   Those same failures reproduce on clean `e6cbe645`: three Spark schema-source
   parser assertions and missing `mmkt_rate_snapshot` in the Power BI catalog.
   They are retained as unrelated findings, not reported as a clean full-suite pass.
@@ -89,4 +89,10 @@ role boundary, current-only exception and rollback procedure.
 
 Upstream local commits: `647f086` (client/validity), `7c0deae` (cadence),
 `e3e48e3` (staged recovery/restore), `5f416b4` (169 policies). All commit hooks
-passed. They remain on the local branch without a push or merge.
+passed. These identify the executed repair. The four commits were subsequently
+rebased onto main `9ca1694` as `5d4fc57`, `d9eca40`, `a7685fa`, `7ed2af5` for
+[EcoMedallion #95](https://github.com/thatquantguy44/EcoMedallion/pull/95).
+The full suite on that PR base passed 1,531 tests with one skip and the same four
+baseline failures. Downstream changes are in
+[MarketAtlas #14](https://github.com/thatquantguy44/MarketAtlas/pull/14).
+Both branches are pushed; neither PR is merged.
