@@ -26,7 +26,7 @@ from market_atlas.reporting.browser import browser_snapshot
 Path(sys.argv[2]).write_text(json.dumps(browser_snapshot(sys.argv[1]),indent=2))
 PY
 node "$plugin/scripts/prepare-data-app.mjs" --surface dashboard --output "$output" --snapshot "$snapshot"
-cp powerbi/browser/DashboardContent.jsx "$output/src/content/dashboard/DashboardContent.jsx"
+cp powerbi/browser/*.jsx "$output/src/content/dashboard/"
 PYTHONPATH=src python3 - "$output" <<'PY'
 import json,sys
 from pathlib import Path

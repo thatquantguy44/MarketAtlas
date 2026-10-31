@@ -1,4 +1,5 @@
 import React from "react";
+import { RefreshStatus } from "./RefreshStatus.jsx";
 import { DataComponent, DataTable, EvidenceChart, Filters, MetricCard, Section,
   SortableItem, SortableRegion, useDataApp, useDashboardTabs, useSectionFilters } from "../../data-app-public.jsx";
 
@@ -75,6 +76,7 @@ export function DashboardContent() {
     }
   }
   return <article>
+    <RefreshStatus />
     <p data-editable-id="report-scope" data-editable-narrative>
       Restricted internal data · current economic taxonomy. Catalog membership does not imply observation ingestion.
       Publication time is separate from source freshness. Unknown metrics remain blank.

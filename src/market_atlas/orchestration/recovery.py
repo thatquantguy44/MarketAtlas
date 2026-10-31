@@ -19,9 +19,10 @@ class RecoveryError(ValueError):
     """A safe operator-facing reason why a checkpoint cannot be resumed."""
 
 
-CHECKPOINT_VERSION = 2
+CHECKPOINT_VERSION = 3
 CAPTURE_PRODUCERS = {
     "contract_gate.json": "source_gate",
+    "series_selection.json": "source_gate",
     "observations.json": "extract_observations",
     "context.json": "extract_context",
     "catalog.json": "extract_catalog",

@@ -7,7 +7,11 @@ on:
       - 'tests/**'
       - 'configs/**'
       - 'orchestration/**'
-      - 'scripts/dagster-dev.sh'
+      - 'scripts/dagster-*.sh'
+      - 'scripts/*report*.sh'
+      - 'scripts/refresh-browser-report.py'
+      - 'services/dagster-supervisor.mjs'
+      - 'powerbi/browser/**'
       - 'pyproject.toml'
       - 'requirements-orchestration.lock'
       - '.github/workflows/orchestration.yml'
@@ -23,6 +27,10 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements-orchestration.lock
       - run: python -m pip check
+      - name: Check local service and report launchers
+        run: |
+          bash -n scripts/dagster-dev.sh scripts/dagster-service.sh scripts/report-preview.sh scripts/build-browser-report.sh
+          node --check services/dagster-supervisor.mjs
       - name: Test definitions, schedules, sequencing, retries and fixture exports
         env:
           PYTHONPATH: src

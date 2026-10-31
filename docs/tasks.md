@@ -245,6 +245,49 @@ execution or cross-page drill-through is claimed. Evidence:
 [T-022 validation](../reports/t022-report-project-validation.md),
 [usage instructions](../powerbi/guides/generated-reports.md). T-015 remains open.
 
+### [x] T-023 — Refresh the existing browser report after validated runs
+
+Owner: Josh / report owner; implementation: Codex. Dependencies: T-020–T-022.
+Maps: REQ-009/010/011, NFR-002/003/005 → AC-009/010/011/014/015/017.
+
+Completed 2026-10-30 at local scope. A new final delivery stage builds an isolated
+candidate, verifies checksums, retains app identity/presentation metadata, preserves
+old immutable assets and commits HTML last. Failed builds preserve the previous
+report. Status polling shows successful refresh/source freshness, failed attempts
+and an explicit reload action. Native Dagster failure teardown updates monitoring.
+Checkpoint v3 freezes dynamic selections and includes their capture hashes.
+Evidence: [T-023–T-025 validation](../reports/t023-t025-automation-series-validation.md).
+Power BI execution remains separate; AC-009 is still partial.
+
+### [x] T-024 — Supervise local Dagster and verify its daily schedule
+
+Owner: Josh / refresh operator; implementation: Codex. Dependencies: T-023.
+Maps: REQ-010, NFR-005/006 → AC-010/017/018.
+
+Completed 2026-10-30 for the macOS user-login pilot. The task-owned Node supervisor
+and LaunchAgent start Dagster from its pinned environment, retain local history,
+restart after exit/login and expose start/status/restart/stop commands. The daily
+18:30 New York schedule is verified running; a service-launched API run passed and
+daemon heartbeats had no errors. The machine must remain running/logged in;
+production hosting and external alerts are not established. See
+[local automation](local-automation.md) and [validation](../reports/t023-t025-automation-series-validation.md).
+
+### [x] T-025 — Expand to all eligible approved FRED series
+
+Owner: Josh / source and methodology owner; implementation: Codex. Dependencies:
+T-004B/C, T-016/T-017, T-023. Maps: REQ-006/007/009/010/011 →
+AC-006/007/009/010/011/013/014/015/017.
+
+Completed 2026-10-30 at the approved-source boundary. Parameterized discovery with
+hard catalog/row bounds selects 94 point-in-time series (35,576 versions) and
+268 current-context/quality series from the existing 290-series catalog. Observation
+checks exclude missing/invalid vintage dates; current quality uses independent
+eligibility. Source queries batch IDs and hard-limit result sizes. The expanded
+live run and service rerun passed, with zero duplicate inserts on rerun. The
+170 vintage-unknown series remain current-context only; four have no usable
+window observations; 22 BLS/ECB entries require other observation adapters.
+See [eligibility rules](series-coverage.md) and [validation](../reports/t023-t025-automation-series-validation.md).
+
 ## Completion rules and coverage
 
 A task is complete only when its deliverable exists, required review/validation evidence is retained, relevant acceptance rows are updated, and documentation matches actual behavior. Downstream code may progress against fixture contracts while optional upstream integrations remain unavailable; do not collapse those statuses.

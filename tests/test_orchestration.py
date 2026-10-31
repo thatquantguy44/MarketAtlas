@@ -276,6 +276,31 @@ class DagsterRefreshTests(unittest.TestCase):
                     )
                     self.assertEqual(checkpoint["status"], "failed")
 
+    def test_failed_dagster_op_records_report_failure_at_resource_teardown(self):
+        from unittest.mock import Mock
+
+        from market_atlas.orchestration.definitions import fred_daily_refresh
+
+        with tempfile.TemporaryDirectory() as directory:
+            plan = plan_at(test_root(directory))
+            backend = RecordingBackend(failure="extract_catalog")
+            backend.record_report_failure = Mock()
+            with (
+                patch(
+                    "market_atlas.orchestration.definitions.make_plan",
+                    return_value=plan,
+                ),
+                patch(
+                    "market_atlas.orchestration.definitions.LiveBackend",
+                    return_value=backend,
+                ),
+            ):
+                result = fred_daily_refresh.execute_in_process(raise_on_error=False)
+            self.assertFalse(result.success)
+            backend.record_report_failure.assert_called_once_with(
+                "extract_catalog", "ValueError"
+            )
+
     def test_dagster_retries_a_transient_failure_before_downstream_steps(self):
         from market_atlas.orchestration.definitions import fred_daily_refresh
 

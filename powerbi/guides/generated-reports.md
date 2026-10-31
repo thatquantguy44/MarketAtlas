@@ -56,8 +56,9 @@ independent publication IDs remain available for inspection.
 
 The current local preview is [MarketAtlas macro research](http://127.0.0.1:60114/).
 It runs only on this computer. A user login service restarts the preview after
-login; the source data remain pinned until an explicit rebuild. No cloud hosting
-or automatic browser-report refresh is configured.
+login. The configured daily Dagster job now updates this existing report after
+pack validation; other independent generated projects remain pinned until refreshed.
+See [local automation](../../docs/local-automation.md). No cloud hosting is configured.
 
 To generate a new browser report from another validated actual-data pack, use
 the installed Data plugin's bundled runtime (Node is required):

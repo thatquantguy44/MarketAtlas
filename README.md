@@ -173,6 +173,9 @@ Read in order:
 
 23. [Report front-end runbook](docs/report-frontend-runbook.md): open/start/stop the local report, recover after reboot, and rebuild from a new data pack.
 
+24. [Local daily automation](docs/local-automation.md): supervised Dagster startup, schedule state and failure-safe report delivery.
+25. [Series coverage and eligibility](docs/series-coverage.md): all eligible approved FRED selections, temporal gates and expansion limits.
+
 The individual documents are canonical. Preserve requirement IDs when revising scope so the plan, tasks, and acceptance evidence stay aligned.
 
 ## Extending to securities finance

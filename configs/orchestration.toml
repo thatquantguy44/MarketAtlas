@@ -4,12 +4,17 @@ timezone = "America/New_York"
 cron_schedule = "30 18 * * *"
 output_directory = "data/generated/daily"
 pack_directory = "data/generated/powerbi-real"
+refresh_browser_report = true
+browser_report_directory = "data/generated/reports/browser"
 observation_config = "configs/pilot.toml"
 context_config = "configs/context_pilot.toml"
 release_days_back = 7
 release_days_ahead = 60
 page_size = 500
 max_export_rows = 100000
+series_selection_mode = "all_eligible"
+max_series = 1000
+max_observation_rows = 250000
 
 # MarketAtlas consumes the approved PostgreSQL interfaces; it does not own the
 # upstream FRED API ingestion. Optionally require its success marker before reads.

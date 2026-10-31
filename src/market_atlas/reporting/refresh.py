@@ -1,0 +1,243 @@
+"""Build a replacement in isolation and publish its index last at the existing URL."""
+
+from __future__ import annotations
+
+import fcntl
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from pathlib import Path
+
+from market_atlas.reporting.browser import browser_snapshot
+
+DEFAULT_PLUGIN = (
+    Path.home()
+    / ".codex/plugins/cache/openai-curated-remote/data-analytics/1.1.0-exp-homepage"
+)
+
+
+def atomic_write(path, payload):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=".report-", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(payload)
+        os.replace(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def encoded(value):
+    return (json.dumps(value, indent=2, allow_nan=False) + "\n").encode()
+
+
+@contextmanager
+def project_lock(project):
+    with (Path(project) / ".refresh.lock").open("a") as stream:
+        try:
+            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError("report refresh already running") from None
+        try:
+            yield
+        finally:
+            fcntl.flock(stream, fcntl.LOCK_UN)
+
+
+def _project(path):
+    path = Path(path).absolute()
+    if path.is_symlink() or path.resolve() != path:
+        raise ValueError("report project must be a canonical directory")
+    if (
+        not (path / "src/data.json").is_file()
+        or not (path / "dist/index.html").is_file()
+    ):
+        raise ValueError("report project must have an existing compiled build")
+    return path
+
+
+def record_failure(project, *, run_id, stage, error_type):
+    """Retain the last success; expose only safe stage and exception class identifiers."""
+    project = _project(project)
+    with project_lock(project):
+        path = project / "dist/refresh-status.json"
+        status = json.loads(path.read_text()) if path.exists() else {}
+        status["last_attempt"] = {
+            "status": "failed",
+            "run_id": run_id,
+            "stage": stage,
+            "error_type": error_type,
+            "at": datetime.now(UTC).isoformat(),
+        }
+        atomic_write(path, encoded(status))
+
+
+def _build(project, plugin, node):
+    subprocess.run(
+        [
+            node,
+            str(plugin / "scripts/data-app.mjs"),
+            "build",
+            "--project-dir",
+            str(project),
+            "--separate-data",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+
+def _verify_build(project):
+    dist = project / "dist"
+    manifest = json.loads((dist / "data-app-build.json").read_text())
+    if manifest.get("kind") != "separate-data-v1":
+        raise ValueError("report requires a split build")
+    for key in ("html", "snapshot"):
+        spec = manifest[key]
+        if Path(spec["path"]).name != spec["path"]:
+            raise ValueError("invalid report build asset")
+        content = (dist / spec["path"]).read_bytes()
+        if (
+            hashlib.sha256(content).hexdigest() != spec["sha256"]
+            or len(content) != spec["bytes"]
+        ):
+            raise ValueError("report build checksum mismatch")
+    return manifest
+
+
+def refresh_report(
+    project, pack, *, run_id, upstream=None, plugin=None, node=None, builder=None
+):
+    project = _project(project)
+    plugin = Path(
+        plugin or os.environ.get("MARKETATLAS_DATA_PLUGIN", DEFAULT_PLUGIN)
+    ).resolve()
+    node = node or shutil.which("node")
+    if not node or not (plugin / "scripts/data-app.mjs").is_file():
+        raise ValueError("report build runtime unavailable")
+    with project_lock(project):
+        current = json.loads((project / "src/data.json").read_text())
+        if not current.get("id"):
+            raise ValueError("report must retain a stable app identity")
+        snapshot = browser_snapshot(pack)
+        # Retain artifact identity, title, theme, export policy and other owner metadata.
+        updated = dict(current)
+        updated.update(
+            {key: snapshot[key] for key in ("queries", "generatedAt", "status")}
+        )
+        updated["buildStatus"] = "complete"
+        pack_id = json.loads((Path(pack) / "manifest.json").read_text())["pack_id"]
+        coverage = [
+            row
+            for row in snapshot["queries"]["source_context"]["rows"]
+            if row["context_kind"] == "source_coverage"
+        ]
+        refresh = {
+            "pack_id": pack_id,
+            "run_id": run_id,
+            "refreshed_at": updated["generatedAt"],
+            "source_coverage_records": len(coverage),
+            "stale_coverage_records": sum(
+                row.get("details_is_stale") is True for row in coverage
+            ),
+            "unknown_coverage_records": sum(
+                row.get("details_is_stale") is None for row in coverage
+            ),
+            "upstream_ingestion": (upstream or {}).get(
+                "upstream_freshness", (upstream or {}).get("status", "not_verified")
+            ),
+        }
+        updated["queries"]["refresh_status"] = {
+            "rows": [refresh],
+            "source": {
+                "label": "Successful MarketAtlas report refresh",
+                "files": ["manifest.json"],
+                "filters": ["Immutable pack " + pack_id],
+                "metricDefinitions": [
+                    {
+                        "label": "Stale coverage records",
+                        "definition": "Number of exported source/series coverage records whose supplied stale flag is true. Publication time is not source freshness.",
+                    }
+                ],
+                "evidenceFlow": [
+                    {
+                        "title": "Validated daily refresh",
+                        "detail": "Run " + run_id + "; immutable pack " + pack_id,
+                    }
+                ],
+            },
+        }
+        with tempfile.TemporaryDirectory(
+            prefix=".report-build-", dir=project.parent
+        ) as temporary:
+            candidate = Path(temporary) / "candidate"
+            shutil.copytree(
+                project,
+                candidate,
+                ignore=shutil.ignore_patterns(
+                    "dist", "node_modules", ".git", ".data-app-offline", ".refresh.lock"
+                ),
+            )
+            atomic_write(candidate / "src/data.json", encoded(updated))
+            (builder or _build)(candidate, plugin, node)
+            manifest = _verify_build(candidate)
+            # Immutable sidecars remain available for tabs still running the preceding build.
+            for path in (candidate / "dist").rglob("*"):
+                if not path.is_file() or path.name in (
+                    "index.html",
+                    "data-app-build.json",
+                ):
+                    continue
+                relative = path.relative_to(candidate / "dist")
+                target = project / "dist" / relative
+                if target.exists() and target.read_bytes() != path.read_bytes():
+                    raise ValueError("refusing to replace a mutable report asset")
+                if not target.exists():
+                    atomic_write(target, path.read_bytes())
+            status = {
+                "last_success": refresh,
+                "last_attempt": {
+                    "status": "success",
+                    "run_id": run_id,
+                    "at": datetime.now(UTC).isoformat(),
+                },
+            }
+            replacements = {
+                project / "src/data.json": encoded(updated),
+                project / "dist/data-app-build.json": encoded(manifest),
+                project / "dist/refresh-status.json": encoded(status),
+            }
+            originals = {
+                path: path.read_bytes() if path.exists() else None
+                for path in replacements
+            }
+            try:
+                for path, payload in replacements.items():
+                    atomic_write(path, payload)
+                # Commit point: the previous HTML and its immutable data remain readable until now.
+                atomic_write(
+                    project / "dist/index.html",
+                    (candidate / "dist/index.html").read_bytes(),
+                )
+            except BaseException:
+                for path, payload in originals.items():
+                    if payload is None:
+                        path.unlink(missing_ok=True)
+                    else:
+                        atomic_write(path, payload)
+                raise
+        return {
+            "status": "updated",
+            "project": str(project),
+            "pack_id": pack_id,
+            "app_id": current["id"],
+            "refreshed_at": refresh["refreshed_at"],
+        }

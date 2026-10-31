@@ -50,3 +50,13 @@ and browser validation](../reports/t022-report-project-validation.md) covers nat
 JSON schemas/bindings and actual-data browser filtering/evidence. These strengthen
 local recovery and report access. AC-009 remains partial: no Power BI engine
 refresh, rendering or cross-page drill-through was executed.
+
+T-023–T-025 supplementary evidence (2026-10-30): [automation and expanded-series
+validation](../reports/t023-t025-automation-series-validation.md) records failure-safe
+local report delivery, source freshness/failure notices, supervised macOS startup,
+a running daily schedule and a successful background-service refresh. Point-in-time
+ingestion expanded to 94 series/35,576 versions; current coverage/quality expanded
+to 268 FRED series with separate temporal eligibility. These extend local scope
+under AC-006/007/009/010/011/013/014/015/017/018. Source availability is not invented
+for 170 vintage-unknown series, source APIs remain unrefreshed, and AC-009 remains
+partial pending actual Power BI execution. Production/always-on hosting is not claimed.
