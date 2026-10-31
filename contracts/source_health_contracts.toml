@@ -1,0 +1,35 @@
+registry_version = "source-contract-registry-v1"
+
+[[contracts]]
+schema_name = "audit"
+object_name = "etl_run"
+object_type = "table"
+lifecycle_state = "supported_live"
+owner = "josh-project-owner"
+source_owner_status = "Requested by Josh for bounded read-only freshness/vintage diagnosis on 2026-10-31; no source writes or external redistribution"
+purpose = "Diagnostic upstream execution status and counts only; no error payloads, source values or manifest paths"
+declared_grain = "one row per upstream run_id"
+business_key = ["run_id"]
+required_columns = ["run_id", "status", "started_at", "ended_at", "series_total", "series_succeeded", "series_failed", "series_skipped_not_due"]
+expected_column_fingerprint_sha256 = "24671151141536fc2720e9c08f92e31ebaedd8a6fde8280746937443805cbbf2"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
+temporal_semantics = "Execution timestamps describe source-pipeline attempts, not observation publication/availability dates. A run success does not establish every series is fresh."
+adapter = "marketatlas_source_health_diagnostics"
+
+[[contracts]]
+schema_name = "audit"
+object_name = "etl_series_run"
+object_type = "table"
+lifecycle_state = "supported_live"
+owner = "josh-project-owner"
+source_owner_status = "Requested by Josh for bounded read-only freshness/vintage diagnosis on 2026-10-31; no source writes or external redistribution"
+purpose = "Diagnostic upstream execution status and counts only; no error payloads, source values or manifest paths"
+declared_grain = "one row per upstream run_id and series_id"
+business_key = ["run_id", "series_id"]
+required_columns = ["run_id", "series_id", "status", "started_at", "ended_at", "observations_extracted", "rows_merged_silver", "dq_passed"]
+expected_column_fingerprint_sha256 = "0d5de12d6dff035f37eeeaab52a11be16806d39dc748751c2647d207b99dfc3c"
+data_classification = "restricted_internal_only"
+redistribution_status = "restricted"
+temporal_semantics = "Execution timestamps describe source-pipeline attempts, not observation publication/availability dates. A run success does not establish every series is fresh."
+adapter = "marketatlas_source_health_diagnostics"

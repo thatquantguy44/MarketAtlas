@@ -1,0 +1,576 @@
+diff --git a/src/fred_pipeline/sources/fred.py b/src/fred_pipeline/sources/fred.py
+index c98b8c3..2c31253 100644
+--- a/src/fred_pipeline/sources/fred.py
++++ b/src/fred_pipeline/sources/fred.py
+@@ -19 +19,5 @@ from typing import Any, Callable, Optional
+-from fred_pipeline.sources.base import HTTPSource, RateLimiter, SourceError
++from fred_pipeline.sources.base import (
++    HTTPSource,
++    RateLimiter as RateLimiter,
++    SourceError,
++)
+@@ -55 +59,9 @@ def _coalesce_observations(observations: list[dict[str, Any]]) -> list[dict[str,
+-            if run is not None and obs.get("value") == run.get("value"):
++            if (
++                run is not None
++                and obs.get("value") == run.get("value")
++                and (
++                    run["realtime_end"] == "9999-12-31"
++                    or date.fromisoformat(obs["realtime_start"])
++                    <= date.fromisoformat(run["realtime_end"]) + timedelta(days=1)
++                )
++            ):
+@@ -118 +130,4 @@ class FredClient(HTTPSource):
+-            series_id, payload, run_id=run_id, track_vintage=track_vintage,
++            series_id,
++            payload,
++            run_id=run_id,
++            track_vintage=track_vintage,
+@@ -131,0 +147,39 @@ class FredClient(HTTPSource):
++    def _observation_pages(self, params: dict[str, Any]) -> dict[str, Any]:
++        """Read every observation page; refuse truncated or drifting responses.
++
++        Vintage-date batching does not paginate observation rows. Apply both.
++        Keep each API response page for Bronze lineage, without request/auth params.
++        """
++        parameters = {**params, "limit": 100000, "offset": 0}
++        first = self._request("series/observations", parameters)
++        if "count" not in first:
++            raise FredAPIError("Observation response is missing its count")
++        count = int(first["count"])
++        if count < 0 or count > 1000000:
++            raise FredAPIError(
++                "Observation response exceeds the one-million-row recovery limit"
++            )
++        rows = list(first.get("observations") or [])
++        pages = [first]
++        while len(rows) < count:
++            offset = len(rows)
++            page = self._request(
++                "series/observations", {**parameters, "offset": offset}
++            )
++            batch = page.get("observations") or []
++            if (
++                int(page.get("count", -1)) != count
++                or int(page.get("offset", -1)) != offset
++                or not batch
++            ):
++                raise FredAPIError(
++                    "Observation pagination is incomplete or changed during extraction"
++                )
++            rows.extend(batch)
++            pages.append(page)
++        if len(rows) != count:
++            raise FredAPIError("Observation count does not match extracted rows")
++        if len(pages) == 1:
++            return first
++        return {**first, "observations": rows, "offset": 0, "response_pages": pages}
++
+@@ -160 +214 @@ class FredClient(HTTPSource):
+-            return self._request("series/observations", params)
++            return self._observation_pages(params)
+@@ -183 +237,3 @@ class FredClient(HTTPSource):
+-                series_id, start, years,
++                series_id,
++                start,
++                years,
+@@ -186 +242 @@ class FredClient(HTTPSource):
+-                return self._request("series/observations", attempt)
++                return self._observation_pages(attempt)
+@@ -192,2 +248,5 @@ class FredClient(HTTPSource):
+-        latest = {k: v for k, v in params.items()
+-                  if k not in ("realtime_start", "realtime_end")}
++        latest = {
++            k: v
++            for k, v in params.items()
++            if k not in ("realtime_start", "realtime_end")
++        }
+@@ -196 +255,2 @@ class FredClient(HTTPSource):
+-            "(no vintage history for this run)", series_id,
++            "(no vintage history for this run)",
++            series_id,
+@@ -198 +258 @@ class FredClient(HTTPSource):
+-        return self._request("series/observations", latest)
++        return self._observation_pages(latest)
+@@ -236,0 +297,5 @@ class FredClient(HTTPSource):
++        if not 1 <= batch_size <= 2000:
++            raise ValueError("vintage batch size must be between 1 and 2000")
++        # FRED may include one boundary-state vintage in addition to the dated
++        # releases. Reserve its slot rather than requesting 2001 states.
++        batch_size = min(batch_size, 1999)
+@@ -247,2 +312 @@ class FredClient(HTTPSource):
+-            return self._request(
+-                "series/observations",
++            return self._observation_pages(
+@@ -252,3 +316,2 @@ class FredClient(HTTPSource):
+-            return self._request(
+-                "series/observations",
+-                {**base, "realtime_start": vintages[0], "realtime_end": vintages[-1]},
++            return self._observation_pages(
++                {**base, "realtime_start": vintages[0], "realtime_end": "9999-12-31"},
+@@ -259,4 +322,14 @@ class FredClient(HTTPSource):
+-            chunk = vintages[i:i + batch_size]
+-            payload = self._request(
+-                "series/observations",
+-                {**base, "realtime_start": chunk[0], "realtime_end": chunk[-1]},
++            chunk = vintages[i : i + batch_size]
++            payload = self._observation_pages(
++                {
++                    **base,
++                    "realtime_start": chunk[0],
++                    "realtime_end": (
++                        (
++                            date.fromisoformat(vintages[i + batch_size])
++                            - timedelta(days=1)
++                        ).isoformat()
++                        if i + batch_size < len(vintages)
++                        else "9999-12-31"
++                    ),
++                },
+@@ -267 +340,3 @@ class FredClient(HTTPSource):
+-            series_id, len(vintages), (len(vintages) + batch_size - 1) // batch_size,
++            series_id,
++            len(vintages),
++            (len(vintages) + batch_size - 1) // batch_size,
+@@ -311 +386,3 @@ class FredClient(HTTPSource):
+-    def get_category_series(self, category_id: int, **kwargs: Any) -> list[dict[str, Any]]:
++    def get_category_series(
++        self, category_id: int, **kwargs: Any
++    ) -> list[dict[str, Any]]:
+@@ -313 +390,3 @@ class FredClient(HTTPSource):
+-        return self.list_series("category/series", {"category_id": category_id}, **kwargs)
++        return self.list_series(
++            "category/series", {"category_id": category_id}, **kwargs
++        )
+@@ -315 +394,3 @@ class FredClient(HTTPSource):
+-    def get_release_series(self, release_id: int, **kwargs: Any) -> list[dict[str, Any]]:
++    def get_release_series(
++        self, release_id: int, **kwargs: Any
++    ) -> list[dict[str, Any]]:
+diff --git a/tests/test_fred_client.py b/tests/test_fred_client.py
+index ad77a44..77b90ca 100644
+--- a/tests/test_fred_client.py
++++ b/tests/test_fred_client.py
+@@ -20 +20,3 @@ def test_requires_api_key():
+-def test_get_observations_success(fake_session_cls, fake_response_cls, observations_payload):
++def test_get_observations_success(
++    fake_session_cls, fake_response_cls, observations_payload
++):
+@@ -33 +35 @@ def test_vintage_params_passed_through(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([fake_response_cls({"observations": []})])
++    session = fake_session_cls([fake_response_cls({"count": 0, "observations": []})])
+@@ -44,5 +46,7 @@ def test_retries_on_transient_then_succeeds(fake_session_cls, fake_response_cls)
+-    session = fake_session_cls([
+-        fake_response_cls(None, status_code=503),
+-        fake_response_cls(None, status_code=500),
+-        fake_response_cls({"observations": []}, status_code=200),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls(None, status_code=503),
++            fake_response_cls(None, status_code=500),
++            fake_response_cls({"count": 0, "observations": []}, status_code=200),
++        ]
++    )
+@@ -51 +55 @@ def test_retries_on_transient_then_succeeds(fake_session_cls, fake_response_cls)
+-    assert out == {"observations": []}
++    assert out == {"count": 0, "observations": []}
+@@ -56,4 +60,8 @@ def test_non_retryable_error_raises_immediately(fake_session_cls, fake_response_
+-    session = fake_session_cls([
+-        fake_response_cls({"error_message": "Bad Request. Series does not exist."},
+-                          status_code=400),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls(
++                {"error_message": "Bad Request. Series does not exist."},
++                status_code=400,
++            ),
++        ]
++    )
+@@ -68 +76,3 @@ def test_exhausts_retries_and_raises(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([fake_response_cls(None, status_code=503) for _ in range(3)])
++    session = fake_session_cls(
++        [fake_response_cls(None, status_code=503) for _ in range(3)]
++    )
+@@ -77 +87 @@ _VINTAGE_CAP_BODY = {
+-                     "allowed. The maximum is 2000."
++    "allowed. The maximum is 2000."
+@@ -82,6 +92,18 @@ def test_vintage_cap_falls_back_to_bounded_window(fake_session_cls, fake_respons
+-    session = fake_session_cls([
+-        fake_response_cls(_VINTAGE_CAP_BODY, status_code=400),   # full window caps
+-        fake_response_cls({"observations": [{"date": "2024-01-01", "value": "1",
+-                           "realtime_start": "2020-01-01",
+-                           "realtime_end": "9999-12-31"}]}),       # bounded succeeds
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls(_VINTAGE_CAP_BODY, status_code=400),  # full window caps
++            fake_response_cls(
++                {
++                    "count": 1,
++                    "observations": [
++                        {
++                            "date": "2024-01-01",
++                            "value": "1",
++                            "realtime_start": "2020-01-01",
++                            "realtime_end": "9999-12-31",
++                        }
++                    ],
++                }
++            ),  # bounded succeeds
++        ]
++    )
+@@ -99 +121,3 @@ def test_vintage_cap_final_fallback_to_latest_only(fake_session_cls, fake_respon
+-    session = fake_session_cls(caps + [fake_response_cls({"observations": []})])
++    session = fake_session_cls(
++        caps + [fake_response_cls({"count": 0, "observations": []})]
++    )
+@@ -104 +128 @@ def test_vintage_cap_final_fallback_to_latest_only(fake_session_cls, fake_respon
+-    assert out == {"observations": []}
++    assert out == {"count": 0, "observations": []}
+@@ -111,4 +135,8 @@ def test_non_vintage_400_still_raises(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([
+-        fake_response_cls({"error_message": "Bad Request. Series does not exist."},
+-                          status_code=400),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls(
++                {"error_message": "Bad Request. Series does not exist."},
++                status_code=400,
++            ),
++        ]
++    )
+@@ -117,2 +145,3 @@ def test_non_vintage_400_still_raises(fake_session_cls, fake_response_cls):
+-        client.get_observations("NOPE", realtime_start="1776-07-04",
+-                                realtime_end="9999-12-31")
++        client.get_observations(
++            "NOPE", realtime_start="1776-07-04", realtime_end="9999-12-31"
++        )
+@@ -123,4 +152,6 @@ def test_get_vintage_dates_paginates(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([
+-        fake_response_cls({"vintage_dates": ["2020-01-01", "2020-06-01"]}),
+-        fake_response_cls({"vintage_dates": ["2021-01-01"]}),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls({"vintage_dates": ["2020-01-01", "2020-06-01"]}),
++            fake_response_cls({"vintage_dates": ["2021-01-01"]}),
++        ]
++    )
+@@ -134,3 +165,4 @@ def test_all_vintages_batches_and_coalesces(fake_session_cls, fake_response_cls)
+-    # 3 vintage dates, batch_size 2 -> 1 vintagedates call + 2 observation calls
+-    vintage_dates = fake_response_cls({"vintage_dates": ["2020-01-01", "2020-02-01",
+-                                                         "2020-03-01"]})
++    # 4 vintage dates, batch_size 2 -> 1 vintage-date call + 2 observation calls
++    vintage_dates = fake_response_cls(
++        {"vintage_dates": ["2020-01-01", "2020-02-01", "2020-03-01", "2020-03-02"]}
++    )
+@@ -138,4 +170,13 @@ def test_all_vintages_batches_and_coalesces(fake_session_cls, fake_response_cls)
+-    batch1 = fake_response_cls({"observations": [
+-        {"date": "2019-12-01", "value": "100", "realtime_start": "2020-01-01",
+-         "realtime_end": "2020-02-01"},
+-    ]})
++    batch1 = fake_response_cls(
++        {
++            "count": 1,
++            "observations": [
++                {
++                    "date": "2019-12-01",
++                    "value": "100",
++                    "realtime_start": "2020-01-01",
++                    "realtime_end": "2020-02-29",
++                },
++            ],
++        }
++    )
+@@ -143,6 +184,19 @@ def test_all_vintages_batches_and_coalesces(fake_session_cls, fake_response_cls)
+-    batch2 = fake_response_cls({"observations": [
+-        {"date": "2019-12-01", "value": "100", "realtime_start": "2020-03-01",
+-         "realtime_end": "2020-03-01"},
+-        {"date": "2019-12-01", "value": "105", "realtime_start": "2020-03-01",
+-         "realtime_end": "9999-12-31"},
+-    ]})
++    batch2 = fake_response_cls(
++        {
++            "count": 2,
++            "observations": [
++                {
++                    "date": "2019-12-01",
++                    "value": "100",
++                    "realtime_start": "2020-03-01",
++                    "realtime_end": "2020-03-01",
++                },
++                {
++                    "date": "2019-12-01",
++                    "value": "105",
++                    "realtime_start": "2020-03-02",
++                    "realtime_end": "9999-12-31",
++                },
++            ],
++        }
++    )
+@@ -157 +211 @@ def test_all_vintages_batches_and_coalesces(fake_session_cls, fake_response_cls)
+-    assert ("105", "2020-03-01") in values
++    assert ("105", "2020-03-02") in values
+@@ -166,3 +220,18 @@ def test_coalesce_observations_merges_equal_runs():
+-        {"date": "d", "value": "1", "realtime_start": "2020-01-01", "realtime_end": "2020-02-01"},
+-        {"date": "d", "value": "1", "realtime_start": "2020-02-02", "realtime_end": "2020-03-01"},
+-        {"date": "d", "value": "2", "realtime_start": "2020-03-02", "realtime_end": "9999-12-31"},
++        {
++            "date": "d",
++            "value": "1",
++            "realtime_start": "2020-01-01",
++            "realtime_end": "2020-02-01",
++        },
++        {
++            "date": "d",
++            "value": "1",
++            "realtime_start": "2020-02-02",
++            "realtime_end": "2020-03-01",
++        },
++        {
++            "date": "d",
++            "value": "2",
++            "realtime_start": "2020-03-02",
++            "realtime_end": "9999-12-31",
++        },
+@@ -178,3 +247,5 @@ def test_metadata_extraction(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([
+-        fake_response_cls({"seriess": [{"id": "DGS10", "title": "10Y"}]}),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls({"seriess": [{"id": "DGS10", "title": "10Y"}]}),
++        ]
++    )
+@@ -188,4 +259,6 @@ def test_list_series_paginates(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([
+-        fake_response_cls({"seriess": [{"id": "A"}, {"id": "B"}]}),
+-        fake_response_cls({"seriess": [{"id": "C"}]}),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls({"seriess": [{"id": "A"}, {"id": "B"}]}),
++            fake_response_cls({"seriess": [{"id": "C"}]}),
++        ]
++    )
+@@ -193,2 +266,3 @@ def test_list_series_paginates(fake_session_cls, fake_response_cls):
+-    out = client.list_series("category/series", {"category_id": 1},
+-                             max_results=None, page_size=2)
++    out = client.list_series(
++        "category/series", {"category_id": 1}, max_results=None, page_size=2
++    )
+@@ -202,3 +276,5 @@ def test_list_series_respects_max_results(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([
+-        fake_response_cls({"seriess": [{"id": "A"}, {"id": "B"}]}),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls({"seriess": [{"id": "A"}, {"id": "B"}]}),
++        ]
++    )
+@@ -212,9 +288,23 @@ def test_get_release_dates_paginates(fake_session_cls, fake_response_cls):
+-    session = fake_session_cls([
+-        fake_response_cls({"release_dates": [
+-            {"release_id": 10, "release_name": "CPI", "date": "2026-08-12"},
+-            {"release_id": 50, "release_name": "Employment", "date": "2026-08-07"},
+-        ]}),
+-        fake_response_cls({"release_dates": [
+-            {"release_id": 53, "release_name": "GDP", "date": "2026-08-27"},
+-        ]}),
+-    ])
++    session = fake_session_cls(
++        [
++            fake_response_cls(
++                {
++                    "release_dates": [
++                        {"release_id": 10, "release_name": "CPI", "date": "2026-08-12"},
++                        {
++                            "release_id": 50,
++                            "release_name": "Employment",
++                            "date": "2026-08-07",
++                        },
++                    ]
++                }
++            ),
++            fake_response_cls(
++                {
++                    "release_dates": [
++                        {"release_id": 53, "release_name": "GDP", "date": "2026-08-27"},
++                    ]
++                }
++            ),
++        ]
++    )
+@@ -223 +313,3 @@ def test_get_release_dates_paginates(fake_session_cls, fake_response_cls):
+-        realtime_start="2026-07-17", realtime_end="2026-11-17", limit=2,
++        realtime_start="2026-07-17",
++        realtime_end="2026-11-17",
++        limit=2,
+@@ -234,2 +326,4 @@ def test_get_release_dates_passes_params(fake_session_cls, fake_response_cls):
+-        realtime_start="2026-07-17", realtime_end="2026-11-17",
+-        include_release_dates_with_no_data=True, sort_order="asc",
++        realtime_start="2026-07-17",
++        realtime_end="2026-11-17",
++        include_release_dates_with_no_data=True,
++        sort_order="asc",
+@@ -245 +339,2 @@ def test_get_release_dates_without_release_id_hits_plural_endpoint(
+-    fake_session_cls, fake_response_cls,
++    fake_session_cls,
++    fake_response_cls,
+@@ -255 +350,2 @@ def test_get_release_dates_with_release_id_hits_singular_scoped_endpoint(
+-    fake_session_cls, fake_response_cls,
++    fake_session_cls,
++    fake_response_cls,
+@@ -260,3 +356,11 @@ def test_get_release_dates_with_release_id_hits_singular_scoped_endpoint(
+-    session = fake_session_cls([fake_response_cls({"release_dates": [
+-        {"release_id": 101, "date": "2026-07-29"},
+-    ]})])
++    session = fake_session_cls(
++        [
++            fake_response_cls(
++                {
++                    "release_dates": [
++                        {"release_id": 101, "date": "2026-07-29"},
++                    ]
++                }
++            )
++        ]
++    )
+@@ -265 +369,3 @@ def test_get_release_dates_with_release_id_hits_singular_scoped_endpoint(
+-        release_id=101, realtime_start="2026-07-17", realtime_end="2026-11-17",
++        release_id=101,
++        realtime_start="2026-07-17",
++        realtime_end="2026-11-17",
+@@ -276,2 +382,2 @@ def test_rate_limiter_sleeps_when_too_fast():
+-    rl.acquire()          # first call, no sleep
+-    now[0] = 0.1          # only 0.1s elapsed, need 1.0s
++    rl.acquire()  # first call, no sleep
++    now[0] = 0.1  # only 0.1s elapsed, need 1.0s
+diff --git a/tests/test_observation_pagination.py b/tests/test_observation_pagination.py
+new file mode 100644
+index 0000000..54e63ea
+--- /dev/null
++++ b/tests/test_observation_pagination.py
+@@ -0,0 +1,119 @@
++"""Regression coverage for observation-row pagination in every vintage path."""
++
++from unittest import TestCase
++from fred_pipeline.sources.fred import FredClient, FredAPIError
++
++
++class ObservationPaginationTests(TestCase):
++    def client(self, payloads):
++        calls = []
++        iterator = iter(payloads)
++        client = object.__new__(FredClient)
++
++        def request(endpoint, params):
++            calls.append((endpoint, dict(params)))
++            payload = next(iterator)
++            if isinstance(payload, Exception):
++                raise payload
++            return payload
++
++        client._request = request
++        return client, calls
++
++    def pages(self):
++        return [
++            {
++                "count": 3,
++                "offset": 0,
++                "observations": [{"date": "2000-01-01"}, {"date": "2001-01-01"}],
++            },
++            {"count": 3, "offset": 2, "observations": [{"date": "2026-10-23"}]},
++        ]
++
++    def test_normal_request_reads_tail_and_retains_response_pages(self):
++        pages = self.pages()
++        client, calls = self.client(pages)
++        result = client.get_observations("ANFCI")
++        self.assertEqual(len(result["observations"]), 3)
++        self.assertEqual(result["observations"][-1]["date"], "2026-10-23")
++        self.assertEqual([p[1]["offset"] for p in calls], [0, 2])
++        self.assertEqual(result["response_pages"], pages)
++
++    def test_vintage_window_reads_all_observation_pages(self):
++        client, calls = self.client(self.pages())
++        client.get_vintage_dates = lambda _: ["2024-01-01", "2026-10-30"]
++        result = client.get_observations_all_vintages("X")
++        self.assertEqual(len(result["observations"]), 3)
++        self.assertEqual(calls[-1][1]["realtime_end"], "9999-12-31")
++
++    def test_cap_fallback_still_reads_all_rows(self):
++        error = FredAPIError(
++            "Exceeded maximum number of vintage dates", status_code=400
++        )
++        client, calls = self.client([error, *self.pages()])
++        result = client.get_observations("X", realtime_start="1776-07-04")
++        self.assertEqual(len(result["observations"]), 3)
++        self.assertEqual(calls[-1][1]["offset"], 2)
++
++    def test_missing_count_or_excessive_count_refused(self):
++        for payload in ({"observations": []}, {"count": 1000001, "observations": []}):
++            client, calls = self.client([payload])
++            with self.assertRaises(FredAPIError):
++                client.get_observations("X")
++            self.assertEqual(len(calls), 1)
++
++    def test_incomplete_or_drifting_pages_refused(self):
++        for page in (
++            {"count": 3, "offset": 2, "observations": []},
++            {"count": 4, "offset": 2, "observations": [{"date": "x"}]},
++            {"count": 3, "offset": 0, "observations": [{"date": "x"}]},
++        ):
++            client, _ = self.client([self.pages()[0], page])
++            with self.assertRaises(FredAPIError):
++                client.get_observations("X")
++
++    def test_vintage_batches_cover_gaps_and_keep_final_interval_open(self):
++        client, calls = self.client(
++            [
++                {"count": 0, "observations": []},
++                {"count": 0, "observations": []},
++            ]
++        )
++        client.get_vintage_dates = lambda _: ["2020-01-01", "2020-02-01", "2020-05-01"]
++        client.get_observations_all_vintages("X", batch_size=2)
++        self.assertEqual(calls[0][1]["realtime_end"], "2020-04-30")
++        self.assertEqual(calls[1][1]["realtime_start"], "2020-05-01")
++        self.assertEqual(calls[1][1]["realtime_end"], "9999-12-31")
++
++    def test_equal_values_with_unknown_gap_do_not_manufacture_continuity(self):
++        from fred_pipeline.sources.fred import _coalesce_observations
++
++        rows = [
++            {
++                "date": "2020-01-01",
++                "value": "1",
++                "realtime_start": "2020-01-01",
++                "realtime_end": "2020-02-01",
++            },
++            {
++                "date": "2020-01-01",
++                "value": "1",
++                "realtime_start": "2020-03-01",
++                "realtime_end": "9999-12-31",
++            },
++        ]
++        self.assertEqual(len(_coalesce_observations(rows)), 2)
++
++    def test_vintage_window_reserves_boundary_state_under_api_cap(self):
++        from datetime import date, timedelta
++
++        client, calls = self.client(
++            [{"count": 0, "observations": []}, {"count": 0, "observations": []}]
++        )
++        dates = [
++            (date(2000, 1, 1) + timedelta(days=i)).isoformat() for i in range(2000)
++        ]
++        client.get_vintage_dates = lambda _: dates
++        client.get_observations_all_vintages("X", batch_size=2000)
++        self.assertEqual(len(calls), 2)
++        self.assertEqual(calls[1][1]["realtime_start"], dates[1999])

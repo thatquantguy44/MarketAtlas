@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid5
 
@@ -13,6 +14,17 @@ from market_atlas.database import DatabaseUnavailable
 UPSTREAM_NAMESPACE = UUID("9de3d55e-5ae9-4e50-9d12-87651e46690b")
 SOURCE_NAME = "macro_medallion_ecomedallion"
 SOURCE_OBJECT = "meta.fred_series,gold.fred_point_in_time"
+STATE_COLUMNS = (
+    "series_node_id",
+    "reference_period",
+    "frequency",
+    "value",
+    "unit",
+    "is_missing",
+    "vintage",
+    "source_valid_through_inclusive",
+    "available_at",
+)
 ALLOWED_REDISTRIBUTION_STATUSES = {
     "synthetic",
     "approved",
@@ -171,6 +183,24 @@ def _manifest_identity(manifest: dict[str, Any]) -> str:
     )
 
 
+def observation_state(node_id, entity, observation):
+    """Compare source facts independently of extraction/ingestion timestamps."""
+    return (
+        node_id,
+        _as_date(observation["reference_period"], "reference_period"),
+        entity["frequency"],
+        None if observation["value"] is None else Decimal(str(observation["value"])),
+        entity["unit"],
+        observation["is_missing"],
+        f"{observation['available_on']}#{observation['revision_number']}",
+        _as_date(
+            observation["source_valid_through_inclusive"],
+            "source_valid_through_inclusive",
+        ),
+        _as_timestamp(observation["available_on"], "available_on"),
+    )
+
+
 def ingest(config: TargetDatabaseConfig, extract: dict[str, Any]) -> dict[str, object]:
     """Write a validated upstream extract only to MarketAtlas-owned schemas."""
     validate_extract(extract)
@@ -185,6 +215,8 @@ def ingest(config: TargetDatabaseConfig, extract: dict[str, Any]) -> dict[str, o
         from psycopg.types.json import Jsonb
 
         with _connect(config) as connection, connection.cursor() as cursor:
+            # Serialize source ingestion, including CLI callers outside Dagster.
+            cursor.execute("SELECT pg_advisory_xact_lock(194700123)")
             cursor.execute(
                 """
                 INSERT INTO atlas.input_manifest (
@@ -245,12 +277,51 @@ def ingest(config: TargetDatabaseConfig, extract: dict[str, Any]) -> dict[str, o
                 )
                 node_ids[canonical_key] = cursor.fetchone()[0]
 
+            existing = {}
+            records = [row["source_record"] for row in extract["macro_observations"]]
+            for offset in range(0, len(records), 1000):
+                cursor.execute(
+                    "SELECT macro_observation_version_id,source_record,recorded_from,"
+                    + ",".join(STATE_COLUMNS)
+                    + " FROM atlas.macro_observation_version WHERE source_record=ANY(%s) AND recorded_to IS NULL FOR UPDATE",
+                    (records[offset : offset + 1000],),
+                )
+                for row in cursor.fetchall():
+                    if row[1] in existing:
+                        raise ValueError(
+                            "multiple current versions for source observation"
+                        )
+                    existing[row[1]] = row
             inserted_observations = 0
+            corrected_observations = 0
             for observation in extract["macro_observations"]:
                 source_record = observation["source_record"]
                 vintage = (
                     f"{observation['available_on']}#{observation['revision_number']}"
                 )
+                active = existing.get(source_record)
+                state = observation_state(
+                    node_ids[observation["series_canonical_key"]],
+                    entity_by_key[observation["series_canonical_key"]],
+                    observation,
+                )
+                if active and tuple(active[3:]) == state:
+                    continue
+                version_id = stable_id("macro-observation-version", source_record)
+                if active:
+                    if extracted_at <= active[2]:
+                        raise ValueError(
+                            "source correction must advance MarketAtlas record time"
+                        )
+                    cursor.execute(
+                        "UPDATE atlas.macro_observation_version SET recorded_to=%s WHERE macro_observation_version_id=%s",
+                        (extracted_at, active[0]),
+                    )
+                    version_id = stable_id(
+                        "macro-observation-correction",
+                        f"{source_record}:{manifest_sha256}:{extracted_at.isoformat()}",
+                    )
+                    corrected_observations += 1
                 cursor.execute(
                     """
                     INSERT INTO atlas.macro_observation_version (
@@ -266,12 +337,12 @@ def ingest(config: TargetDatabaseConfig, extract: dict[str, Any]) -> dict[str, o
                     ON CONFLICT (macro_observation_version_id) DO NOTHING
                     """,
                     (
-                        stable_id("macro-observation-version", source_record),
+                        version_id,
                         node_ids[observation["series_canonical_key"]],
                         _as_date(observation["reference_period"], "reference_period"),
                         str(observation["reference_period"]),
                         entity_by_key[observation["series_canonical_key"]]["frequency"],
-                        observation["value"],
+                        state[3],
                         entity_by_key[observation["series_canonical_key"]]["unit"],
                         observation["is_missing"],
                         vintage,
@@ -298,6 +369,7 @@ def ingest(config: TargetDatabaseConfig, extract: dict[str, Any]) -> dict[str, o
             "source_rows_sha256": manifest["source_rows_sha256"],
             "macro_series_count": len(node_ids),
             "macro_observation_inserted_count": inserted_observations,
+            "macro_observation_corrected_count": corrected_observations,
             "macro_observation_seen_count": len(extract["macro_observations"]),
         }
     except (ValueError, DatabaseUnavailable):

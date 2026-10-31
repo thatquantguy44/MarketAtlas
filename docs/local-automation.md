@@ -113,3 +113,11 @@ and context selections, dates and verified captures.
 
 [Series eligibility and coverage](series-coverage.md) explains the different
 catalog, observation and current-context/quality populations.
+
+## Investigate source health
+
+The manual `fred_source_health` job checks coverage ages, audit attempts and
+vintage policy without source writes or an additional schedule. Its success means
+the diagnosis completed. See [source-health recovery](source-health-recovery.md)
+for CLI usage, private evidence, generated review manifests and the source-owner
+repair boundary. Reload the code location to discover newly added jobs.

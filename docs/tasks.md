@@ -288,6 +288,39 @@ live run and service rerun passed, with zero duplicate inserts on rerun. The
 window observations; 22 BLS/ECB entries require other observation adapters.
 See [eligibility rules](series-coverage.md) and [validation](../reports/t023-t025-automation-series-validation.md).
 
+### [x] T-026 — Diagnose FRED source freshness and vintage policy
+
+Owner: Josh / source and methodology owner; implementation: Codex. Dependencies:
+T-025. Maps: REQ-006/009/010/011, NFR-001/003/006 → AC-006/009/010/013/015/018.
+
+Completed 2026-10-31 at diagnosis/tooling scope. A bounded read-only CLI and manual
+Dagster job reconcile coverage ages, attempt/success clocks and vintage policy.
+Two separate diagnostic audit contracts add status/timing/count access without
+changing publication contracts. Live evidence: 181 stale/268, zero rule mismatches,
+179 stale series last skipped, 170 intentionally current-only series. A staged
+upstream observation-pagination patch passes 26 tests; provider probes recover
+dated AKUR/ANFCI data privately. No source patch or warehouse repair was applied.
+See [evidence](../reports/t026-source-health-validation.md) and
+[recovery runbook](source-health-recovery.md).
+
+### [x] T-027 — Apply and validate upstream freshness/vintage repairs
+
+Owner: Josh / source owner; implementation: Codex. Dependencies: T-026 and Josh's
+explicit staged upstream write authorization (2026-10-31). Maps: REQ-006/009/010/011,
+NFR-001/002/003/005/006 → AC-006/009/010/013/014/015/017/018.
+
+Completed 2026-10-31 for the bounded 2024–October 2026 window. Fixed upstream row
+pagination, real-time interval boundaries and stale FRED cadence gating. Staged/
+validated 226 dated sources and refreshed one explicit current-only exception;
+updated 169 canonical vintage policies. Original affected rows are retained in
+transactional audit backups; AKUR rollback/reapply matched exactly. MarketAtlas
+now admits 267 series / 127,907 versions, preserves source corrections as system-time
+versions, binds exact decimals and passes a zero-insert/zero-correction replay.
+Age flags fell to 23, all matching provider latest periods. Other upstream models,
+pre-2024 history, cloud/source scheduling and Power BI execution remain separate.
+See [T-027 evidence](../reports/t027-source-repair-validation.md) and
+[runbook](source-health-recovery.md).
+
 ## Completion rules and coverage
 
 A task is complete only when its deliverable exists, required review/validation evidence is retained, relevant acceptance rows are updated, and documentation matches actual behavior. Downstream code may progress against fixture contracts while optional upstream integrations remain unavailable; do not collapse those statuses.

@@ -1,10 +1,116 @@
 # MarketAtlas — Handoff
 
-Updated: 2026-10-30. This is an early implementation handoff, not a completed pilot or production release.
+Updated: 2026-10-31. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Start here next session
 
-**Latest T-023–T-025 checkpoint (2026-10-30):** work is on
+**Completed T-026/T-027 checkpoint (2026-10-31):** Josh explicitly authorized
+staged writes in the named upstream checkout. Repair is complete for the approved
+2024-01-01–2026-10-31 window. **Do not ask for that permission again.** Normal
+MarketAtlas adapters remain read-only; source-owner writes used the separate
+upstream operator workflow. Primary branch: `feat/source-freshness-vintages`,
+from main/merged PR #13 `e6aa4d2`. Upstream branch:
+`fix/fred-pagination-source-recovery`, base `e6cbe645`, local commits
+`647f086` paging/intervals, `7c0deae` stale gating, `e3e48e3` staged repair/restore,
+`5f416b4` validated policies. No repair branch has been pushed or merged.
+
+Read [repair runbook](source-health-recovery.md) and
+[T-027 evidence](../reports/t027-source-repair-validation.md). The 227-candidate
+union produced 226 dated series / 102,185 staged versions plus a 13-period
+current-only Existing Home Sales refresh. FRED reports no ALFRED series for
+`EXHOSLUSM495S`; its 17 blank-date rows in the broader window remain excluded from
+PIT. The source ledger has 227 applied batches plus the restored pilot. All
+original affected Silver/latest/revision rows and metadata remain in
+`audit.fred_repair_backup` / `audit.fred_repair_batch`. AKUR restore matched every
+backup row, then reapplied. Ten canonical manifest files enable 169 policies;
+the existing private upstream config enables complete vintage history. Other
+Gold models and observations before 2024 were not rebuilt.
+
+New PostgreSQL eligibility: **267 series / 127,907 versions**, current coverage/
+quality 268, graph 290 series / 11 concepts. Age flags fell 181 → 23 with zero rule
+mismatches or unknown flags. All 23 latest periods match live FRED metadata;
+these are period-age/publication-lag cases, not a remaining missing-ingestion
+queue. Source flags are preserved and the browser explains their meaning.
+
+Full native repair refresh `af04ae7b-69bb-42dc-a25f-fc797aea2a65` succeeded;
+subsequent replay exposed float-to-numeric rounding. Exact Decimal binding now
+preserves precision and avoids false repeated corrections. Original/intervening
+system-time records remain retained. Final normalization/report run
+`3f43b2e2-2975-4b8b-8d25-7991e1871672` succeeded after one context-query retry.
+The final independent replay checked all 127,907 versions and inserted/corrected
+**zero**, with capture time advanced. Private proof is
+`data/generated/source-health/authorized-repair/final-idempotence.json`.
+Final validated pack:
+`data/generated/powerbi-real/be93f9085a543d44b84c962f1d8af96bd4e88d1fa53aecabe691adf2d597befc/`.
+The existing app/URL remain intact. Browser checks passed the 23/268/zero-unknown
+panel, 290/11 catalog, 268 quality rows, AKUR summary/provenance filter/reset and
+zero console errors. No cloud publication occurred.
+
+MarketAtlas: 120 tests, 115 passed/five opt-in database skips, plus both tests in
+the explicit rollback-only correction regression passed (history/as-of/value/
+interval/exact precision/idempotence). Upstream full suite: 1,525 passed, one
+skipped and four **pre-existing** failures, reproduced against clean HEAD:
+three Spark-schema parser assertions and missing mmkt_rate_snapshot catalog entry.
+Source commit hooks passed. Detailed captures, audits, provider comparisons and
+logs remain ignored under `data/generated/source-health/authorized-repair/`.
+
+Dagster remains supervised locally at port 3001 with the existing daily 18:30 New
+York schedule; no upstream API schedule was added. `fred_source_health` is a manual
+read-only diagnostic job. Its successful completion does not certify all age flags
+clear. The generic upstream-success marker is still unconfigured; do not equate
+that UI label with the separately verified operator repair.
+
+**Exact next engineering task:** review the two local branches and their scoped
+validation, then push/open PRs if requested. Retain the four baseline upstream test
+findings as separate work. T-015/AC-009 remains open; the user lacks Power BI access,
+so do not repeatedly request it. Broader BLS/ECB adapters and analytical series
+exploration remain later work, not part of this completed source repair.
+
+**Historical T-026 diagnosis checkpoint (2026-10-31):** user requested freshness investigation
+and vintage recovery. Work is local/uncommitted on `feat/source-freshness-vintages`,
+from merged PR #13 / main `e6aa4d2`. PR #13's two GitHub workflows passed. The prior
+report/publications are retained; upstream warehouse and source checkout are unchanged.
+
+Read [source-health recovery](source-health-recovery.md) and
+[T-026 evidence](../reports/t026-source-health-validation.md). Diagnostics verified
+eight read-only contracts (six publication + two separate audit contracts).
+Of 268 FRED series, 181 have stale reference-period flags; all match their rules.
+Latest attempts for 179 stale series were skipped as not due. Across all selected
+series, 209 latest attempts were skipped and 59 succeeded. The latest broader
+upstream run was partial (104 succeeded/two failed); do not equate its totals with
+MarketAtlas coverage. No source-age thresholds were loosened.
+
+All 170 blank-vintage series have `vintage_enabled = false`: normalization
+intentionally blanks dates. There are 35,433 undated versions in the selected
+window, 94 dated series and four with no window observations. Selection now labels
+current-only policy explicitly while retaining PIT exclusion. For each of the four
+financial-conditions series, the last successful upstream extract returned exactly
+100,000 rows. The inspected client does not paginate observation rows. A proposed
+upstream patch and API fixtures passed 26 targeted tests in an isolated copy and
+`git apply --check`; the original source hash is unchanged.
+
+Read-only FRED API probes recovered 65 dated AKUR versions through September 2026
+and 10,115 dated ANFCI versions through October 23. They remain private, unpromoted
+provider captures; no PostgreSQL repair or broader recovery is claimed. The staged
+181-series polling and 170-series vintage review manifests validate with the
+upstream loaders. Pilot dry-run argv disable skipping/notifications and never execute
+automatically. Source-writer rollout needs the source-owner decision in the runbook.
+
+Manual Dagster job `fred_source_health` passed live as
+`6399f461-aded-4d0f-bf83-593d330cb372`; output is under
+`data/generated/source-health/<run-id>/`. The existing daily schedule was not changed.
+Final MarketAtlas suite: 118 tests, 114 passed/four opt-in database skips.
+Ruff and diff checks pass. Generated evidence remains ignored.
+
+**Exact next engineering task:** Josh / source owner confirms the canonical
+upstream checkout and explicitly authorizes applying the reviewed patch and staged
+source repairs, which write outside MarketAtlas's read-only source boundary.
+Start with the generated dry-run pilots, validate source counts/intervals, preserve
+current-only rows under an explicit replacement policy, then approve bounded write
+rollout and rerun MarketAtlas. Do not use capture/ingestion time as availability.
+T-027 is pending; T-015/AC-009 remains open without requesting unavailable Power BI access.
+
+**Historical T-023–T-025 checkpoint (2026-10-30):** work is on
 `feat/automated-report-refresh`, created from merged main `f2ea0d8` (PR #12).
 This checkpoint is prepared for branch review; use Git and the branch PR for the
 final commit and remote state. The 14-stage pipeline now updates the existing
@@ -253,16 +359,18 @@ requires its own explicit contract and owner/rights decision.
 
 ```text
 Resume MarketAtlas from docs/handoff.md, starting with "Start here next session".
-Read .agents/AGENTS.md, local-automation.md, series-coverage.md, and the spec/task/
-acceptance/evidence documents. Verify Git state before editing: T-023–T-025 work
-is on feat/automated-report-refresh based on merged main f2ea0d8. Preserve local
-changes. Review/commit this branch, then plan source availability remediation or
-BLS/ECB onboarding under explicit contracts. The active local Dagster service
-executes this checkout; verify/restart after branch or settings changes. Keep the
-report's app ID/URL and last-good-build protection, read-only source role, scoped
-writes, distinct temporal meanings, private captures and independent publications.
-The user has no Power BI access; T-015/AC-009 remains open without repeated access
-requests. Update the checkpoint with actual evidence and runtime state.
+T-026/T-027 are complete at their documented restricted-local window scope. Josh
+explicitly authorized the staged upstream repair; do not ask again. Preserve the
+267-series / 127,907-version repaired source and its reversible backups. Read
+source-health-recovery.md and T-027 evidence, then verify both Git branches and the
+current app/schedule before acting. Source branch fix/fred-pagination-source-recovery
+has four local commits ending 5f416b4; primary branch is feat/source-freshness-vintages.
+No repair branch is pushed or merged. The next task is review/push/PR only if
+requested. Four upstream full-suite failures reproduce on the baseline; retain
+that distinction. Existing Home Sales remains current-only without ALFRED history;
+all 23 remaining age flags matched provider latest periods at validation. Routine
+MarketAtlas reads stay scoped and corrections preserve system-time history.
+T-015/AC-009 remains open without repeated Power BI access requests.
 ```
 
 ## Current state

@@ -8,6 +8,22 @@ existing approved views. No source tables are modified and no external API is
 called. The bounded observation history starts January 1, 2024 and ends at the
 New York run date with the same knowledge cutoff.
 
+## Current validated repair, October 31, 2026
+
+After the [authorized source repair](source-health-recovery.md), PIT admission is
+**267 FRED series / 127,907 versions**. Current coverage/quality remains 268 and the
+graph remains 290 series / 11 concepts. The repaired history begins in 2024.
+
+169 formerly current-only series now have verified source dates and canonical
+vintage policies; all four no-window financial-conditions series recovered recent
+observations. Existing Home Sales remains current-only because FRED has no ALFRED
+history; its current data were refreshed without inventing historical availability.
+The 23 remaining upstream age flags all matched provider latest periods. They are
+retained as period-age rules, with zero mismatches/unknown flags. Old source rows
+are backed up, and MarketAtlas retains prior system-time correction versions.
+
+The following October 30 results are historical, before repair.
+
 ## Verified expansion, October 30, 2026
 
 | Surface | Previous | Expanded validated scope |
@@ -75,3 +91,13 @@ Private per-run `series_selection.json` records the catalog size, independent
 observation/context ID lists, window, counts and every exclusion reason. Pack
 manifests retain counts, hashes and independent publication IDs. Restricted source
 captures and row-level profiles remain under ignored `data/generated/`.
+
+## Historical vintage-policy diagnosis, before repair
+
+All 170 current-only series have upstream `vintage_enabled = false`, and the
+upstream normalizer deliberately blanks their real-time dates. Eligibility now
+records `current_only_by_source_policy` separately from malformed observations;
+PIT admission remains unchanged. A [read-only diagnostic and recovery plan](source-health-recovery.md)
+traces source polling skips, pagination and authoritative re-extraction. Provider
+probes are separate from validated PostgreSQL ingestion and do not expand the
+94-series admitted population.

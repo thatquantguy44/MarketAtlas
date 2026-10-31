@@ -70,3 +70,12 @@ catalog fingerprint `6dcaa1fc2c1881823bcde8d9e874d1b652cc76f55f2864c8f67143253ae
 T-016 added `gold.v_series_revision_summary` against catalog fingerprint
 `983c665d16384309fe3c8ef7b3d9dbd15ab8423e0e87ad0ec3886d633929999e`.
 The remaining 85 readable economic objects remain `discovered_not_onboarded`.
+
+## Diagnostic execution audits (T-026)
+
+[The separate source-health registry](../contracts/source_health_contracts.toml)
+scopes `audit.etl_run` and `audit.etl_series_run` to bounded read-only status,
+timing and count diagnostics requested on 2026-10-31. The health tool verifies
+these plus the regular six contracts before reading rows. It does not read raw
+errors, manifest paths or source values. This does not promote audit objects to
+the publication/observation adapter. See [source-health recovery](source-health-recovery.md).

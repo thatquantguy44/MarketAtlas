@@ -1,6 +1,6 @@
 # MarketAtlas — Product Specification
 
-Status: candidate v0.1 specification, prepared for review on 2026-10-24; reconciled with the current handoff on 2026-10-30 against retained evidence through 2026-10-30. T-001–T-003, T-005–T-014, T-016–T-025 are complete at their stated fixture, design, or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open; the v0.1 release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work. Actual acceptance status is recorded in [acceptance.md](acceptance.md).
+Status: candidate v0.1 specification, prepared for review on 2026-10-24; reconciled with the current handoff on 2026-10-31 against retained evidence through 2026-10-31. T-001–T-003, T-005–T-014, T-016–T-027 are complete at their stated fixture, design, or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open; the v0.1 release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work. Actual acceptance status is recorded in [acceptance.md](acceptance.md).
 
 ## Request and purpose
 
@@ -23,7 +23,7 @@ The engineering deliverable is a reusable graph foundation and report-ready outp
 
 The v0.1 pilot includes a market entity map, curated macro context, one bounded family of rolling instrument-return correlations, PostgreSQL serving outputs, a reproducible synthetic demonstration in the React workspace, and a Power BI semantic/report package to be exercised in an authorized authoring environment. The React fixture demonstration and restricted-local live macro graph are implemented. The Power BI package includes a TMDL template, a five-page PBIP/PBIR project generator and a verified local actual-data browser report. Generated native source remains unexecuted in Power BI. Fixture and React execution are independent of Power BI availability; AC-009 remains partial until actual Power BI execution supplies the required evidence.
 
-The proposed analytical sizing envelope remains up to 50 instruments, 25 macro series, two years of daily market history, and at most 300 configured instrument pairs. These are design targets, not verified analytical coverage. Macro history may have a lower frequency and different revision structure. The validated synthetic report has 15 nodes, 14 relationship facts, 3 curated contexts, and 32 correlation estimates. Separately, the restricted descriptive catalog has 290 series and 11 taxonomy concepts; the expanded point-in-time observation ingestion has evidence for 94 series and 35,576 versions, and captured-current revision-quality publication for 268 selected summaries. Eligibility and exclusions are recorded in [series coverage](series-coverage.md). Catalog membership does not imply observation ingestion, analytical eligibility, or quality-summary selection for every series. See [tasks](tasks.md), [Power BI reconciliation](../powerbi/README.md#ac-009-reconciliation-script), and [the handoff](handoff.md).
+The proposed analytical sizing envelope remains up to 50 instruments, 25 macro series, two years of daily market history, and at most 300 configured instrument pairs. These are design targets, not verified analytical coverage. Macro history may have a lower frequency and different revision structure. The validated synthetic report has 15 nodes, 14 relationship facts, 3 curated contexts, and 32 correlation estimates. Separately, the restricted descriptive catalog has 290 series and 11 taxonomy concepts; the expanded point-in-time observation ingestion has evidence for 267 series and 127,907 versions, and captured-current revision-quality publication for 268 selected summaries. Eligibility and exclusions are recorded in [series coverage](series-coverage.md). Catalog membership does not imply observation ingestion, analytical eligibility, or quality-summary selection for every series. See [tasks](tasks.md), [Power BI reconciliation](../powerbi/README.md#ac-009-reconciliation-script), and [the handoff](handoff.md).
 
 Later scope includes beta estimation, historical event/revision reconstruction and event studies, broader analytical asset coverage, and securities-finance implementations. Current scheduled-release context and captured-current revision-quality summaries are already supported at their documented restricted-local scope; neither establishes historical event reconstruction or measured market responses. The securities-finance extension contract is complete at design scope only. The first pilot excludes arbitrary report-time graph traversal, causal claims, trading execution, dense all-pairs estimation, and restricted bank/client/counterparty/position data in the public demonstration.
 
@@ -79,6 +79,14 @@ FRED series. The descriptive graph remains 290 series. No upstream APIs or sourc
 writes were added. Production hosting and native Power BI execution remain open.
 See [local automation](local-automation.md), [series coverage](series-coverage.md)
 and [evidence](../reports/t023-t025-automation-series-validation.md).
+
+T-026 adds a read-only source-health CLI/manual Dagster job and separately scoped
+execution-audit contracts. It reconciles source-age flags, polling attempts and
+intentional current-only vintage policy. T-027 completes the explicitly authorized, reversible upstream repair for the
+2024–October 2026 window. Validated admission is 267 series / 127,907 versions;
+one series remains current-only because FRED has no ALFRED history. All 23 remaining
+period-age flags matched current provider periods. Corrections retain old system-time
+versions, and repeated ingestion inserts/corrects zero after exact Decimal binding. See [recovery](source-health-recovery.md).
 
 ## v0.1 review scenario
 

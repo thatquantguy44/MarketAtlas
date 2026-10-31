@@ -183,6 +183,46 @@ def synthetic_powerbi_smoke():
     validate_synthetic_powerbi_pack(build_synthetic_powerbi_pack())
 
 
+@op(
+    config_schema={
+        "local_config": Field(str, default_value=CONFIG_PATH),
+        "observation_start": Field(str, default_value="2024-01-01"),
+        "observation_end": Field(str, default_value=""),
+    }
+)
+def diagnose_fred_source_health(context):
+    from market_atlas.source_health import run_diagnostics
+
+    config = context.op_config
+    output = REPOSITORY_ROOT / "data/generated/source-health" / context.run_id
+    result = run_diagnostics(
+        config["local_config"],
+        output,
+        start=config["observation_start"],
+        end=config["observation_end"] or None,
+    )
+    context.add_output_metadata(
+        {
+            "status": result["status"],
+            "output": str(output),
+            "stale_series": result["summary"]["stale_series"],
+            "stale_latest_attempt_skipped": result["summary"][
+                "stale_latest_attempt_skipped"
+            ],
+            "undated_versions": result["summary"]["undated_versions"],
+        }
+    )
+
+
+@job(
+    executor_def=in_process_executor,
+    description="Read-only FRED freshness, upstream attempts and vintage-policy diagnosis; success means checks completed, not data are fresh.",
+)
+def fred_source_health():
+    diagnose_fred_source_health()
+
+
 defs = Definitions(
-    jobs=[fred_daily_refresh, synthetic_powerbi_smoke], schedules=[fred_daily_schedule]
+    jobs=[fred_daily_refresh, synthetic_powerbi_smoke, fred_source_health],
+    schedules=[fred_daily_schedule],
 )
