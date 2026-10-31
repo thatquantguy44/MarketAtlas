@@ -11,9 +11,13 @@ dependencies = []
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.3,<4"]
+orchestration = ["dagster==1.13.27", "dagster-webserver==1.13.27", "psycopg[binary]>=3.3,<4"]
 
 [project.scripts]
 market-atlas = "market_atlas.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.dagster]
+module_name = "market_atlas.orchestration.definitions"

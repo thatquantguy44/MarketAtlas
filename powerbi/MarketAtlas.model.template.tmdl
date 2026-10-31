@@ -11,7 +11,7 @@ expression pServer = "REPLACE_WITH_APPROVED_POSTGRES_HOST_AND_PORT"
 
 expression pDatabase = "REPLACE_WITH_APPROVED_TARGET_DATABASE"
 
-expression pPublicationName = "default"
+expression pPublicationName = "synthetic_fixture"
 
 // Capture this value once before refresh; never independently resolve the pointer per table.
 expression pSnapshotId = "00000000-0000-0000-0000-000000000000"

@@ -23,4 +23,23 @@ Status: implementation evidence is in progress. AC-002 through AC-008, AC-010 th
 | AC-017 | NFR-005 | Passed (fixture + restricted quality) | `reports/t017-revision-quality-publication-validation.md`: injected quality materialization failure rolls back rows, retains a failed run, preserves the pointer and recovers on retry;  `reports/t010-validation.md`, `reports/t013-release-validation.md`: an injected failed fixture build records failure, writes zero serving rows, and leaves the previous published pointer unchanged; rerun/recovery validation passes | Implementation agent, 2026-10-26 |
 | AC-018 | NFR-006 | Passed (fixture walkthrough) | `docs/contributor-demo.md`, `reports/t014-contributor-handoff.md`: fresh-checkout credential-free fixture build/validate/inspect and all 49 Python tests passed; README/handoff links trace the requirements, tasks, evidence, data notice, operations, and extension contract. Optional live API and Power BI remain explicitly out of this walkthrough | Implementation agent, 2026-10-26 |
 
+T-018 supplementary evidence (2026-10-30): [Power BI data-job validation](../reports/t018-powerbi-data-jobs-validation.md)
+records portable file generation, typed/hashed pack validation, safe reruns,
+failed-export isolation, and report-only export of four existing local
+publications. [Job instructions](../powerbi/guides/data-jobs.md) and
+[report recipes](../powerbi/guides/report-recipes.md) extend the contributor/report
+handoff for AC-002/009/010/011/013/014/015/017/018 without changing their recorded
+release status. AC-009 remains partial: M/DAX source and GitHub workflow source
+have not been executed in Power BI or GitHub, and no scheduler or service refresh
+has been enabled.
+
+T-020 supplementary evidence (2026-10-30): [Dagster orchestration validation](../reports/t020-dagster-orchestration-validation.md)
+records a successful 13-stage live PostgreSQL refresh, rolling-date plans,
+source-contract gating, checkpoint/retry/failure behavior, database lock
+exclusion, definition/schedule checks and a validated real-data export. The
+local UI/daemon is verified; the daily schedule is defined and stopped. This
+extends operating evidence for AC-006/010/011/013/014/015/017/018 at local scope;
+production scheduling, upstream ingestion and Power BI service/report execution
+are not established. AC-009 remains partial.
+
 Attach reproducible output locations, input hashes, method/configuration versions, declared environment, and concise results as appropriate. Restricted data and environment details must stay in their authorized location; public summaries should use synthetic examples and safe identifiers. Record failed and unsupported checks honestly.

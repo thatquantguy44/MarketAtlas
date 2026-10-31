@@ -26,6 +26,7 @@ from .config import (
     ConfigError,
     load_macro_context,
     load_macro_medallion,
+    load_report_database,
     load_source_database,
     load_target_database,
     load_upstream_asset,
@@ -60,6 +61,8 @@ from .publishing.macro_context import (
 )
 from .publishing.revision_quality import load_revision_extract, publish_revision_quality
 from .report_api import serve_macro_economic_graph
+from .reporting.export import TABLES as POWERBI_PUBLICATIONS
+from .reporting.export import export_pack, validate_pack
 from .source_catalog import build_source_catalog
 from .source_contracts import (
     DEFAULT_SOURCE_CONTRACTS_PATH,
@@ -303,7 +306,13 @@ def _extract_context_adapter(config_path: Path, pilot_path: Path, output: Path) 
             print(json.dumps(gate, sort_keys=True), file=sys.stderr)
             return 1
         result = extract_macro_context(database, load_macro_context(pilot_path))
-    except (ConfigError, DatabaseUnavailable, SourceContractError, TypeError, ValueError) as error:
+    except (
+        ConfigError,
+        DatabaseUnavailable,
+        SourceContractError,
+        TypeError,
+        ValueError,
+    ) as error:
         print(str(error), file=sys.stderr)
         return 1
     result["manifest"]["source_contract_verification"] = {
@@ -339,7 +348,13 @@ def _extract_series_catalog_adapter(
             print(json.dumps(gate, sort_keys=True), file=sys.stderr)
             return 1
         result = extract_series_catalog(database, page_size, include_coverage)
-    except (ConfigError, DatabaseUnavailable, SourceContractError, TypeError, ValueError) as error:
+    except (
+        ConfigError,
+        DatabaseUnavailable,
+        SourceContractError,
+        TypeError,
+        ValueError,
+    ) as error:
         print(str(error), file=sys.stderr)
         return 1
     result["manifest"]["source_contract_verification"] = {
@@ -409,7 +424,13 @@ def _extract_revision_summary_adapter(
         result = extract_revision_summary(
             database, list(load_macro_context(context_path).series_ids), page_size
         )
-    except (ConfigError, DatabaseUnavailable, SourceContractError, TypeError, ValueError) as error:
+    except (
+        ConfigError,
+        DatabaseUnavailable,
+        SourceContractError,
+        TypeError,
+        ValueError,
+    ) as error:
         print(str(error), file=sys.stderr)
         return 1
     result["manifest"]["source_contract_verification"] = {
@@ -630,9 +651,17 @@ def _validate_fixture_reporting(config_path: Path) -> int:
 def _validate_release(config_path: Path, samples: int, output: Path | None) -> int:
     try:
         result = run_release_validation(
-            load_source_database(config_path), load_target_database(config_path), samples
+            load_source_database(config_path),
+            load_target_database(config_path),
+            samples,
         )
-    except (ConfigError, DatabaseUnavailable, SourceContractError, TypeError, ValueError) as error:
+    except (
+        ConfigError,
+        DatabaseUnavailable,
+        SourceContractError,
+        TypeError,
+        ValueError,
+    ) as error:
         print(str(error), file=sys.stderr)
         return 1
     if output is not None:
@@ -645,6 +674,41 @@ def _validate_release(config_path: Path, samples: int, output: Path | None) -> i
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="market-atlas")
     commands = parser.add_subparsers(dest="command", required=True)
+    refresh = commands.add_parser(
+        "refresh", help="plan or run the real PostgreSQL refresh pipeline"
+    )
+    refresh_commands = refresh.add_subparsers(dest="refresh_command", required=True)
+    for command in ("plan", "run"):
+        refresh_command = refresh_commands.add_parser(command)
+        refresh_command.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+        refresh_command.add_argument(
+            "--settings", type=Path, default=Path("configs/orchestration.toml")
+        )
+        refresh_command.add_argument(
+            "--as-of", help="window date; defaults to today in the configured timezone"
+        )
+        refresh_command.add_argument(
+            "--run-id", help="optional unique checkpoint directory name"
+        )
+    powerbi = commands.add_parser(
+        "powerbi", help="export and validate immutable Power BI CSV packs"
+    )
+    powerbi_commands = powerbi.add_subparsers(dest="powerbi_command", required=True)
+    powerbi_export = powerbi_commands.add_parser("export")
+    powerbi_export.add_argument(
+        "--source", choices=("fixture", "published"), default="fixture"
+    )
+    powerbi_export.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    powerbi_export.add_argument("--output", type=Path, required=True)
+    powerbi_export.add_argument(
+        "--publications",
+        nargs="+",
+        choices=tuple(POWERBI_PUBLICATIONS),
+        default=["synthetic_fixture"],
+    )
+    powerbi_export.add_argument("--max-rows", type=int, default=100000)
+    powerbi_validate = powerbi_commands.add_parser("validate")
+    powerbi_validate.add_argument("--input", type=Path, required=True)
     fixture = commands.add_parser(
         "fixture", help="generate or validate synthetic inputs"
     )
@@ -759,7 +823,9 @@ def main(argv: list[str] | None = None) -> int:
         dest="revision_quality_command", required=True
     )
     revision_quality_publish = revision_quality_commands.add_parser("publish")
-    revision_quality_publish.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    revision_quality_publish.add_argument(
+        "--config", type=Path, default=DEFAULT_CONFIG_PATH
+    )
     revision_quality_publish.add_argument("--input", type=Path, required=True)
     context = commands.add_parser(
         "context", help="load and publish approved macro-source context extracts"
@@ -775,7 +841,8 @@ def main(argv: list[str] | None = None) -> int:
     context_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     context_validate.add_argument("--input", type=Path, required=True)
     economic_graph = commands.add_parser(
-        "economic-graph", help="project and publish the approved live macro knowledge graph"
+        "economic-graph",
+        help="project and publish the approved live macro knowledge graph",
     )
     economic_graph_commands = economic_graph.add_subparsers(
         dest="economic_graph_command", required=True
@@ -847,6 +914,72 @@ def main(argv: list[str] | None = None) -> int:
     release_validate.add_argument("--samples", type=int, default=20)
     release_validate.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
+    if args.command == "refresh":
+        from .orchestration.pipeline import RefreshError, make_plan, run_refresh
+
+        try:
+            if args.refresh_command == "plan":
+                result = make_plan(
+                    args.run_id or "preview", args.settings, as_of=args.as_of
+                ).document()
+            else:
+                result = run_refresh(
+                    args.config, args.settings, as_of=args.as_of, run_id=args.run_id
+                )
+        except (
+            RefreshError,
+            ConfigError,
+            DatabaseUnavailable,
+            OSError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as error:
+            message = (
+                str(error)
+                if isinstance(error, RefreshError)
+                else f"refresh configuration or execution failed ({type(error).__name__})"
+            )
+            print(message, file=sys.stderr)
+            return 1
+        print(json.dumps(result, sort_keys=True))
+        return 0
+    if args.command == "powerbi":
+        try:
+            if args.powerbi_command == "validate":
+                result = validate_pack(args.input)
+            else:
+                if args.source == "fixture" and args.publications != [
+                    "synthetic_fixture"
+                ]:
+                    raise ValueError("fixture export does not read live publications")
+                result = export_pack(
+                    args.output,
+                    config=load_report_database(args.config)
+                    if args.source == "published"
+                    else None,
+                    publications=args.publications,
+                    max_rows=args.max_rows,
+                )
+        except (
+            ConfigError,
+            DatabaseUnavailable,
+            OSError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as error:
+            # Config/database errors are intentionally secret-safe; malformed packs
+            # and filesystem errors need no raw file or row details on stdout.
+            message = (
+                str(error)
+                if isinstance(error, (ConfigError, DatabaseUnavailable, ValueError))
+                else "cannot read or write Power BI pack"
+            )
+            print(message, file=sys.stderr)
+            return 1
+        print(json.dumps(result, sort_keys=True))
+        return 0
     if args.command == "database":
         if args.database_command == "migrate":
             return _migrate_database(args.config, args.migration_directory)

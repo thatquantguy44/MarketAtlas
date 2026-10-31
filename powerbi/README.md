@@ -2,11 +2,39 @@
 
 This folder contains a source-controlled TMDL template for the synthetic fixture report. It deliberately contains no database credential, local configuration path, or source-schema object. It is not a PBIX or PBIP, and it has not been opened in Power BI Desktop from this macOS environment.
 
+## Data generation jobs and report guides
+
+For portable CSV ingestion, start with [data jobs](guides/data-jobs.md):
+
+```sh
+PYTHONPATH=src python3 -S -m market_atlas powerbi export --output data/generated/powerbi
+```
+
+The command returns an immutable pack folder with typed tables, checksums,
+counts and provenance. It works without a database. A separate report-only
+published-data mode exports the existing fixture, macro catalog, release/coverage
+and revision-quality publications for restricted internal use. The
+[Power Query loader](queries/fnLoadPack.pq) imports one selected pack.
+
+[Report recipes](guides/report-recipes.md) provide model relationships, DAX,
+visual layouts and reconciliation checks for market relationships, correlation
+changes, macro coverage, release freshness, revision quality and provenance.
+The [GitHub workflow](../.github/workflows/powerbi-data.yml) generates synthetic
+packs on manual dispatch or relevant pull requests once pushed. Actual Power BI
+execution and service refresh remain separate work; AC-009 stays partial.
+
+The remainder of this document describes the existing PostgreSQL TMDL path.
+
+[PostgreSQL publication access](../docs/publication-access.md) lists the registry,
+report views and reader-role setup for all four publications. Migration 012
+renames the original synthetic publication to `synthetic_fixture`; update that
+parameter in any previously saved local template copies.
+
 ## Snapshot-pinned refresh
 
-Before every refresh, an approved report operator must capture the UUID in `atlas_report.current_snapshot_metadata` for publication `default`, then set `pSnapshotId` in `MarketAtlas.model.template.tmdl`. Do not leave the all-zero placeholder in place.
+Before every refresh, an approved report operator must capture the UUID in `atlas_report.current_snapshot_metadata` for publication `synthetic_fixture`, then set `pSnapshotId` in `MarketAtlas.model.template.tmdl`. Do not leave the all-zero placeholder in place.
 
-Each imported fact/dimension query filters an immutable `atlas_report` snapshot table by that same UUID. `Snapshot Metadata` also verifies that the selected UUID is still the active `default` publication when the refresh begins. This prevents different imported tables from resolving a moving publication pointer.
+Each imported fact/dimension query filters an immutable `atlas_report` snapshot table by that same UUID. `Snapshot Metadata` also verifies that the selected UUID is still the active `synthetic_fixture` publication when the refresh begins. This prevents different imported tables from resolving a moving publication pointer.
 
 Set `pServer` and `pDatabase` only in an authorized local copy. A database owner must provision a dedicated Power BI login that can use `marketatlas_report_reader`; never use a source-reader or writer role, and do not commit a connection string or password.
 

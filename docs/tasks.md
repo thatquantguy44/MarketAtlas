@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-26. T-001–T-003, T-005–T-014, T-016 and T-017 are complete at their stated fixture, design or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-30. T-001–T-003, T-005–T-014, T-016–T-020 are complete at their stated fixture, design or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -159,6 +159,62 @@ public redistribution right was added. Evidence:
 `reports/t017-revision-quality-publication-validation.md`,
 `tests/test_revision_quality_publication.py`,
 `tests/test_revision_quality_database.py`.
+
+### [x] T-018 — Generate portable Power BI data packs and report guides
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-003,
+T-011, T-016/T-017 for the optional live quality surface. Maps: REQ-002,
+REQ-009, REQ-010, REQ-011, NFR-001/002/003/005/006 → AC-002/009/010/011/013/014/015/017/018.
+
+Completed 2026-10-30 for local export and source-guide scope. The credential-free
+job calculates the canonical fixture's 32 estimates and exports dimensions,
+relationship/context facts and provenance. The published-data job reads only
+allowlisted report snapshot tables under the report-reader role in one
+repeatable-read, read-only transaction. Immutable CSV packs include typed schemas,
+hashes, counts and primary keys; validation rejects mixed snapshots, corrupt
+files, duplicate/orphan keys, missing core provenance and invalid null/numeric
+states. A Power Query loader, model/DAX/report recipes and synthetic-only GitHub
+workflow source accompany the jobs. The four local publications passed a
+read-only export smoke test. Power BI authoring snippets and GitHub execution
+remain unexercised; no scheduler or service refresh was configured. T-015 and
+AC-009 remain open. Evidence: [T-018 validation](../reports/t018-powerbi-data-jobs-validation.md),
+[data jobs](../powerbi/guides/data-jobs.md), [report recipes](../powerbi/guides/report-recipes.md),
+and `tests/test_powerbi_export.py`.
+
+### [x] T-019 — Name the synthetic publication explicitly and document access
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-010, T-018.
+Maps: REQ-009/010/011, NFR-001/005/006 → AC-009/010/011/013/017/018.
+
+Completed 2026-10-30. Producers, export selections, Power BI source and current
+documentation use `synthetic_fixture`. Migration 012 renames only the legacy
+publication pointer, rejects collisions and prevents legacy-name recreation;
+it preserves retained snapshots/builds and publication timestamps. Local
+application preserved all four snapshot IDs/timestamps and the three real-data
+publications. Rollback-isolated database tests cover repeat application,
+collision refusal and reader access; published exports pass with the new name.
+The [access guide](publication-access.md) and
+[read-only SQL](../sql/queries/publications.sql) locate the registry and report
+views. Evidence: [T-019 validation](../reports/t019-publication-rename-validation.md).
+T-015/AC-009 remains open.
+
+### [x] T-020 — Orchestrate daily real-data PostgreSQL refreshes with Dagster
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-004B/C,
+T-016–T-019. Maps: REQ-006/009/010/011, NFR-001/002/003/005/006 →
+AC-006/009/010/011/013/014/015/017/018.
+
+Completed 2026-10-30 for local orchestration/runtime scope. The optional pinned
+Dagster environment exposes the 13-stage real refresh and a separate synthetic
+smoke job. Dates roll by the New York run date; source contracts gate reads,
+retries reuse captured inputs, and PostgreSQL lock exclusion prevents overlapping
+refreshes. A successful live run refreshed three publications and validated a
+real Power BI pack. The local development UI/daemon is running; the daily
+18:30 schedule is defined and stopped. Upstream FRED ingestion, Power BI service
+refresh, alerts and production service installation remain outside this work.
+See [the runbook](dagster-orchestration.md),
+[T-020 evidence](../reports/t020-dagster-orchestration-validation.md), and
+`tests/test_orchestration.py`. T-015/AC-009 remains open.
 
 ## Completion rules and coverage
 

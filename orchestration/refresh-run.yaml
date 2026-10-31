@@ -1,0 +1,7 @@
+resources:
+  refresh:
+    config:
+      local_config: configs/local.toml
+      pipeline_settings: configs/orchestration.toml
+      # Empty means today's date in America/New_York, resolved once per run.
+      as_of: ""
