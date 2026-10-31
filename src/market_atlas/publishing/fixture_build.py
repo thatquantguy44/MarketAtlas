@@ -18,7 +18,7 @@ from market_atlas.contracts import sha256
 from market_atlas.database import DatabaseUnavailable
 from market_atlas.graph.fixture_loader import _connect, load_fixture, stable_id
 
-PUBLICATION_NAME = "default"
+PUBLICATION_NAME = "synthetic_fixture"
 
 
 def _code_revision() -> str:

@@ -1,5 +1,27 @@
 # Snapshot-pinned reporting contract
 
+For connection instructions and the view mapping for all four publications,
+see [PostgreSQL publication access](publication-access.md). The synthetic
+database publication is named `synthetic_fixture` following migration 012.
+
+## Portable Power BI exports (T-018)
+
+`market-atlas powerbi export` produces immutable UTF-8 CSV packs with typed
+manifests, keys, counts and checksums. The default source is a credential-free
+canonical fixture calculation; `--source published` reads selected existing
+report publications under `marketatlas_report_reader` in one repeatable-read,
+read-only transaction. Each publication keeps its own snapshot/input/build and
+dates. No source data is refreshed or published by exporting.
+
+See [job and ingestion instructions](../powerbi/guides/data-jobs.md),
+[report recipes](../powerbi/guides/report-recipes.md), and
+[validation evidence](../reports/t018-powerbi-data-jobs-validation.md).
+The standalone synthetic pack uses file identities, not database serving/build
+IDs; published-data packs remain restricted internal-only. Source-guide checks
+do not replace actual Power BI execution for AC-009.
+
+## Database snapshot contract
+
 Every report query begins with `atlas_report.current_snapshot_metadata`. The publication pointer resolves exactly one `serving_snapshot_id`; all current report views join to that ID. Consumers must retain that resolved ID for a refresh and must not independently re-resolve the pointer for each table.
 
 | View | Grain | Purpose |
@@ -16,7 +38,7 @@ Every report query begins with `atlas_report.current_snapshot_metadata`. The pub
 | `current_bounded_path_bridge` | Snapshot × bounded directed path | Start/end node, depth (maximum four), ordered node/assertion/edge arrays |
 | `current_provenance` | Snapshot × displayed subject | Build, input manifest, source record, support assertion, method/configuration/input-selection identity, cutoff, and details |
 
-`current_relationship_fact`, `current_macro_context_fact`, `current_macro_source_context`, and `current_rolling_correlation_estimate` are separate facts. A curated context must not be aggregated or labeled as a statistical estimate. `current_macro_source_context` is a separate `macro_context` publication, so it cannot replace or mix with the fixture/default publication. Its taxonomy and coverage records are explicitly `current_only`; its release records are explicitly `scheduled_event`. Correlation counts must operate at the estimate-version grain; when joining endpoint nodes, both joins are single-valued snapshot dimensions, so one estimate remains one row.
+`current_relationship_fact`, `current_macro_context_fact`, `current_macro_source_context`, and `current_rolling_correlation_estimate` are separate facts. A curated context must not be aggregated or labeled as a statistical estimate. `current_macro_source_context` is a separate `macro_context` publication, so it cannot replace or mix with the synthetic_fixture publication. Its taxonomy and coverage records are explicitly `current_only`; its release records are explicitly `scheduled_event`. Correlation counts must operate at the estimate-version grain; when joining endpoint nodes, both joins are single-valued snapshot dimensions, so one estimate remains one row.
 
 `current_macro_economic_graph_node` and `current_macro_economic_graph_edge` are a separate `macro_economic_graph` publication. The local report API uses only those two views under `marketatlas_report_reader`; the React client calls that API rather than PostgreSQL. Its edges are source-backed current taxonomy projections and must remain visibly distinct from curated mappings and analytical estimates. For a full catalog, the API returns a source-to-concept aggregate navigation view by default, then a bounded, paged concept neighborhood on selection. Aggregate `contains` links are API/UI navigation aids and are never stored or represented as reference assertions; only returned `measures` edges are source-backed graph assertions.
 

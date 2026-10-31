@@ -1,8 +1,10 @@
 # Operations and recovery handoff
 
-Status: manual local demonstration only. There is no scheduler, alert channel,
-or production service in scope. Do not represent this document as an operating
-runbook for a scheduled pilot.
+Status: local Dagster orchestration is implemented and a live PostgreSQL refresh
+has passed. The development UI/daemon was started locally; its daily schedule
+is defined but stopped. No production service, reboot recovery or alert channel
+is configured. See [the Dagster runbook](dagster-orchestration.md) for jobs,
+activation, rolling windows and execution limits.
 
 ## Responsibility record
 
@@ -30,8 +32,8 @@ external redistribution or replace any third-party source terms.
    `silver`, `gold`, `bronze`, or `audit`.
 
 For the public fixture, the exercised no-database commands are in
-[contributor-demo.md](contributor-demo.md). This project has no configured
-automatic refresh cadence.
+[contributor-demo.md](contributor-demo.md). The optional Dagster schedule defines a daily 18:30 America/New_York
+cadence; it remains stopped until enabled in the local instance.
 
 For the restricted quality publication, extract only the configured approved IDs,
 then run `revision-quality publish --input <ignored-extract-path>`. It writes

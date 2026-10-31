@@ -1,0 +1,17 @@
+[pipeline]
+# Scheduled windows use this local calendar date, including across DST changes.
+timezone = "America/New_York"
+cron_schedule = "30 18 * * *"
+output_directory = "data/generated/daily"
+pack_directory = "data/generated/powerbi-real"
+observation_config = "configs/pilot.toml"
+context_config = "configs/context_pilot.toml"
+release_days_back = 7
+release_days_ahead = 60
+page_size = 500
+max_export_rows = 100000
+
+# MarketAtlas consumes the approved PostgreSQL interfaces; it does not own the
+# upstream FRED API ingestion. Optionally require its success marker before reads.
+upstream_success_file = ""
+upstream_max_age_hours = 36

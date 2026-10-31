@@ -175,6 +175,34 @@ def load_target_database(path: Path = DEFAULT_CONFIG_PATH) -> TargetDatabaseConf
 
 
 @dataclass(frozen=True)
+class ReportDatabaseConfig(TargetDatabaseConfig):
+    """Dedicated report login; source and writer privileges are unnecessary."""
+
+    role: str = "marketatlas_report_reader"
+
+
+def load_report_database(path: Path = DEFAULT_CONFIG_PATH) -> ReportDatabaseConfig:
+    try:
+        document = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise ConfigError("cannot read report database configuration") from error
+    section = document.get("report_database")
+    if not isinstance(section, dict):
+        raise ConfigError("configuration requires a [report_database] table")
+    required = ("host", "database", "username", "password")
+    if any(not isinstance(section.get(k), str) or not section[k] for k in required):
+        raise ConfigError(
+            "report_database requires host, database, username and password"
+        )
+    port = section.get("port")
+    if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+        raise ConfigError("report_database.port must be an integer from 1 to 65535")
+    if section.get("role", "marketatlas_report_reader") != "marketatlas_report_reader":
+        raise ConfigError("report_database.role must be marketatlas_report_reader")
+    return ReportDatabaseConfig(**{k: section[k] for k in required}, port=port)
+
+
+@dataclass(frozen=True)
 class MacroMedallionConfig:
     series_ids: tuple[str, ...]
     observation_start: str

@@ -1,6 +1,6 @@
 # MarketAtlas — Implementation Tasks
 
-Status: active task plan, 2026-10-26. T-001–T-003, T-005–T-014, T-016 and T-017 are complete at their stated fixture, design or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
+Status: active task plan, 2026-10-30. T-001–T-003, T-005–T-014, T-016–T-020 are complete at their stated fixture, design or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open. A checked task is not a release claim; shared downstream acceptance criteria may remain partial.
 
 Role names are proposed responsibilities. Record the actual person/agent on assignment. Each task must preserve the mapped specification IDs and attach evidence in [acceptance.md](acceptance.md). Read [plan.md](plan.md) for contracts and design decisions.
 
@@ -126,6 +126,9 @@ Completed 2026-10-26 for the portable fixture/design handoff scope. A `git archi
 
 ### [ ] T-015 — Exercise the Power BI fixture report
 
+T-022 adds generated native projects and a working actual-data browser report;
+the Power BI refresh/render/drill-through acceptance exercise is still open.
+
 Owner: BI engineer / report owner. Dependencies: T-011, T-013. Maps: REQ-009, REQ-011 → AC-009, AC-011.
 
 Open the tracked `powerbi/MarketAtlas.model.template.tmdl` in an authorized Power BI Desktop or Power BI service environment, set one captured fixture snapshot UUID, create the five report pages, and retain the PBIP/PBIR source plus screenshots. Prove filter/reset reconciliation, distinct-count grain safety, as-of/freshness labels, and drill-through for sourced relationship `A11`, curated context `CTX3`, and one correlation. Evidence: an executed Power BI report/artifact and reconciliation results; a source template or SQL-only validation does not pass AC-009.
@@ -159,6 +162,88 @@ public redistribution right was added. Evidence:
 `reports/t017-revision-quality-publication-validation.md`,
 `tests/test_revision_quality_publication.py`,
 `tests/test_revision_quality_database.py`.
+
+### [x] T-018 — Generate portable Power BI data packs and report guides
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-003,
+T-011, T-016/T-017 for the optional live quality surface. Maps: REQ-002,
+REQ-009, REQ-010, REQ-011, NFR-001/002/003/005/006 → AC-002/009/010/011/013/014/015/017/018.
+
+Completed 2026-10-30 for local export and source-guide scope. The credential-free
+job calculates the canonical fixture's 32 estimates and exports dimensions,
+relationship/context facts and provenance. The published-data job reads only
+allowlisted report snapshot tables under the report-reader role in one
+repeatable-read, read-only transaction. Immutable CSV packs include typed schemas,
+hashes, counts and primary keys; validation rejects mixed snapshots, corrupt
+files, duplicate/orphan keys, missing core provenance and invalid null/numeric
+states. A Power Query loader, model/DAX/report recipes and synthetic-only GitHub
+workflow source accompany the jobs. The four local publications passed a
+read-only export smoke test. Power BI authoring snippets and GitHub execution
+remain unexercised; no scheduler or service refresh was configured. T-015 and
+AC-009 remain open. Evidence: [T-018 validation](../reports/t018-powerbi-data-jobs-validation.md),
+[data jobs](../powerbi/guides/data-jobs.md), [report recipes](../powerbi/guides/report-recipes.md),
+and `tests/test_powerbi_export.py`.
+
+### [x] T-019 — Name the synthetic publication explicitly and document access
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-010, T-018.
+Maps: REQ-009/010/011, NFR-001/005/006 → AC-009/010/011/013/017/018.
+
+Completed 2026-10-30. Producers, export selections, Power BI source and current
+documentation use `synthetic_fixture`. Migration 012 renames only the legacy
+publication pointer, rejects collisions and prevents legacy-name recreation;
+it preserves retained snapshots/builds and publication timestamps. Local
+application preserved all four snapshot IDs/timestamps and the three real-data
+publications. Rollback-isolated database tests cover repeat application,
+collision refusal and reader access; published exports pass with the new name.
+The [access guide](publication-access.md) and
+[read-only SQL](../sql/queries/publications.sql) locate the registry and report
+views. Evidence: [T-019 validation](../reports/t019-publication-rename-validation.md).
+T-015/AC-009 remains open.
+
+### [x] T-020 — Orchestrate daily real-data PostgreSQL refreshes with Dagster
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-004B/C,
+T-016–T-019. Maps: REQ-006/009/010/011, NFR-001/002/003/005/006 →
+AC-006/009/010/011/013/014/015/017/018.
+
+Completed 2026-10-30 for local orchestration/runtime scope. The optional pinned
+Dagster environment exposes the 13-stage real refresh and a separate synthetic
+smoke job. Dates roll by the New York run date; source contracts gate reads,
+retries reuse captured inputs, and PostgreSQL lock exclusion prevents overlapping
+refreshes. A successful live run refreshed three publications and validated a
+real Power BI pack. The local development UI/daemon is running; the daily
+18:30 schedule is defined and stopped. Upstream FRED ingestion, Power BI service
+refresh, alerts and production service installation remain outside this work.
+See [the runbook](dagster-orchestration.md),
+[T-020 evidence](../reports/t020-dagster-orchestration-validation.md), and
+`tests/test_orchestration.py`. T-015/AC-009 remains open.
+
+### [x] T-021 — Recover native Dagster downstream re-execution
+
+Owner: Josh / project owner; implementation: Codex. Dependencies: T-020.
+Maps: REQ-010/011, NFR-002/003/005 → AC-010/011/014/015/017.
+
+Completed 2026-10-30 for local recovery scope. Parent checkpoints restore verified
+captures and completed prerequisites, preserve original dates, and retain child/root
+lineage. Database/publication changes and incompatible/missing captures fail safely.
+Native Dagster failure-to-child re-execution passed against the real PostgreSQL
+pipeline without repeating the completed seven stages. Evidence:
+[T-021 validation](../reports/t021-dagster-recovery-validation.md).
+
+### [x] T-022 — Author native report projects and provide browser access
+
+Owner: Josh / report owner; implementation: Codex. Dependencies: T-018, T-020.
+Maps: REQ-009/011 → AC-009/011 (supplementary; AC-009 remains partial).
+
+Completed 2026-10-30 at source-generation and local-browser scope. A reproducible
+PBIP/PBIR/model generator authors five pages for fixture or actual macro packs.
+Both native projects passed official report JSON schemas and binding checks.
+An actual-data browser report passed concept/quality filter-reset and evidence
+checks and runs locally without a Power BI account. No native Power BI engine
+execution or cross-page drill-through is claimed. Evidence:
+[T-022 validation](../reports/t022-report-project-validation.md),
+[usage instructions](../powerbi/guides/generated-reports.md). T-015 remains open.
 
 ## Completion rules and coverage
 

@@ -22,3 +22,13 @@ database = "macro_medallion"
 username = "replace-me"
 password = "replace-me"
 role = "marketatlas_writer"
+
+# Optional Power BI export connection. Use a dedicated login able to assume
+# only marketatlas_report_reader; no source or writer access is required.
+[report_database]
+host = "localhost"
+port = 55432
+database = "macro_medallion"
+username = "replace-me"
+password = "replace-me"
+role = "marketatlas_report_reader"

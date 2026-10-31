@@ -12,7 +12,7 @@ Status: implementation evidence is in progress. AC-002 through AC-008, AC-010 th
 | AC-006 | REQ-006 | Passed (fixture + bounded live macro) | `reports/t017-revision-quality-publication-validation.md`: restricted current-quality capture remains distinct from unsupported source availability/history;  reports/t007-validation.md and reports/t004b-live-ingestion-validation.md: fixture version contracts plus live point-in-time macro metadata/observations, input manifest, and idempotent load pass | Implementation agent, 2026-10-26 |
 | AC-007 | REQ-007 | Passed (fixture) | `reports/t008-validation.md`: source-backed country/concept and curated sector context mappings have rationale, owner, source, dates, taxonomy version, and explicit non-sensitivity label | Implementation agent, 2026-10-24 |
 | AC-008 | REQ-008 | Passed (fixture) | `reports/t009-validation.md`: fixed-window configured-pair return correlations, independent numerical match, undefined statuses, input/cutoff metadata, and no-lookahead validation | Implementation agent, 2026-10-24 |
-| AC-009 | REQ-009 | Partial | `reports/t011-validation.md`, `docs/reporting.md`, `reports/t012-validation.md`, `reports/t015-powerbi-source-package.md`, and `powerbi/`: snapshot-pinned reporting outputs, React fixture demo, and a source-controlled Power BI template/reconciliation script exist; Power BI visual/refresh exercise remains required | Implementation agent, 2026-10-26 |
+| AC-009 | REQ-009 | Partial | `reports/t011-validation.md`, `docs/reporting.md`, `reports/t012-validation.md`, `reports/t015-powerbi-source-package.md`, and `powerbi/`: snapshot-pinned outputs, React demo, template, generated native projects and a verified local actual-data browser report exist (see `reports/t022-report-project-validation.md`); Power BI visual/refresh/drill-through execution remains required | Implementation agent, 2026-10-30 |
 | AC-010 | REQ-010 | Passed (fixture + restricted quality) | `reports/t017-revision-quality-publication-validation.md`: separate immutable quality publication, exact rerun reuse, report grain and prior-pointer retention pass;  `reports/t010-validation.md`: immutable build/snapshot identities, idempotent output reuse, validation hash, and single-pointer publication | Implementation agent, 2026-10-26 |
 | AC-011 | REQ-011 | Passed (fixture + restricted quality) | `reports/t017-revision-quality-publication-validation.md`: selected quality rows expose source/input/build, capture time and independent publication provenance through the report API and browser;  `reports/t011-validation.md`: sourced relationship, curated context, and correlation each drill through to snapshot, build/input, and source/method evidence | Implementation agent, 2026-10-26 |
 | AC-012 | REQ-012 | Passed (design) | `docs/securities-finance-extension.md`: controlled restricted client/agreement/loan/collateral/rule-evaluation grains reference existing instrument node IDs only; public report/browser grants are excluded, and unknown eligibility remains explicit | Implementation agent, 2026-10-26 |
@@ -23,4 +23,30 @@ Status: implementation evidence is in progress. AC-002 through AC-008, AC-010 th
 | AC-017 | NFR-005 | Passed (fixture + restricted quality) | `reports/t017-revision-quality-publication-validation.md`: injected quality materialization failure rolls back rows, retains a failed run, preserves the pointer and recovers on retry;  `reports/t010-validation.md`, `reports/t013-release-validation.md`: an injected failed fixture build records failure, writes zero serving rows, and leaves the previous published pointer unchanged; rerun/recovery validation passes | Implementation agent, 2026-10-26 |
 | AC-018 | NFR-006 | Passed (fixture walkthrough) | `docs/contributor-demo.md`, `reports/t014-contributor-handoff.md`: fresh-checkout credential-free fixture build/validate/inspect and all 49 Python tests passed; README/handoff links trace the requirements, tasks, evidence, data notice, operations, and extension contract. Optional live API and Power BI remain explicitly out of this walkthrough | Implementation agent, 2026-10-26 |
 
+T-018 supplementary evidence (2026-10-30): [Power BI data-job validation](../reports/t018-powerbi-data-jobs-validation.md)
+records portable file generation, typed/hashed pack validation, safe reruns,
+failed-export isolation, and report-only export of four existing local
+publications. [Job instructions](../powerbi/guides/data-jobs.md) and
+[report recipes](../powerbi/guides/report-recipes.md) extend the contributor/report
+handoff for AC-002/009/010/011/013/014/015/017/018 without changing their recorded
+release status. AC-009 remains partial: M/DAX source and GitHub workflow source
+have not been executed in Power BI or GitHub, and no scheduler or service refresh
+has been enabled.
+
+T-020 supplementary evidence (2026-10-30): [Dagster orchestration validation](../reports/t020-dagster-orchestration-validation.md)
+records a successful 13-stage live PostgreSQL refresh, rolling-date plans,
+source-contract gating, checkpoint/retry/failure behavior, database lock
+exclusion, definition/schedule checks and a validated real-data export. The
+local UI/daemon is verified; the daily schedule is defined and stopped. This
+extends operating evidence for AC-006/010/011/013/014/015/017/018 at local scope;
+production scheduling, upstream ingestion and Power BI service/report execution
+are not established. AC-009 remains partial.
+
 Attach reproducible output locations, input hashes, method/configuration versions, declared environment, and concise results as appropriate. Restricted data and environment details must stay in their authorized location; public summaries should use synthetic examples and safe identifiers. Record failed and unsupported checks honestly.
+
+T-021/T-022 supplementary evidence (2026-10-30): [native recovery](../reports/t021-dagster-recovery-validation.md)
+passed with a real failed parent and successful six-stage child; [report source
+and browser validation](../reports/t022-report-project-validation.md) covers native
+JSON schemas/bindings and actual-data browser filtering/evidence. These strengthen
+local recovery and report access. AC-009 remains partial: no Power BI engine
+refresh, rendering or cross-page drill-through was executed.

@@ -1,10 +1,10 @@
 # MarketAtlas — Product Specification
 
-Status: candidate v0.1 specification, prepared for review on 2026-10-24. Early fixture, PostgreSQL adapter, and identity/ontology implementation is underway; acceptance evidence is tracked separately and the release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work.
+Status: candidate v0.1 specification, prepared for review on 2026-10-24; reconciled with the current handoff on 2026-10-30 against retained evidence through 2026-10-30. T-001–T-003, T-005–T-014, T-016–T-022 are complete at their stated fixture, design, or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open; the v0.1 release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work. Actual acceptance status is recorded in [acceptance.md](acceptance.md).
 
 ## Request and purpose
 
-Build a general market knowledge graph on PostgreSQL, reuse the user's local MacroMedallion (also called EcoMedallion) asset where verified, and expose useful market, macro, and relationship views through Power BI before adding securities-finance domains.
+Build a general market knowledge graph on PostgreSQL, reuse the user's local MacroMedallion (also called EcoMedallion) asset where verified, and expose useful market, macro, and relationship views through the React demonstration and documented Power BI outputs before adding securities-finance implementations. The React delivery decision is recorded in [ADR-001](decisions/001-quantmeridian-react-scaffold.md); Power BI execution remains required for AC-009.
 
 MarketAtlas helps a quant follow relationships across instruments, issuers, classifications, and economic series while inspecting where each connection came from and when it was known. Its public demonstration should make that value understandable without access to a private repository, database, or licensed dataset.
 
@@ -17,27 +17,67 @@ The engineering deliverable is a reusable graph foundation and report-ready outp
 | Quant or data scientist | Which instruments share an issuer, sector, country, currency, or index? | Inspect a sourced path and distinguish missing mappings from confirmed links. |
 | Macro researcher | Which economic series describe a selected country or economic concept, and which instruments have a curated relevance link? | Explore contextual mappings with units, freshness, and mapping rationale. |
 | Analyst | Which configured instrument pairs changed their rolling return correlation? | Compare dated estimates with sample counts, methodology, and source lineage. |
-| Power BI consumer | Why does this connection or number appear? | Drill through from a displayed relationship to its source and build. |
+| Report consumer (React / Power BI) | Why does this connection or number appear? | Drill through from a displayed relationship to its source and build. |
 
 ## Scope and release boundary
 
-The v0.1 pilot includes a market entity map, curated macro context, one bounded family of rolling instrument-return correlations, PostgreSQL serving outputs, a reproducible synthetic demonstration, and a Power BI semantic/report specification with a report implementation when the supported authoring environment is available. A PostgreSQL demo does not depend on Power BI being installed; Power BI acceptance remains a separate, unpassed criterion until exercised in Power BI.
+The v0.1 pilot includes a market entity map, curated macro context, one bounded family of rolling instrument-return correlations, PostgreSQL serving outputs, a reproducible synthetic demonstration in the React workspace, and a Power BI semantic/report package to be exercised in an authorized authoring environment. The React fixture demonstration and restricted-local live macro graph are implemented. The Power BI package includes a TMDL template, a five-page PBIP/PBIR project generator and a verified local actual-data browser report. Generated native source remains unexecuted in Power BI. Fixture and React execution are independent of Power BI availability; AC-009 remains partial until actual Power BI execution supplies the required evidence.
 
-Proposed sizing envelope, subject to discovery: up to 50 instruments, 25 macro series, two years of daily market history, and at most 300 configured instrument pairs. These are design targets, not verified current coverage or performance. Macro history may have a lower frequency and different revision structure.
+The proposed analytical sizing envelope remains up to 50 instruments, 25 macro series, two years of daily market history, and at most 300 configured instrument pairs. These are design targets, not verified analytical coverage. Macro history may have a lower frequency and different revision structure. The validated synthetic report has 15 nodes, 14 relationship facts, 3 curated contexts, and 32 correlation estimates. Separately, the restricted descriptive catalog has 290 series and 11 taxonomy concepts; the bounded live observation ingestion has evidence for 3 series and 151 observation versions, and revision-quality publication for 3 selected summaries. Catalog membership does not imply observation ingestion, analytical eligibility, or quality-summary selection for every series. See [tasks](tasks.md), [Power BI reconciliation](../powerbi/README.md#ac-009-reconciliation-script), and [the handoff](handoff.md).
 
-Later scope includes beta estimation, timestamped event context and event studies, broader asset coverage, and securities-finance views. The first pilot excludes arbitrary report-time graph traversal, causal claims, trading execution, dense all-pairs estimation, and restricted bank/client/counterparty/position data in the public demonstration.
+Later scope includes beta estimation, historical event/revision reconstruction and event studies, broader analytical asset coverage, and securities-finance implementations. Current scheduled-release context and captured-current revision-quality summaries are already supported at their documented restricted-local scope; neither establishes historical event reconstruction or measured market responses. The securities-finance extension contract is complete at design scope only. The first pilot excludes arbitrary report-time graph traversal, causal claims, trading execution, dense all-pairs estimation, and restricted bank/client/counterparty/position data in the public demonstration.
 
 ## Existing systems and evidence status
 
-MacroMedallion and EcoMedallion are interchangeable names for one upstream economic-data asset. An operator may point MarketAtlas at a local checkout for discovery and lineage through the git-ignored `configs/local.toml`; MarketAtlas neither clones nor imports that checkout and does not require a remote URL, commit, or branch pin. The primary integration contract is the authorized local `macro_medallion` PostgreSQL database, where a bounded read-only MarketAtlas adapter has verified series metadata and point-in-time observation interfaces. Owners, licenses/redistribution rights, complete source-role review, and deployment conventions still require T-001/T-004 work.
+MacroMedallion and EcoMedallion are interchangeable names for one upstream economic-data asset. An operator may point MarketAtlas at a local checkout for discovery and lineage through the git-ignored `configs/local.toml`; MarketAtlas neither clones nor imports that checkout and does not require a remote URL, commit, or branch pin. The primary integration contract is the authorized local `macro_medallion` PostgreSQL database. Six approved live interfaces have verified read-only source contracts and bounded adapters. T-001 is complete for the local restricted scope: Josh owns the manual local pilot's source/data, database, report, methodology, refresh/recovery, and incident roles; source outputs are restricted internal-only and public sharing remains unauthorized. Broader source onboarding, public redistribution approval, and scheduled deployment remain open. See [the source catalog](source-catalog.md) and [the ownership and rights decision](source-onboarding-decision.md).
+
+The completed fixture implementation covers canonical identities and ontology, temporal relationship replay, cutoff-aware observation versions, curated macro context, bounded rolling correlations, atomic snapshot publication, reporting/provenance outputs, release-validation evidence, and a contributor walkthrough. The implemented demonstration uses the React workspace selected in [ADR-001](decisions/001-quantmeridian-react-scaffold.md). The restricted-local live graph has retained validation for a descriptive catalog of 290 series and 11 taxonomy concepts; this catalog does not establish historical taxonomy or analytical coverage at that scale. T-017 adds an independent current revision-quality publication and selected-series UI with capture/input/build provenance; retained validation covers three configured summaries, repeat-run reuse, and failure recovery. These are recorded results through 2026-10-26, not a new live-environment validation. See [the handoff checkpoint](handoff.md#start-here-next-session) and [T-017 evidence](../reports/t017-revision-quality-publication-validation.md).
+
+The next acceptance task is T-015 / AC-009, owned by Josh / project owner: exercise the existing Power BI source package in an authorized authoring environment and retain report, refresh, filtering/count reconciliation, and provenance evidence. AC-009 remains partial; React, SQL, and template checks do not satisfy the Power BI exercise. Broader T-004 adapters, public source-rights/artifact review, and scheduled deployment/operational readiness also remain open. Completion of the scoped tasks above does not establish a completed pilot or production release.
 
 The public fixture path is independently runnable. Verified upstream integrations consume existing interfaces or tables under explicit contracts; adaptation choices belong in the plan. Missing dependencies must produce an honest fixture-only or blocked integration status.
+
+T-018 adds portable Power BI CSV data jobs and report guides on 2026-10-30.
+Credential-free fixture packs and read-only exports of existing report
+publications include typed schemas, checksums, row counts, keys and provenance.
+Local file validation and a four-publication database export passed; the M/DAX
+guides and synthetic GitHub workflow remain unexecuted in their target hosts.
+No scheduler or Power BI service refresh was configured. See [data jobs](../powerbi/guides/data-jobs.md),
+[report recipes](../powerbi/guides/report-recipes.md), and
+[T-018 evidence](../reports/t018-powerbi-data-jobs-validation.md). These outputs
+support REQ-002/009/010/011 and the existing acceptance chain; AC-009 remains
+partial pending T-015.
+
+T-019 names the synthetic database publication `synthetic_fixture`. Migration
+012 preserves the existing pointer's snapshot and timestamp; the three actual
+macro publications are unchanged. [Publication access](publication-access.md)
+documents the report registry and view mapping. Historical build manifests and
+export packs retain the names recorded at their creation.
+
+T-020 adds optional Dagster orchestration for the existing PostgreSQL sources:
+rolling observation/release windows, contract gates, a full-catalog graph refresh,
+selected revision quality, and a validated real Power BI pack. A local 13-stage
+run passed on 2026-10-30. The development UI/daemon is available with a stopped
+18:30 New York schedule definition; upstream API ingestion, Power BI service
+refresh and production scheduling remain separate. See [the runbook](dagster-orchestration.md)
+and [evidence](../reports/t020-dagster-orchestration-validation.md).
+
+T-021 validates native Dagster recovery from a failed stage using verified parent
+captures and completed prerequisites. T-022 authors native fixture/actual-data
+report projects and provides an actual-data browser report without requiring a
+Power BI account. Native JSON Schema and browser checks passed; Power BI refresh,
+rendering and drill-through remain unexecuted. See [recovery evidence](../reports/t021-dagster-recovery-validation.md)
+and [report evidence](../reports/t022-report-project-validation.md).
 
 ## v0.1 review scenario
 
 The first demonstration uses one labeled synthetic instrument and a fixed information cutoff. A reviewer selects the instrument, follows its listing and issuer/classification links, opens one curated macro-context link to see its rationale and source, then views a configured rolling return-correlation pair at two endpoint dates. The result displays the pair, return definition, scheduled-session window, valid paired count, estimate or undefined reason, cutoff, method version, and input/build identity. The reviewer can drill from each displayed connection to its evidence and distinguish business effective time from source availability and MarketAtlas record time.
 
-The same fixture includes a later correction or macro revision. Moving the knowledge cutoff before that availability must remove the later information from the historical-as-known view; a current-context view may show it with its later timestamp. This walkthrough is a proposed review case for AC-002, AC-004–AC-008, and AC-011. Power BI execution and reconciliation are additionally required for AC-009; a SQL-only walkthrough cannot pass that criterion.
+The same fixture includes a later correction or macro revision. Moving the knowledge cutoff before that availability must remove the later information from the historical-as-known view; a current-context view may show it with its later timestamp. Fixture validation and walkthrough evidence for these behaviors is retained under AC-002, AC-004–AC-008, and AC-011 in [the acceptance register](acceptance.md). The React demonstration exposes the fixture report and provenance; it does not complete the separate Power BI exercise.
+
+T-015 must exercise the five pages in [the Power BI package](../powerbi/README.md): snapshot/quality, market map, macro context, correlation monitor, and provenance. Resolve the current synthetic `synthetic_fixture` publication immediately before refresh and pin every import to that same snapshot UUID. Reconcile the fixture counts above, prove filter/reset and distinct-count behavior, and retain provenance evidence for relationship `A11`, context `CTX3`, and one correlation. The template and SQL checks alone cannot pass AC-009.
+
+The separate restricted-local React walkthrough selects a live macro series, follows its current taxonomy provenance, and opens revision-quality context. Graph and quality snapshots and dates are displayed independently. An unavailable quality publication, a series outside the quality selection, and a selected series with an unknown summary remain distinguishable; unknown metrics remain null. Quality outages must leave the graph usable. This walkthrough supplies current-context evidence under T-017 and does not establish historical source availability or expand Power BI acceptance.
 
 ## Functional requirements
 
@@ -79,26 +119,30 @@ These contracts define information that must survive integration; physical table
 | Reference or curated connection | Endpoint identities, controlled relationship, provenance, source fact or curated rationale, business effective interval, source availability/knowledge timing, record history, quality status. Missing evidence is not a negative fact. |
 | Market observation | Instrument, timestamp/trading date and calendar, measure, value/unit, adjustment basis, publication/availability cutoff, source record and input snapshot. Currency conversion, return and corporate-action handling are explicit. |
 | Macro observation | Series, reference period, value/unit, frequency, release/availability timestamp, revision/vintage identifier and validity, source record and extraction time. Latest revised history cannot be represented as an earlier vintage. |
+| Current revision-quality context | Selected series identity, supplied summary metrics or explicit unknown/nulls, source contract/record, capture time, input manifest, build and independent publication snapshot, quality/coverage status, and restricted/current-only labels. Capture time does not establish source availability or a historical vintage. |
 | Analytical connection | Canonical pair, method/version, transformation, window, information cutoff, aligned observation dates or their reproducible identity, estimate/undefined reason, sample count, quality status, and run/input snapshot. |
 | Serving publication | Snapshot identity, publication time, input/run identities, view grain and keys, completeness and quality state, freshness measures and provenance references. |
 
 Business effective time answers when a relationship applies. Availability time answers when the underlying information became usable. Record time answers when this system captured or changed it. These timestamps are not interchangeable. Historical membership and historical macro vintages are required for a historical-as-known claim; where unavailable, the output must say current/latest-context or unsupported history.
 
+Snapshot consistency applies within each publication. The synthetic `synthetic_fixture`, current `macro_context`, `macro_economic_graph`, and `macro_revision_quality` publications are independent. Consumers pin one snapshot per publication and retain its own input/build identity and dates; a combined UI must not imply a shared snapshot or capture time. The browser accesses report APIs backed only by `atlas_report` under the report-reader role and never receives database credentials. See [the reporting contract](reporting.md). Category `contains` links are navigation aids; only the returned source-backed `measures` edges are taxonomy assertions.
+
 Reference, curated-context, and analytical connections must be visibly distinguishable. A numerical correlation must not inherit the truth status of a sourced issuer relationship. Repeated values introduced by forward filling low-frequency macro series must not be treated as fresh independent observations in the v0.1 return-correlation family.
 
 ## Dependencies and ownership
 
-Roles below are proposed assignments, not confirmations of actual people or approval.
+Josh accepted the roles below for the manual local pilot in [the ownership decision](source-onboarding-decision.md#approval-record) and [operations responsibility record](operations.md#responsibility-record). These assignments do not establish production readiness or authorize public redistribution. Scheduled operation still requires explicit hosting, access, backup/restore, method-change approval, freshness expectations, and alert/escalation arrangements.
 
-| Dependency | Owner role | Required before |
+| Dependency | Accountable local owner | Recorded scope / remaining gate |
 | --- | --- | --- |
-| Local upstream checkout and approved PostgreSQL interfaces | Project maintainer / upstream maintainer | Upstream adapter implementation |
-| PostgreSQL scope, roles, and migration convention | Database owner | Any integration writes |
-| Source redistribution and usage terms | Source owner / project maintainer | Public real-data fixture or publication |
-| Identity, ontology, and curated mapping rules | Quant/data owner | Reference-map acceptance |
-| Returns, timing, and correlation methodology | Quant owner | Analytical acceptance |
-| Power BI authoring, gateway, and semantic model environment | BI owner | Power BI execution acceptance |
-| Synthetic fixture and public repository packaging | Project maintainer | Public demonstration acceptance |
+| Optional local upstream checkout and approved PostgreSQL interfaces | Josh / project and source owner | Six approved interfaces; any additional interface needs a separate contract and approval. Checkout is optional. |
+| PostgreSQL scope, roles, and migration convention | Josh / database owner | Read-only source access and dedicated `atlas`/`atlas_report` writes verified locally; scheduled backup/restore and migration arrangements remain open. |
+| Source redistribution and usage terms | Josh / source and data owner | Restricted internal-only use; public real-data publication remains unauthorized pending rights review. |
+| Identity, ontology, and curated mapping rules | Josh / data and methodology owner | Fixture evidence retained; broader source mappings require their own review. |
+| Returns, timing, and correlation methodology | Josh / methodology owner | Synthetic configured-pair evidence retained; analytical expansion requires method approval and eligible inputs. |
+| Power BI authoring, gateway, and semantic model environment | Josh / report owner | T-015 / AC-009 remains open; authorized authoring access and a dedicated report login are required. |
+| Synthetic fixture and public repository packaging | Josh / project owner | Contributor walkthrough complete; public release-artifact review remains open. |
+| Refresh/recovery and incident response | Josh / local operator and incident owner | Manual execution only; scheduler, alert destination and escalation path remain undefined. |
 
 ## Constraints & Risks
 
@@ -109,26 +153,30 @@ Roles below are proposed assignments, not confirmations of actual people or appr
 | RISK-003 | Correlations in raw levels, stale data, asynchronous closes, or mixed return definitions mislead consumers. | Restrict v0.1 to compatible instrument returns with explicit alignment and diagnostic rules. |
 | RISK-004 | Multi-valued classifications or membership links multiply Power BI facts. | Declare grain and key rules; validate counts against source populations and make filter semantics explicit. |
 | RISK-005 | Private data or connection metadata enters a public portfolio repository. | Use labeled synthetic examples; require documented redistribution rights for any real-data artifact. |
-| RISK-006 | A graph visualization becomes the only demonstration of utility. | Demonstrate explainable SQL/report questions and provenance paths using standard Power BI visuals and tables. |
+| RISK-006 | A graph visualization becomes the only demonstration of utility. | Demonstrate explainable report questions, tables and provenance in the React workspace; retain the separate standard-visual and reconciliation exercise in Power BI. |
 | RISK-007 | Planning documents are mistaken for a working or production-ready system. | Maintain explicit lifecycle status and unpassed acceptance evidence; make public claims match completed work. |
 
 ## Success measures and definition of done
 
 Track resolved identity coverage, invalid/quarantined relationships, orphan/duplicate counts, freshness, successful/failed builds, input reproducibility, and report latency. Measure usefulness by completing the three user questions against declared examples with inspectable provenance; record observed task duration and user feedback without inventing a baseline benefit.
 
+[T-013 evidence](../reports/t013-release-validation.md) meets the build/query targets for the documented synthetic fixture and current catalog using a warm local PostgreSQL connection and 20 prepared executions per query. AC-016 passes at that local envelope only; the larger analytical design targets, production concurrency, and cold-cache performance are not established. A daily Dagster schedule is defined and stopped; no automated freshness SLA or production service is configured.
+
 The documentation package is complete when its requirements, proposed plan, tasks, handoff, roadmap, and public claims agree. The implemented v0.1 is complete only when all Must acceptance criteria below have actual passing evidence, open blocking risks have an owner/resolution, and the maintainer records release review. Documentation completion does not advance the implementation or validation gates.
 
-## Open Questions
+## Discovery decisions and open questions
 
-| ID | Question | Proposed owner | Timing |
+Question IDs are retained for traceability. Resolutions below are limited to the recorded local scope.
+
+| ID | Status and decision / remaining question | Owner | Timing / evidence |
 | --- | --- | --- | --- |
-| Q-001 | Does MacroMedallion name a distinct repository or an earlier name for [EcoMedallion](https://github.com/thatquantguy44/EcoMedallion)? If distinct, what is its exact URL? | Project maintainer | Discovery |
-| Q-002 | What interfaces, canonical IDs, PostgreSQL objects, privileges, and refresh patterns exist? | Upstream/database owners | Discovery |
-| Q-003 | Which data retain historical identifier/classification states and macro vintages, and when were they available? | Data/quant owner | Before historical claims |
-| Q-004 | Which sources and derived outputs may be redistributed publicly? | Source owner | Before real-data publication |
-| Q-005 | Which pilot universe, eligible pair list, calendars, and return definitions are supported? | Quant owner | Method design |
-| Q-006 | Which Power BI authoring/connectivity options and standard visuals are available? | BI owner | BI design |
-| Q-007 | Who accepts performance targets and retains build artifacts/input snapshots? | Maintainer/database owner | Pilot setup |
+| Q-001 | Resolved: MacroMedallion and EcoMedallion name the same upstream asset. Optional local-checkout discovery does not require a remote URL or revision pin. | Josh / project owner | [Source catalog](source-catalog.md) |
+| Q-002 | Resolved for the six approved interfaces and local role scope. Additional objects need explicit contracts; broader adapters and scheduled refresh arrangements remain open. | Josh / source and database owner | Before additional onboarding; [catalog](source-catalog.md), [contract registry](../contracts/source_contracts.toml) |
+| Q-003 | Partial: fixture temporal replay and bounded live macro vintages are evidenced. Current taxonomy and captured quality do not establish historical classification or revision-event reconstruction. What additional historical coverage can an approved source support? | Josh / data and methodology owner | Before broader historical claims; [acceptance](acceptance.md), [reporting contract](reporting.md) |
+| Q-004 | Local decision recorded: source-derived outputs are restricted internal-only; public examples use synthetic fixtures. Which provider terms would permit any future public real-data or derived-output publication? | Josh / source owner | Before public real-data publication; [rights decision](source-onboarding-decision.md) |
+| Q-005 | Fixture universe, configured pairs, synthetic weekday calendar and adjusted-price inputs are documented. Which real-market universe, holiday calendars and return definitions may be approved for broader analytics? | Josh / methodology owner | Before analytical expansion; [fixture contract](fixtures.md), [plan](plan.md) |
+| Q-006 | Open: which authorized Power BI Desktop or suitable service authoring environment and dedicated report login can execute T-015? The last recorded macOS session had neither Desktop nor an authenticated service workspace. | Josh / report owner | Next acceptance task; [handoff](handoff.md#execute-t-015-next), [Power BI package](../powerbi/README.md) |
+| Q-007 | Local owner assigned and performance evidence retained. What hosting, input/artifact retention, backup/restore and alert/escalation arrangements are required before scheduling? | Josh / project and database owner | Before scheduled operation; [performance evidence](../reports/t013-release-validation.md), [operations](operations.md) |
 
 ## Acceptance Criteria
 

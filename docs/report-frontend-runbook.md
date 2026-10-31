@@ -1,0 +1,147 @@
+# Start and maintain the local report front end
+
+This runbook manages the optional **MarketAtlas macro research** browser report.
+The report is a React dashboard served on this computer by the Data plugin's
+local preview service. It needs Node, Python 3.11 or newer, the installed Data
+plugin runtime, and a compiled report project. Opening an existing report does
+not need PostgreSQL, Dagster or Power BI running.
+
+The existing report is [MarketAtlas macro research](http://127.0.0.1:60114/).
+Its project directory is `data/generated/reports/browser/`. The URL works only
+on the computer serving the report; it cannot be shared with another computer
+as a hosted report.
+
+## Open or restart the existing report
+
+In Terminal:
+
+```sh
+cd "/Users/joshualutkemuller/Documents/Quant Sandbox/platforms/MarketAtlas"
+scripts/report-preview.sh start
+```
+
+Open the `url` returned by the command. For the existing project, this is
+`http://127.0.0.1:60114/`. A successful start reports `state: "running"` and
+`registered: true`. Repeating `start` reuses the project's registered port.
+You can close Terminal after successful startup.
+
+The preview is registered as a user login service. It normally restarts after
+you log in following a reboot. That starts the web server with its existing
+files; it does not rerun the PostgreSQL pipeline or fetch newer data. Keep the
+project and Node executable available on disk.
+
+To check or stop just this report:
+
+```sh
+scripts/report-preview.sh status
+scripts/report-preview.sh stop
+```
+
+`stop` unregisters this project's background service while preserving its files
+and assigned URL. Run `start` to register/start it again. It does not stop Dagster
+or any other application. Check the returned `state` and `registered` fields;
+`status` returning successfully alone does not mean the report is running.
+
+To manage a different generated report, pass its project directory:
+
+```sh
+scripts/report-preview.sh start data/generated/reports/my-browser-report
+scripts/report-preview.sh status data/generated/reports/my-browser-report
+scripts/report-preview.sh stop data/generated/reports/my-browser-report
+```
+
+Use the returned URL for that project; a new project may get a different port.
+The launcher accepts absolute paths too and can be invoked from another working
+directory using its absolute path.
+
+## Recreate the report after a clean checkout
+
+Generated apps and restricted exports under `data/generated/` are intentionally
+ignored by Git. A fresh checkout therefore contains the report's source and
+build scripts, but does not contain your local compiled report or its data.
+
+1. Obtain one validated actual-data pack from a successful
+   [Dagster refresh](dagster-orchestration.md), or retain a private copy of the
+   existing immutable pack. This must contain the three real macro publications.
+2. Build a new project with the command below. Replace `IMMUTABLE_PACK_ID` with
+   the folder returned by the successful refresh.
+3. Start that project's preview and open the returned URL.
+
+```sh
+scripts/build-browser-report.sh \
+  data/generated/powerbi-real/IMMUTABLE_PACK_ID \
+  data/generated/reports/my-browser-report
+scripts/report-preview.sh start data/generated/reports/my-browser-report
+```
+
+The builder verifies the pack and refuses to overwrite an existing project.
+It creates the React app, copies the repository's report content, and compiles
+`dist/index.html` plus its required data sidecar. Serve the whole `dist/`
+directory; copying only `index.html` is insufficient.
+
+The report content is tracked in `powerbi/browser/DashboardContent.jsx` and its
+reviewed-data transformation in `src/market_atlas/reporting/browser.py`.
+[Generated-report instructions](../powerbi/guides/generated-reports.md) also
+cover native Power BI project generation.
+
+## Show newer pipeline data
+
+Starting/restarting the web server serves the existing snapshot. Dagster creates
+new immutable packs independently; the browser report does not automatically
+switch to the latest pack. To view a newer pack, build a new report project using
+the commands above and start its preview. This preserves the existing report's
+personal edits and pinned data. No automatic browser-report refresh is configured.
+
+The default Data plugin location used by the launch/build scripts is:
+
+```text
+~/.codex/plugins/cache/openai-curated-remote/data-analytics/1.1.0-exp-homepage
+```
+
+If the plugin was updated or moved, set its installed location before running
+either script:
+
+```sh
+export MARKETATLAS_DATA_PLUGIN="/absolute/path/to/installed/data-analytics/version"
+scripts/report-preview.sh start
+```
+
+If needed, locate installed candidates with this bounded search, then select the
+version installed in your app:
+
+```sh
+rg --files --hidden "$HOME/.codex/plugins/cache/openai-curated-remote/data-analytics" \
+  | rg '/scripts/data-app-preview[.]mjs$'
+```
+
+The runtime is a separate Data plugin dependency; installing the repository's
+Python package alone does not install it. Keep generated app runtime files intact.
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| Browser cannot connect | Run `scripts/report-preview.sh status`, then `start`; open the returned URL. |
+| No compiled report | Restore the complete ignored project privately or rebuild from a validated pack into a new directory. |
+| Missing Node or Python | Make Node and Python 3.11+ available in Terminal's PATH, then retry. |
+| Data preview runtime missing | Verify the Data plugin installation and set `MARKETATLAS_DATA_PLUGIN`. |
+| Assigned port occupied | Inspect the specific listener with `lsof -nP -iTCP:60114 -sTCP:LISTEN` (use the reported port). Do not terminate an unrelated process or change the registered port blindly. |
+| Login-service permission/startup failure | Read the error and the `logs` path returned by `status`. Retry `start` with the installed Node runtime; do not change machine security policies. |
+| Page loads with old data | Check publication/source timestamps in the report. Build from a newer validated pack; restarting the server does not refresh data. |
+| Old appearance after a deliberate rebuild | Reload the existing browser tab after preserving any unsaved personal edits. |
+
+If user login service registration is unavailable on another host, a temporary
+loopback-only preview can serve an existing build:
+
+```sh
+python3 -m http.server 60115 --bind 127.0.0.1 \
+  --directory data/generated/reports/my-browser-report/dist
+```
+
+Use this fallback only if port 60115 is free. Open `http://127.0.0.1:60115/`;
+keep Terminal running and stop it with Ctrl-C. This temporary server does not
+restart after logout/reboot. The normal registered preview remains preferred.
+
+The actual-data report and all its exports are restricted internal-only. This
+runbook starts a local preview; cloud publication and access changes require
+their own approved sharing scope.
