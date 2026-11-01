@@ -85,8 +85,11 @@ and `input_sha256` locate full source-record evidence in `prepared.json`.
 
 These are a separate `macro-analytics-pack-v1` contract, not the existing
 publication-based Power BI pack. They can be imported as typed CSVs using
-`schema.json`; integration into the existing browser/Power BI generator is future
-work. Source captures and packs remain ignored under `data/generated/` and are
+`schema.json`. The browser's **Relationship research** tab now consumes the
+validated pack independently; follow the
+[front-end runbook](report-frontend-runbook.md#relationship-research-views) to
+attach it while retaining the existing report URL. Native Power BI generator
+integration remains future work. Source captures and packs remain ignored under `data/generated/` and are
 restricted internal-only. They are not public repository artifacts.
 
 ## Interpret the method
@@ -148,7 +151,7 @@ bounded to 50 unique series, 100 configured within-group pairs, 250,000 source
 versions, a 25-year capture span, 10,000 panels and 2 million preparation cells.
 
 Method changes require a new reviewed configuration/method version and fresh
-validation. Source repair, browser views, scheduling and predictive research
+validation. Source repair, automatic analytics scheduling and predictive research
 remain separate tasks. The [feature specification](t028-t029-macro-analytics-spec.md)
 records the full contract and primary method references.
 

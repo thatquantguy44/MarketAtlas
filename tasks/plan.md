@@ -32,3 +32,13 @@ records the live CLI run, exact replay and independent numerical proof. All 23
 new tests pass; the full pinned suite has 138 passes/five opt-in database skips.
 Changed-file lint passes; 11 untouched baseline lint findings remain separate.
 No commit/push or browser integration was requested as part of this checkpoint.
+
+## Browser follow-on checkpoint, 2026-11-01
+
+User then authorized shipping the foundation and adding browser views. Foundation
+`bd607df` is pushed in PR #15. T-030 adds validated independent-pack attachment,
+scoped heatmap/timeline/ranking/pair evidence and atomic authored-content updates.
+[Validation](../reports/t030-browser-analytics-validation.md) records 143 Python
+passes/five skips, four Node passes and actual normal/narrow Chrome checks. The
+normal daily refresh retains frozen research data; automatic research generation
+is the next separate task. PR review/merge remains with Josh.

@@ -357,6 +357,24 @@ isolation pass. Strict thresholds withhold current monthly results affected by
 the October 2025 source gap. No predictive or report-integration claim. See
 [runbook](macro-analytics.md) and [evidence](../reports/t028-t029-macro-analytics-validation.md).
 
+### [x] T-030 — Expose macro relationship research in the browser report
+
+Owner: Josh / report and methodology owner; implementation: Codex. Dependencies:
+T-028/T-029. Maps REQ-008/009/010/011 and NFR-002/003/005 to supplementary
+AC-008/009/010/011/014/015/017/018; native Power BI acceptance remains partial.
+
+Completed 2026-11-01 at restricted-local browser scope. The existing report now
+has a Relationship research tab with heatmap, dispersion timeline, divergence
+ranking and exact pair-window/source investigation. Independent dates and
+undefined states remain explicit. Named group/date/pair scopes restore from view
+links. Validated attachment, optional authored installation, rollback and normal
+refresh retention preserve the app identity/URL. Full suite: 143 passed/five
+skips; four Node cases pass. Actual Chrome normal/narrow, filter/reset/source and
+unavailable-state checks pass. See [spec](t030-browser-analytics-spec.md),
+[runbook](report-frontend-runbook.md#relationship-research-views) and
+[evidence](../reports/t030-browser-analytics-validation.md). Automatic research
+generation, predictive research and Power BI execution remain separate.
+
 ## Completion rules and coverage
 
 A task is complete only when its deliverable exists, required review/validation evidence is retained, relevant acceptance rows are updated, and documentation matches actual behavior. Downstream code may progress against fixture contracts while optional upstream integrations remain unavailable; do not collapse those statuses.

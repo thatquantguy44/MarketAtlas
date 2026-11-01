@@ -90,3 +90,14 @@ separate from the instrument-return method and database report publications.
 Incomplete samples and unknown vintages stay unavailable. No historical taxonomy,
 MarketAtlas historical possession, predictive value, browser integration or new
 schedule is established. AC-009 remains partial without Power BI execution.
+
+## T-030 browser research views (2026-11-01)
+
+[Browser analytics evidence](../reports/t030-browser-analytics-validation.md)
+extends supplementary AC-008/009/010/011/014/015/017/018 evidence with the locally
+rendered heatmap, dispersion timeline, divergence ranking, exact transformed
+window/source investigation and scoped controls. Actual normal/narrow checks,
+null handling, pack identity, retained analytics across normal refreshes and
+authored-content rollback pass. This adds browser consumption of the independent
+research pack; it does not establish automatic research generation, predictive
+value or native Power BI execution. AC-009 remains partial.

@@ -1,10 +1,57 @@
 # MarketAtlas — Handoff
 
-Updated: 2026-10-31. This is an early implementation handoff, not a completed pilot or production release.
+Updated: 2026-11-01. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Start here next session
 
-**Completed T-028/T-029 checkpoint (2026-10-31):** Josh requested comparable
+**Completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
+foundation and adding the three browser views. Current branch remains
+`feat/macro-relationship-analytics`, from main `9548eef`. Foundation commit
+`bd607df` is pushed; [PR #15](https://github.com/thatquantguy44/MarketAtlas/pull/15)
+contains the foundation and separate browser change. Check actual GitHub state
+for the final head/CI; no merge was requested. Both foundation workflows passed.
+
+Read [browser runbook](report-frontend-runbook.md#relationship-research-views),
+[T-030 spec](t030-browser-analytics-spec.md) and
+[evidence](../reports/t030-browser-analytics-validation.md). The existing report
+http://127.0.0.1:60114/ retains app
+`dashboard:b31d5d91-39e6-4d2a-8719-4888de544244` and its four prior tabs, plus
+**Relationship research**. It shows heatmap, dispersion timeline, divergence
+ranking and exact pair-window/source evidence. Defaults are Treasury yields/latest
+evaluation. Named per-group date/pair scopes restore from view links. Monthly
+missing results remain unavailable; the latest complete date requires an
+explicit selection. No predictive claim or source repair was added.
+
+The attached research pack remains
+`a56bd8f7591762d8664a7c03eefe4e0d9406469d421c56808f48c6cf589d56d1` (cutoff
+October 31), independent of publication pack
+`be93f9085a543d44b84c962f1d8af96bd4e88d1fa53aecabe691adf2d597befc`.
+Browser queries retain 2,526 relationships, 808 dispersions, 2,458 nodes, 2,458
+window records and 3,512 cached transformed point states. Validated attachment
+uses `scripts/refresh-browser-report.py --analytics-pack ...`; explicit
+`--update-content` installs tracked authored views. Normal publication-only
+refreshes preserve all research queries with their original cutoff. This was
+verified on the real report, with hash proof under ignored
+`data/generated/macro-analytics/browser-integration-proof.json`.
+
+Full Python suite: 148 tests, 143 passed/five opt-in database skips; core `-S`:
+134 passed/14 optional/database skips. Four Node cases pass and run in CI.
+Changed Python lint/shell/diff checks pass; eleven untouched baseline lint
+findings remain separate. Chrome normal and 390×844 checks pass, including
+scope/reset, historical date, source preview, pair action, null states and reload
+restoration. Mobile heading/tooltip issues were repaired and rechecked; normal
+viewport restored. No captured browser warnings/errors. Final report authoring
+status is complete and the research tab is open. Screenshot/logs/proofs remain
+ignored under `data/generated/macro-analytics/`.
+
+**Exact next engineering task:** review PR #15 and final CI; merge only on Josh's
+request. Next product priority is adding macro preparation/build/validation to
+the existing Dagster workflow and refreshing the report only after the research
+pack passes, preserving the previous research/report on failure. No new schedule
+or upstream API ingestion was added. T-015/AC-009 remains open without Power BI
+access; do not repeatedly request it.
+
+**Historical completed T-028/T-029 checkpoint (2026-10-31):** Josh requested comparable
 macro series followed by analytical relationships on a new branch. Current branch
 is `feat/macro-relationship-analytics`, from merged main `9548eef` (MarketAtlas
 #14). EcoMedallion #95 is also merged. The new branch is local; no commit, push or

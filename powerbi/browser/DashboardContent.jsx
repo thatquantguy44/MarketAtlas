@@ -1,5 +1,6 @@
 import React from "react";
 import { RefreshStatus } from "./RefreshStatus.jsx";
+import { MacroAnalytics } from "./MacroAnalytics.jsx";
 import { DataComponent, DataTable, EvidenceChart, Filters, MetricCard, Section,
   SortableItem, SortableRegion, useDataApp, useDashboardTabs, useSectionFilters } from "../../data-app-public.jsx";
 
@@ -8,6 +9,7 @@ const tabs = [
   { id: "freshness", label: "Releases and freshness" },
   { id: "quality", label: "Revision quality" },
   { id: "publications", label: "Publications and evidence" },
+  { id: "analytics", label: "Relationship research" },
 ];
 const columns = (pairs) => pairs.map(([field, label]) => ({ field, label }));
 
@@ -34,6 +36,7 @@ export function DashboardContent() {
   const contexts = reviewedRows("source_context");
   const releases = contexts.filter(row => row.context_kind === "release_event").sort((a,b) => a.effective_date.localeCompare(b.effective_date));
   const sourceCoverage = contexts.filter(row => row.context_kind === "source_coverage");
+  if (activeTabId === "analytics") return <article><RefreshStatus/><MacroAnalytics/></article>;
   const blocks = [];
   const add = (id, title, content, kind="table", span=12) => blocks.push({id,title,content,kind,span});
   if (activeTabId === "catalog") {

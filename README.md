@@ -123,8 +123,11 @@ inflation, labor-condition and Treasury-yield groups produce cutoff-aware
 transformed series, rolling correlations/distances, standardized dispersion and
 node divergence in private immutable JSON/CSV packs. Edit
 [the research settings](configs/macro_analytics.toml) to change the approved
-selection and sample rules. These outputs are separate from the existing report
-and daily refresh.
+selection and sample rules. The existing browser report now includes a
+**Relationship research** tab with heatmap, dispersion timeline, divergence
+ranking and pair-window evidence. Its research pack retains independent dates;
+the daily publication refresh preserves it without regenerating analytics. See
+[the front-end runbook](docs/report-frontend-runbook.md#relationship-research-views).
 
 The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
 

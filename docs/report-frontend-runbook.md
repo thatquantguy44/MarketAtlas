@@ -11,6 +11,57 @@ Its project directory is `data/generated/reports/browser/`. The URL works only
 on the computer serving the report; it cannot be shared with another computer
 as a hosted report.
 
+## Relationship research views
+
+Open **Relationship research** to use the heatmap, dispersion timeline and
+indicator-divergence ranking. The initial research selection is Treasury yields
+at its latest evaluation. Choose an **Economic group** and **Known by** date;
+the heatmap/ranking use that date and the timeline ends at that date. Group/date/
+pair selections travel in the app-generated view link and restore on reload.
+
+Click a supported heatmap cell, then **Inspect pair observations**, to reach
+**Pair evidence**. Its selector also changes the investigated pair. Read the
+paired count/window, correlation/distance/change, exact comparison date, aligned
+transformed observations and source records. Expand baseline diagnostics or use
+the component's **View data source** action for scoped rows and method/input
+identities. The heatmap shows each canonical pair symmetrically; its source
+preview retains canonical rows without invented self-correlations.
+
+Current monthly groups have missing-data states. Choose **Inflation**, then
+**View latest complete date**, for an explicitly selected supported historical
+example. **Latest date** resets to the group's newest evaluation, including its
+unavailable results. A blank cell or unavailable ranking is not a zero or a
+forecast. The research pack has its own cutoff/capture time, independent of the
+daily publication report refresh.
+
+To attach a validated research pack and install the repository's authored views
+into the existing report, run from the repository checkout:
+
+```sh
+PYTHONPATH=src .venv-dagster/bin/python scripts/refresh-browser-report.py \
+  --project data/generated/reports/browser \
+  --pack "PASTE_VALIDATED_PUBLICATION_PACK_DIRECTORY" \
+  --analytics-pack "PASTE_VALIDATED_MACRO_ANALYTICS_PACK_DIRECTORY" \
+  --update-content --run-id manual-analytics-report
+```
+
+Use the `pack_directory` returned by `analytics build-macro` for the research
+argument. The other `--pack` is the independent existing publication export,
+not a macro research pack. See [macro analytics](macro-analytics.md) for preparing
+and validating research inputs. Invalid inputs/builds retain the previous report.
+`--update-content` deliberately installs tracked views; omit it for ordinary
+data-only updates to preserve authored source edits. Presentation edits, app
+identity, older immutable sidecars and the local URL remain retained.
+
+Ordinary daily report refreshes retain the last attached research queries and
+their original dates. They do **not** generate new analytics. To replace research
+data, explicitly supply `--analytics-pack`; automatic analytics generation is a
+separate follow-on task. Fresh builds accept a third optional argument:
+
+```sh
+./scripts/build-browser-report.sh "PUBLICATION_PACK_DIRECTORY" "NEW_REPORT_PROJECT_DIRECTORY" "MACRO_ANALYTICS_PACK_DIRECTORY"
+```
+
 ## Open or restart the existing report
 
 In Terminal:
