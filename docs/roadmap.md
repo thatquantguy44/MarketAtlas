@@ -29,6 +29,13 @@ Exit evidence: event availability and vintage tests, timezone/calendar checks, w
 
 ## v0.3 — Quant relationship research
 
+T-028/T-029 implement the first restricted-local macro research foundation:
+explicit transformed groups, date-cutoff-aware windows, correlations/distances,
+relationship changes, standardized dispersion and immutable evidence packs.
+See [macro analytics](macro-analytics.md). Browser integration, predictive
+evaluation, historical taxonomy, broader source coverage and the remaining
+methods below are still future work; this does not complete v0.3.
+
 Add directional beta estimates, controlled lead/lag experiments, edge stability diagnostics, and graph features such as degree or connected groups. Investigate whether graph-derived features improve a defined research decision against simple baselines. Pre-register the comparison, use chronological evaluation, and account for estimation error and multiple comparisons.
 
 Exit evidence: versioned methodology, reproducible inputs, sensitivity analysis, a baseline comparison, and limitations. A visually dense network is not evidence of alpha or economic causality.

@@ -875,7 +875,8 @@ def main(argv: list[str] | None = None) -> int:
         "--config", type=Path, default=DEFAULT_CONFIG_PATH
     )
     analytics = commands.add_parser(
-        "analytics", help="calculate or validate bounded fixture estimates"
+        "analytics",
+        help="calculate bounded fixture or source-backed research estimates",
     )
     analytics_commands = analytics.add_subparsers(
         dest="analytics_command", required=True
@@ -885,6 +886,23 @@ def main(argv: list[str] | None = None) -> int:
     analytics_calculate.add_argument("--knowledge-cutoff")
     analytics_validate = analytics_commands.add_parser("validate-fixture")
     analytics_validate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    macro_prepare = analytics_commands.add_parser("prepare-macro")
+    macro_prepare.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    macro_prepare.add_argument(
+        "--settings", type=Path, default=Path("configs/macro_analytics.toml")
+    )
+    macro_prepare.add_argument("--as-of", required=True)
+    macro_prepare.add_argument(
+        "--capture",
+        type=Path,
+        help="replay a retained source capture without PostgreSQL",
+    )
+    macro_prepare.add_argument("--output", type=Path, required=True)
+    macro_build = analytics_commands.add_parser("build-macro")
+    macro_build.add_argument("--input", type=Path, required=True)
+    macro_build.add_argument("--output", type=Path, required=True)
+    macro_validate = analytics_commands.add_parser("validate-macro")
+    macro_validate.add_argument("--input", type=Path, required=True)
     build_run = commands.add_parser("build", help="build or validate serving snapshots")
     build_commands = build_run.add_subparsers(dest="build_command", required=True)
     build_fixture_command = build_commands.add_parser("fixture")
@@ -1023,6 +1041,54 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "economic-graph":
         return _publish_macro_economic_graph(args.config, args.input)
     if args.command == "analytics":
+        if args.analytics_command in {"prepare-macro", "build-macro", "validate-macro"}:
+            from .analytics.macro_pack import build_pack as build_macro_pack
+            from .analytics.macro_pack import load_json, write_prepared
+            from .analytics.macro_pack import validate_pack as validate_macro_pack
+            from .analytics.macro_series import (
+                capture_and_prepare,
+                load_settings,
+                prepare_series,
+            )
+
+            try:
+                if args.analytics_command == "prepare-macro":
+                    settings = load_settings(args.settings, args.as_of)
+                    prepared = (
+                        prepare_series(load_json(args.capture), settings, args.as_of)
+                        if args.capture
+                        else capture_and_prepare(
+                            load_source_database(args.config), settings, args.as_of
+                        )
+                    )
+                    path = write_prepared(prepared, args.output)
+                    result = {
+                        "status": "prepared",
+                        "prepared_file": str(path),
+                        "prepared_sha256": prepared["prepared_sha256"],
+                        "series_count": len(prepared["eligibility"]),
+                        "panel_count": len(prepared["panels"]),
+                    }
+                elif args.analytics_command == "build-macro":
+                    result = build_macro_pack(args.input, args.output)
+                else:
+                    result = validate_macro_pack(args.input)
+            except (
+                ConfigError,
+                DatabaseUnavailable,
+                OSError,
+                ValueError,
+                KeyError,
+                TypeError,
+                OverflowError,
+            ):
+                print(
+                    "macro analytics failed; check settings, source availability and artifact integrity",
+                    file=sys.stderr,
+                )
+                return 1
+            print(json.dumps(result, sort_keys=True))
+            return 0
         if args.analytics_command == "calculate-fixture":
             return _calculate_fixture_correlations(args.config, args.knowledge_cutoff)
         return _validate_rolling_correlation_fixture(args.config)

@@ -4,7 +4,56 @@ Updated: 2026-10-31. This is an early implementation handoff, not a completed pi
 
 ## Start here next session
 
-**Completed T-026/T-027 checkpoint (2026-10-31):** Josh explicitly authorized
+**Completed T-028/T-029 checkpoint (2026-10-31):** Josh requested comparable
+macro series followed by analytical relationships on a new branch. Current branch
+is `feat/macro-relationship-analytics`, from merged main `9548eef` (MarketAtlas
+#14). EcoMedallion #95 is also merged. The new branch is local; no commit, push or
+new PR was requested or created in this session. Review actual Git state before
+shipping. Source repair is complete at its prior bounded scope; do not repeat it.
+
+Read [macro analytics runbook](macro-analytics.md),
+[method spec](t028-t029-macro-analytics-spec.md) and
+[evidence](../reports/t028-t029-macro-analytics-validation.md). New CLI commands
+are `analytics prepare-macro`, `build-macro` and `validate-macro`; settings live in
+`configs/macro_analytics.toml`. Ten approved FRED series in inflation, labor
+conditions and Treasury-yield groups use explicit metadata/transforms/orientation,
+date-cutoff vintage selection, conservative grids and fixed sample rules.
+No upstream writes, APIs, dependency/schema changes or existing report/schedule
+changes were made.
+
+Final live capture: 19,963 versions and 808 evaluation panels. Monthly dated
+history is usable from 2010. Each Treasury series has 3,651 undated older rows;
+they remain excluded, with dated history beginning in January 2024. Five monthly
+members mark October 2025 missing; this also prevents November's adjacent change.
+Do not bridge this gap, infer dates or relax thresholds to display a number.
+Current affected monthly windows/baselines stay unavailable; latest Treasury
+results are supported.
+
+Final pack: 2,526 pair/date rows (2,264 supported), 808 dispersion rows (640
+supported), 2,458 node/date rows and ten eligibility rows. Local summary:
+`data/generated/macro-analytics/validation-summary.json`. Authoritative pack:
+`data/generated/macro-analytics/packs/a56bd8f7591762d8664a7c03eefe4e0d9406469d421c56808f48c6cf589d56d1/`.
+Preparation ID: `ddb682876521e92a3393ff161c4f76ee4c2e0e69fedd5b6b89b323220b4801e1`.
+Exact retained-input replay reused the same pack/manifest. The independent
+`scripts/verify-macro-analytics.py` checked 127,624 transformed points, all 2,264
+supported correlations/distances, 1,957 z-scores and 640 dispersions against raw
+source histories using 50-digit Decimal arithmetic and tolerance `1e-10`.
+
+Final suite: 143 tests, 138 passed/five opt-in database skips. Core `python -S`:
+129 passed/14 optional/database skips. All 23 new tests and changed-file Ruff
+checks pass. Whole-repository Ruff has 11 baseline findings in five files proved
+identical to merged main; retain these as separate work. No Power BI execution,
+predictive/causal validation, historical taxonomy or MarketAtlas historical
+possession is claimed. These are separate private research file packs, not new
+report publications or an added daily job.
+
+**Exact next engineering task:** review the T-028/T-029 diff; commit/push/create
+a PR only when requested. Next product priority is browser consumption of the
+validated pack: relationship heatmap, dispersion timeline and node-divergence
+ranking with explicit unavailable states and source evidence. Do not claim these
+views exist yet. T-015/AC-009 remains open; Josh lacks Power BI access.
+
+**Historical completed T-026/T-027 checkpoint (2026-10-31):** Josh explicitly authorized
 staged writes in the named upstream checkout. Repair is complete for the approved
 2024-01-01–2026-10-31 window. **Do not ask for that permission again.** Normal
 MarketAtlas adapters remain read-only; source-owner writes used the separate

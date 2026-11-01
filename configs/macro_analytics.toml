@@ -1,0 +1,49 @@
+# Explicit research universe; source metadata must match before admission.
+version = "macro-analytics-v1"
+observation_start = "2010-01-01"
+output_start = "2024-01-01"
+max_rows = 250000
+redistribution_status = "restricted"
+
+[[groups]]
+id = "inflation"
+frequency = "m"
+window = 24
+minimum_pairs = 24
+baseline = 12
+minimum_baseline = 12
+change_lag_evaluations = 3
+members = [
+  {series_id = "CPIAUCSL", unit = "Index 1982-1984=100", transform = "log_change", orientation = 1},
+  {series_id = "CPILFESL", unit = "Index 1982-1984=100", transform = "log_change", orientation = 1},
+  {series_id = "PCEPI", unit = "Index 2017=100", transform = "log_change", orientation = 1},
+  {series_id = "PCEPILFE", unit = "Index 2017=100", transform = "log_change", orientation = 1},
+]
+
+[[groups]]
+id = "labor_conditions"
+frequency = "m"
+window = 24
+minimum_pairs = 24
+baseline = 12
+minimum_baseline = 12
+change_lag_evaluations = 3
+members = [
+  {series_id = "UNRATE", unit = "Percent", transform = "difference", orientation = -1},
+  {series_id = "U6RATE", unit = "Percent", transform = "difference", orientation = -1},
+  {series_id = "EMRATIO", unit = "Percent", transform = "difference", orientation = 1},
+]
+
+[[groups]]
+id = "treasury_yields"
+frequency = "d"
+window = 63
+minimum_pairs = 45
+baseline = 63
+minimum_baseline = 45
+change_lag_evaluations = 21
+members = [
+  {series_id = "DGS2", unit = "Percent", transform = "difference", orientation = 1},
+  {series_id = "DGS10", unit = "Percent", transform = "difference", orientation = 1},
+  {series_id = "DGS30", unit = "Percent", transform = "difference", orientation = 1},
+]

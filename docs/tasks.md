@@ -321,6 +321,42 @@ pre-2024 history, cloud/source scheduling and Power BI execution remain separate
 See [T-027 evidence](../reports/t027-source-repair-validation.md) and
 [runbook](source-health-recovery.md).
 
+### [x] T-028 — Prepare comparable macro series
+
+Owner: Josh / methodology owner; implementation: Codex. Dependencies: T-027.
+Maps REQ-006/008/011 and NFR-002/003 to supplementary AC-006/008/011/014/015.
+Implement the [macro analytics spec](t028-t029-macro-analytics-spec.md): explicit
+groups/metadata/transforms, bounded read-only longer-history capture, per-date
+source-vintage selection, conservative grids, sample diagnostics and retained
+preparation hashes. Verify numerical/temporal/gap guards, then actual source
+eligibility. No upstream repair or new daily schedule.
+
+Completed 2026-10-31 at restricted-local research scope. Ten explicit series in
+three groups captured 19,963 source versions with bounded read-only queries.
+Preparation retains 808 per-date panels, metadata/sample diagnostics and raw
+source provenance. Monthly history is usable from 2010; older undated Treasury
+rows stay excluded. Temporal, numerical, missing/invalid data and bound checks
+pass. See [evidence](../reports/t028-t029-macro-analytics-validation.md).
+
+### [x] T-029 — Calculate descriptive macro relationship features
+
+Owner: Josh / methodology owner; implementation: Codex. Depends on T-028.
+Maps REQ-008/009/010/011 and NFR-002/003 to supplementary AC-008/011/014/015.
+Implement fixed-window Pearson/distance/change estimates, standardized group
+dispersion and node divergence with explicit undefined states. Produce immutable
+validated JSON/CSV evidence packs; independently verify numbers, rerun identity,
+tamper/failure isolation and a real capture. Browser views and predictive
+evaluation remain separate priorities.
+
+Completed 2026-10-31 at local file-pack scope. Validated 2,526 pair/date rows
+(2,264 supported), 808 group/date rows (640 supported), 2,458 node/date rows and
+10 eligibility rows. All supported transformations, correlations, z-scores and
+dispersions passed independent Decimal checks at `1e-10`. CLI preparation/build,
+exact retained-input replay, schema/grain/integrity validation and failure
+isolation pass. Strict thresholds withhold current monthly results affected by
+the October 2025 source gap. No predictive or report-integration claim. See
+[runbook](macro-analytics.md) and [evidence](../reports/t028-t029-macro-analytics-validation.md).
+
 ## Completion rules and coverage
 
 A task is complete only when its deliverable exists, required review/validation evidence is retained, relevant acceptance rows are updated, and documentation matches actual behavior. Downstream code may progress against fixture contracts while optional upstream integrations remain unavailable; do not collapse those statuses.
