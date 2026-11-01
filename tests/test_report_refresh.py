@@ -134,12 +134,17 @@ class ReportRefreshTests(unittest.TestCase):
                 tempfile.TemporaryDirectory() as directory,
             ):
                 project, plugin, pack = project_at(Path(directory).resolve())
+                atomic_write(
+                    project / "src/content/dashboard/DashboardContent.jsx",
+                    b"prior authored content",
+                )
                 before = {
                     path: (project / path).read_bytes()
                     for path in [
                         "src/data.json",
                         "dist/index.html",
                         "dist/data-app-build.json",
+                        "src/content/dashboard/DashboardContent.jsx",
                     ]
                 }
 
@@ -172,10 +177,77 @@ class ReportRefreshTests(unittest.TestCase):
                         plugin=plugin,
                         node="node",
                         builder=build,
+                        update_content=True,
                     )
                 for path, expected in before.items():
                     self.assertEqual((project / path).read_bytes(), expected)
                 self.assertFalse((project / "dist/refresh-status.json").exists())
+                self.assertFalse(
+                    (project / "src/content/dashboard/MacroAnalytics.jsx").exists()
+                )
+
+    def test_normal_refresh_retains_independent_research_pack_and_cutoff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project, plugin, pack = project_at(Path(directory).resolve())
+            old = json.loads((project / "src/data.json").read_text())
+            research = {
+                "rows": [
+                    {
+                        "group_id": "treasury_yields",
+                        "pack_id": "research-pack",
+                        "as_of": "2024-06-30",
+                    }
+                ]
+            }
+            old["queries"]["macro_analytics_groups"] = research
+            atomic_write(project / "src/data.json", encoded(old))
+            with patch(
+                "market_atlas.reporting.refresh.browser_snapshot",
+                return_value=snapshot(),
+            ):
+                refresh_report(
+                    project,
+                    pack,
+                    run_id="next-daily",
+                    plugin=plugin,
+                    node="node",
+                    builder=fake_build,
+                )
+            current = json.loads((project / "src/data.json").read_text())
+            self.assertEqual(research, current["queries"]["macro_analytics_groups"])
+            status = current["queries"]["refresh_status"]["rows"][0]
+            self.assertEqual("research-pack", status["analytics_pack_id"])
+            self.assertEqual("2024-06-30", status["analytics_as_of"])
+
+    def test_explicit_content_install_keeps_owner_files_and_authoring_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project, plugin, pack = project_at(Path(directory).resolve())
+            with patch(
+                "market_atlas.reporting.refresh.browser_snapshot",
+                return_value=snapshot(),
+            ):
+                refresh_report(
+                    project,
+                    pack,
+                    run_id="preview",
+                    plugin=plugin,
+                    node="node",
+                    builder=fake_build,
+                    update_content=True,
+                    build_status="updating",
+                )
+            current = json.loads((project / "src/data.json").read_text())
+            self.assertEqual("updating", current["buildStatus"])
+            self.assertEqual(
+                b"owner content", (project / "src/content/user-edit.jsx").read_bytes()
+            )
+            self.assertIn(
+                "MacroAnalytics",
+                (project / "src/content/dashboard/DashboardContent.jsx").read_text(),
+            )
+            self.assertTrue(
+                (project / "src/content/dashboard/macroAnalytics.mjs").exists()
+            )
 
     def test_overlapping_report_refreshes_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

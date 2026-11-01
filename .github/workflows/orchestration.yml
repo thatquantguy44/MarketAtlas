@@ -31,6 +31,7 @@ jobs:
         run: |
           bash -n scripts/dagster-dev.sh scripts/dagster-service.sh scripts/report-preview.sh scripts/build-browser-report.sh
           node --check services/dagster-supervisor.mjs
+          node --test tests/browser-analytics.test.mjs
       - name: Test definitions, schedules, sequencing, retries and fixture exports
         env:
           PYTHONPATH: src

@@ -1,10 +1,106 @@
 # MarketAtlas — Handoff
 
-Updated: 2026-10-31. This is an early implementation handoff, not a completed pilot or production release.
+Updated: 2026-11-01. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Start here next session
 
-**Completed T-026/T-027 checkpoint (2026-10-31):** Josh explicitly authorized
+**Completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
+foundation and adding the three browser views. Current branch remains
+`feat/macro-relationship-analytics`, from main `9548eef`. Foundation commit
+`bd607df` is pushed; [PR #15](https://github.com/thatquantguy44/MarketAtlas/pull/15)
+contains the foundation and separate browser change. Check actual GitHub state
+for the final head/CI; no merge was requested. Both foundation workflows passed.
+
+Read [browser runbook](report-frontend-runbook.md#relationship-research-views),
+[T-030 spec](t030-browser-analytics-spec.md) and
+[evidence](../reports/t030-browser-analytics-validation.md). The existing report
+http://127.0.0.1:60114/ retains app
+`dashboard:b31d5d91-39e6-4d2a-8719-4888de544244` and its four prior tabs, plus
+**Relationship research**. It shows heatmap, dispersion timeline, divergence
+ranking and exact pair-window/source evidence. Defaults are Treasury yields/latest
+evaluation. Named per-group date/pair scopes restore from view links. Monthly
+missing results remain unavailable; the latest complete date requires an
+explicit selection. No predictive claim or source repair was added.
+
+The attached research pack remains
+`a56bd8f7591762d8664a7c03eefe4e0d9406469d421c56808f48c6cf589d56d1` (cutoff
+October 31), independent of publication pack
+`be93f9085a543d44b84c962f1d8af96bd4e88d1fa53aecabe691adf2d597befc`.
+Browser queries retain 2,526 relationships, 808 dispersions, 2,458 nodes, 2,458
+window records and 3,512 cached transformed point states. Validated attachment
+uses `scripts/refresh-browser-report.py --analytics-pack ...`; explicit
+`--update-content` installs tracked authored views. Normal publication-only
+refreshes preserve all research queries with their original cutoff. This was
+verified on the real report, with hash proof under ignored
+`data/generated/macro-analytics/browser-integration-proof.json`.
+
+Full Python suite: 148 tests, 143 passed/five opt-in database skips; core `-S`:
+134 passed/14 optional/database skips. Four Node cases pass and run in CI.
+Changed Python lint/shell/diff checks pass; eleven untouched baseline lint
+findings remain separate. Chrome normal and 390×844 checks pass, including
+scope/reset, historical date, source preview, pair action, null states and reload
+restoration. Mobile heading/tooltip issues were repaired and rechecked; normal
+viewport restored. No captured browser warnings/errors. Final report authoring
+status is complete and the research tab is open. Screenshot/logs/proofs remain
+ignored under `data/generated/macro-analytics/`.
+
+**Exact next engineering task:** review PR #15 and final CI; merge only on Josh's
+request. Next product priority is adding macro preparation/build/validation to
+the existing Dagster workflow and refreshing the report only after the research
+pack passes, preserving the previous research/report on failure. No new schedule
+or upstream API ingestion was added. T-015/AC-009 remains open without Power BI
+access; do not repeatedly request it.
+
+**Historical completed T-028/T-029 checkpoint (2026-10-31):** Josh requested comparable
+macro series followed by analytical relationships on a new branch. Current branch
+is `feat/macro-relationship-analytics`, from merged main `9548eef` (MarketAtlas
+#14). EcoMedallion #95 is also merged. The new branch is local; no commit, push or
+new PR was requested or created in this session. Review actual Git state before
+shipping. Source repair is complete at its prior bounded scope; do not repeat it.
+
+Read [macro analytics runbook](macro-analytics.md),
+[method spec](t028-t029-macro-analytics-spec.md) and
+[evidence](../reports/t028-t029-macro-analytics-validation.md). New CLI commands
+are `analytics prepare-macro`, `build-macro` and `validate-macro`; settings live in
+`configs/macro_analytics.toml`. Ten approved FRED series in inflation, labor
+conditions and Treasury-yield groups use explicit metadata/transforms/orientation,
+date-cutoff vintage selection, conservative grids and fixed sample rules.
+No upstream writes, APIs, dependency/schema changes or existing report/schedule
+changes were made.
+
+Final live capture: 19,963 versions and 808 evaluation panels. Monthly dated
+history is usable from 2010. Each Treasury series has 3,651 undated older rows;
+they remain excluded, with dated history beginning in January 2024. Five monthly
+members mark October 2025 missing; this also prevents November's adjacent change.
+Do not bridge this gap, infer dates or relax thresholds to display a number.
+Current affected monthly windows/baselines stay unavailable; latest Treasury
+results are supported.
+
+Final pack: 2,526 pair/date rows (2,264 supported), 808 dispersion rows (640
+supported), 2,458 node/date rows and ten eligibility rows. Local summary:
+`data/generated/macro-analytics/validation-summary.json`. Authoritative pack:
+`data/generated/macro-analytics/packs/a56bd8f7591762d8664a7c03eefe4e0d9406469d421c56808f48c6cf589d56d1/`.
+Preparation ID: `ddb682876521e92a3393ff161c4f76ee4c2e0e69fedd5b6b89b323220b4801e1`.
+Exact retained-input replay reused the same pack/manifest. The independent
+`scripts/verify-macro-analytics.py` checked 127,624 transformed points, all 2,264
+supported correlations/distances, 1,957 z-scores and 640 dispersions against raw
+source histories using 50-digit Decimal arithmetic and tolerance `1e-10`.
+
+Final suite: 143 tests, 138 passed/five opt-in database skips. Core `python -S`:
+129 passed/14 optional/database skips. All 23 new tests and changed-file Ruff
+checks pass. Whole-repository Ruff has 11 baseline findings in five files proved
+identical to merged main; retain these as separate work. No Power BI execution,
+predictive/causal validation, historical taxonomy or MarketAtlas historical
+possession is claimed. These are separate private research file packs, not new
+report publications or an added daily job.
+
+**Exact next engineering task:** review the T-028/T-029 diff; commit/push/create
+a PR only when requested. Next product priority is browser consumption of the
+validated pack: relationship heatmap, dispersion timeline and node-divergence
+ranking with explicit unavailable states and source evidence. Do not claim these
+views exist yet. T-015/AC-009 remains open; Josh lacks Power BI access.
+
+**Historical completed T-026/T-027 checkpoint (2026-10-31):** Josh explicitly authorized
 staged writes in the named upstream checkout. Repair is complete for the approved
 2024-01-01–2026-10-31 window. **Do not ask for that permission again.** Normal
 MarketAtlas adapters remain read-only; source-owner writes used the separate

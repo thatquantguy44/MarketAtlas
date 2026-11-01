@@ -78,3 +78,26 @@ All 23 remaining age flags matched provider periods. See [T-027 evidence](../rep
 The current-only exception, bounded history and four baseline upstream test
 failures are retained limitations. No broader Gold, production, public-data or
 native Power BI acceptance is claimed.
+
+## T-028/T-029 macro research foundation (2026-10-31)
+
+[Macro analytics validation](../reports/t028-t029-macro-analytics-validation.md)
+adds supplementary research evidence for AC-006/008/011/014/015/017/018:
+source-date-cutoff preparation, explicit transformations/groups, bounded longer
+history, independently checked correlations/distances/standardization/dispersion,
+immutable typed evidence packs and exact replay/tamper/failure checks. This is
+separate from the instrument-return method and database report publications.
+Incomplete samples and unknown vintages stay unavailable. No historical taxonomy,
+MarketAtlas historical possession, predictive value, browser integration or new
+schedule is established. AC-009 remains partial without Power BI execution.
+
+## T-030 browser research views (2026-11-01)
+
+[Browser analytics evidence](../reports/t030-browser-analytics-validation.md)
+extends supplementary AC-008/009/010/011/014/015/017/018 evidence with the locally
+rendered heatmap, dispersion timeline, divergence ranking, exact transformed
+window/source investigation and scoped controls. Actual normal/narrow checks,
+null handling, pack identity, retained analytics across normal refreshes and
+authored-content rollback pass. This adds browser consumption of the independent
+research pack; it does not establish automatic research generation, predictive
+value or native Power BI execution. AC-009 remains partial.

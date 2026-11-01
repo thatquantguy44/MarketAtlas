@@ -10,6 +10,14 @@ New York run date with the same knowledge cutoff.
 
 ## Current validated repair, October 31, 2026
 
+The independent [macro research workflow](macro-analytics.md) selects only ten
+explicit comparison series from this catalog. It reads a longer 2010 lookback
+directly from approved source interfaces into private research files; it does
+not expand the daily observation-ingestion window or republish catalog edges.
+Monthly research history is source-dated from 2010, while pre-2024 Treasury rows
+remain undated and excluded. Statistical/sample eligibility is separate from
+the catalog, ingestion and current-quality populations below.
+
 After the [authorized source repair](source-health-recovery.md), PIT admission is
 **267 FRED series / 127,907 versions**. Current coverage/quality remains 268 and the
 graph remains 290 series / 11 concepts. The repaired history begins in 2024.

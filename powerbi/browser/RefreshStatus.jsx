@@ -20,7 +20,8 @@ export function RefreshStatus() {
     return () => { clearInterval(timer); controller.abort(); };
   }, []);
   if (!embedded) return null;
-  const newer = monitor?.last_success?.pack_id && monitor.last_success.pack_id !== embedded.pack_id;
+  const newer = monitor?.last_success?.pack_id && (monitor.last_success.pack_id !== embedded.pack_id ||
+    monitor.last_success.analytics_pack_id !== embedded.analytics_pack_id);
   const failed = monitor?.last_attempt?.status === "failed";
   return <DataComponent id="report-refresh-status" queryId="refresh_status" kind="metric"
     title="Report refresh and source freshness" sourceRows={[embedded]} displayRows={[embedded]}>

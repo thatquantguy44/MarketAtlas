@@ -117,6 +117,18 @@ PYTHONPATH=src python -m market_atlas build validate-fixture
 PYTHONPATH=src python -m market_atlas report validate-fixture
 ```
 
+For source-backed relationship research, the [macro analytics runbook](docs/macro-analytics.md)
+documents `analytics prepare-macro`, `build-macro` and `validate-macro`. Explicit
+inflation, labor-condition and Treasury-yield groups produce cutoff-aware
+transformed series, rolling correlations/distances, standardized dispersion and
+node divergence in private immutable JSON/CSV packs. Edit
+[the research settings](configs/macro_analytics.toml) to change the approved
+selection and sample rules. The existing browser report now includes a
+**Relationship research** tab with heatmap, dispersion timeline, divergence
+ranking and pair-window evidence. Its research pack retains independent dates;
+the daily publication refresh preserves it without regenerating analytics. See
+[the front-end runbook](docs/report-frontend-runbook.md#relationship-research-views).
+
 The independent [React demo](frontend/README.md) uses the QuantMeridian-style Vite scaffold and renders a labeled fixture snapshot through the T-011 reporting contract. It never connects browser code to PostgreSQL. Run it with `cd frontend && npm install && npm run dev`.
 
 After the local report API is running, the demo's **Live macro graph** mode uses Vite's local `/api` proxy to request only the snapshot-pinned `macro_economic_graph` publication. The default graph is a catalog hub plus economic-category navigation summaries; selecting a category returns a paged, searchable neighborhood of actual source-backed `macro series → measures → economic concept` assertions. The interactive canvas intentionally shows 12 series per page to keep nodes and links legible; the API itself stays separately bounded at 1–100 rows and is performance-tested at 50 rows. Summary `contains` links are visibly labeled as navigation only, not assertions. The UI labels taxonomy as `current_only`; it is not point-in-time taxonomy history, a sensitivity estimate, or a browser-to-database connection.

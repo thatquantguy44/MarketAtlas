@@ -8,7 +8,7 @@ from pathlib import Path
 from market_atlas.reporting.export import validate_pack
 
 
-def browser_snapshot(pack):
+def browser_snapshot(pack, *, analytics_pack=None):
     pack = Path(pack)
     validate_pack(pack)
     manifest = json.loads((pack / "manifest.json").read_text())
@@ -120,6 +120,10 @@ def browser_snapshot(pack):
         ),
         "source": evidence,
     }
+    if analytics_pack is not None:
+        from market_atlas.reporting.macro_analytics import analytics_queries
+
+        queries.update(analytics_queries(analytics_pack))
     return {
         "surface": "dashboard",
         "title": "MarketAtlas · Macro research",

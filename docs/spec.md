@@ -1,6 +1,6 @@
 # MarketAtlas — Product Specification
 
-Status: candidate v0.1 specification, prepared for review on 2026-10-24; reconciled with the current handoff on 2026-10-31 against retained evidence through 2026-10-31. T-001–T-003, T-005–T-014, T-016–T-027 are complete at their stated fixture, design, or restricted-local scope. Broader T-004 adapters and T-015 Power BI execution remain open; the v0.1 release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work. Actual acceptance status is recorded in [acceptance.md](acceptance.md).
+Status: candidate v0.1 specification, prepared for review on 2026-10-24; reconciled with the current handoff on 2026-11-01 against retained evidence through 2026-11-01. T-001–T-003, T-005–T-014, T-016–T-030 are complete at their stated fixture, design, restricted-local or research scope. Broader T-004 adapters and T-015 Power BI execution remain open; the v0.1 release is incomplete. This document is the source of truth for scope and acceptance; [plan.md](plan.md), [tasks.md](tasks.md), [handoff.md](handoff.md), and [roadmap.md](roadmap.md) describe delivery status and proposed work. Actual acceptance status is recorded in [acceptance.md](acceptance.md).
 
 ## Request and purpose
 
@@ -87,6 +87,30 @@ intentional current-only vintage policy. T-027 completes the explicitly authoriz
 one series remains current-only because FRED has no ALFRED history. All 23 remaining
 period-age flags matched current provider periods. Corrections retain old system-time
 versions, and repeated ingestion inserts/corrects zero after exact Decimal binding. See [recovery](source-health-recovery.md).
+
+## Macro research extension
+
+T-028/T-029 add an independent, user-authorized macro research path alongside
+the v0.1 instrument-return family. Ten explicitly configured monthly/daily series
+produce source-date-cutoff panels and immutable local JSON/CSV packs with rolling
+correlation, correlation distance/change, standardized group dispersion and node
+divergence. Read-only validation captured 19,963 versions and produced 2,264
+supported relationship estimates and 640 supported group dispersions; missing
+samples and unknown vintages remain withheld. Monthly history is usable from
+2010; Treasury history before 2024 remains unavailable. These results reconstruct
+source histories using current metadata and fixed operator groups, not historical
+taxonomy or MarketAtlas record-time replay. No new PostgreSQL publication,
+browser integration, schedule, predictive validation or Power BI execution is
+claimed. See the [method spec](t028-t029-macro-analytics-spec.md),
+[runbook](macro-analytics.md) and [validation](../reports/t028-t029-macro-analytics-validation.md).
+
+T-030 adds the browser **Relationship research** tab at restricted-local scope.
+It consumes a separately validated macro analytics pack, with heatmap, dispersion
+timeline, divergence ranking and source/window investigation. Missing results and
+independent dates remain explicit. Existing publication refreshes retain the
+last research pack rather than regenerating it. Normal/narrow browser checks
+passed; native Power BI and predictive acceptance remain open. See
+[T-030 evidence](../reports/t030-browser-analytics-validation.md).
 
 ## v0.1 review scenario
 

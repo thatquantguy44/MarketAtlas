@@ -64,6 +64,14 @@ Retain the adjustment convention used to create returns. Versioned adjusted pric
 
 ## P4. Analytical method
 
+T-028/T-029 add a separate macro research path, described in the
+[macro analytics spec](t028-t029-macro-analytics-spec.md) and
+[runbook](macro-analytics.md). Explicit monthly/daily groups use source-date
+vintage selection, declared transformations, fixed windows and independent
+numerical validation. Immutable local packs contain statistical relationships
+and dispersion; this does not change the instrument-return method below or
+claim historical taxonomy, predictive validity or browser integration.
+
 v0.1 implements rolling Pearson correlation on a configured list of at most 300 eligible instrument-return pairs. Proposed sizing is 50 instruments, 25 contextual macro series, and two years of daily market history. This is a bounded pilot envelope, subject to discovery.
 
 For each endpoint date, use the last **60 scheduled sessions** of the declared common calendar as the fixed window. Retain at least 45 valid paired return observations to publish an estimate. Missing observations reduce sample size; do not reach farther back to replace them. Returns require adjacent valid prices on the chosen session grid. Do not forward-fill missing prices or mix multi-session returns with one-session returns.
@@ -143,7 +151,7 @@ Candidate design review: correctness uses constrained identities/types and expli
 | REQ-005 | P3 | T-006, T-007 | AC-005 |
 | REQ-006 | P3 | T-004, T-007, T-017 | AC-006 |
 | REQ-007 | P2, P6 | T-008 | AC-007 |
-| REQ-008 | P4 | T-009 | AC-008 |
+| REQ-008 | P4 | T-009, T-028, T-029 | AC-008 |
 | REQ-009 | P6 | T-011, T-012 | AC-009 |
 | REQ-010 | P5 | T-010, T-017 | AC-010 |
 | REQ-011 | P5, P6 | T-011, T-012, T-017 | AC-011 |
