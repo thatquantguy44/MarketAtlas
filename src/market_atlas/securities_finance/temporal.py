@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from market_atlas.securities_finance.contracts import TimestampEvidence, _require
+from market_atlas.securities_finance.records import SourceRecord
 
 
 @dataclass(frozen=True)
@@ -97,3 +99,98 @@ def compare(left: TimestampEvidence | None, right: TimestampEvidence | None):
     if b[1] < a[0] or (b[1] == a[0] and not b[2]):
         return 1
     return None
+
+
+@dataclass(frozen=True)
+class Decision:
+    record: SourceRecord
+    status: str
+    reasons: tuple[str, ...] = ()
+
+
+def select_versions(records: tuple[SourceRecord, ...], cutoffs: Cutoffs):
+    """Retain a decision for every version; never infer a winner from row order."""
+    groups = defaultdict(list)
+    decisions = []
+    for row in records:
+        env = row.envelope
+        if env is None:
+            decisions.append(Decision(row, "selected"))
+            continue
+        checks = {
+            "business_start": at_or_before(
+                env.effective_at
+                if row.record_type == "lifecycle_event"
+                else env.effective_from,
+                cutoffs.business_as_of,
+            ),
+            "business_end": True
+            if env.effective_to is None
+            else after(env.effective_to, cutoffs.business_as_of),
+            "source_availability": at_or_before(
+                env.source_available_at, cutoffs.knowledge_cutoff
+            ),
+            "system_start": at_or_before(env.recorded_from, cutoffs.system_cutoff),
+            "system_end": True
+            if env.recorded_to is None
+            else after(env.recorded_to, cutoffs.system_cutoff),
+        }
+        status = (
+            "excluded"
+            if False in checks.values()
+            else "unknown"
+            if None in checks.values()
+            else "selected"
+        )
+        reasons = tuple(
+            f"{name}_{'unknown' if result is None else 'outside_cutoff'}"
+            for name, result in checks.items()
+            if result is not True
+        )
+        groups[(env.key.source_name, env.key.record_type, env.key.record_id)].append(
+            Decision(row, status, reasons)
+        )
+    for group in groups.values():
+        candidates = [item for item in group if item.status == "selected"]
+        uncertain = any(item.status == "unknown" for item in group)
+        winner = candidates[0] if len(candidates) == 1 else None
+        # Explicit event correction chains may establish one visible tip. A future
+        # correction is excluded before this step and cannot suppress an old fact.
+        if candidates and candidates[0].record.record_type == "lifecycle_event":
+            by_version = {
+                item.record.envelope.key.version_id: item for item in candidates
+            }
+            parents = {
+                version: item.record.payload["supersedes_version_id"]
+                for version, item in by_version.items()
+            }
+            tips = set(parents) - set(parents.values())
+            if len(tips) == 1:
+                tip = next(iter(tips))
+                visited, cursor = set(), tip
+                while cursor in parents and cursor not in visited:
+                    visited.add(cursor)
+                    cursor = parents[cursor]
+                winner = (
+                    by_version[tip]
+                    if visited == set(parents) and cursor not in visited
+                    else None
+                )
+            else:
+                winner = None
+        for item in group:
+            if item.status == "selected" and (uncertain or winner is None):
+                item = Decision(item.record, "unknown", ("ambiguous_active_versions",))
+            elif item.status == "selected" and item is not winner:
+                item = Decision(item.record, "excluded", ("superseded_event_version",))
+            decisions.append(item)
+    return tuple(
+        sorted(
+            decisions,
+            key=lambda item: (
+                item.record.record_type,
+                item.record.source_name,
+                repr(item.record.to_row(semantic=True)),
+            ),
+        )
+    )

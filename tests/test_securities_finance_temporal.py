@@ -1,17 +1,158 @@
 import unittest
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
-from market_atlas.securities_finance.contracts import ContractError, TimestampEvidence
+from market_atlas.securities_finance.contracts import (
+    ContractError,
+    RecordEnvelope,
+    RecordKey,
+    TimestampEvidence,
+)
+from market_atlas.securities_finance.records import SourceRecord
 from market_atlas.securities_finance.temporal import (
     Cutoffs,
     after,
     at_or_before,
     compare,
     evidence_bounds,
+    select_versions,
 )
 
 
 class TemporalTests(unittest.TestCase):
+    def row(self, version="v1", *, source="sf", event=False, **times):
+        def instant(value):
+            return TimestampEvidence(value, "instant")
+
+        env = RecordEnvelope(
+            RecordKey(
+                source, "lifecycle_event" if event else "legal_entity", "id", version
+            ),
+            None if event else instant("2026-11-01T00:00:00Z"),
+            None,
+            instant("2026-11-02T00:00:00Z"),
+            None,
+            instant("2026-11-03T00:00:00Z"),
+            None,
+            "synthetic:test",
+            effective_at=instant("2026-11-01T00:00:00Z") if event else None,
+        )
+        env = replace(env, **times)
+        payload = (
+            {
+                "event_id": "id",
+                "event_stream_id": "stream",
+                "event_type": "return_settle",
+                "state_component": "loan_outstanding",
+                "target_record_id": "target",
+                "quantity": "1",
+                "status": "settled",
+                "supersedes_version_id": None,
+                "reverses_event_id": None,
+            }
+            if event
+            else {"party_id": "id", "label": "Synthetic", "role": "lender"}
+        )
+        return SourceRecord(env.key.record_type, source, payload, env)
+
+    def cutoff(self, **changes):
+        noon = datetime(2026, 11, 3, 12, tzinfo=UTC)
+        return replace(Cutoffs(noon, noon, noon), **changes)
+
+    def test_three_independent_clocks_and_half_open_ends(self):
+        row = self.row()
+        self.assertEqual("selected", select_versions((row,), self.cutoff())[0].status)
+        for field, value, reason in (
+            ("business_as_of", datetime(2026, 10, 31, tzinfo=UTC), "business_start"),
+            (
+                "knowledge_cutoff",
+                datetime(2026, 11, 1, tzinfo=UTC),
+                "source_availability",
+            ),
+            ("system_cutoff", datetime(2026, 11, 2, tzinfo=UTC), "system_start"),
+        ):
+            decision = select_versions((row,), self.cutoff(**{field: value}))[0]
+            self.assertEqual("excluded", decision.status)
+            self.assertIn(f"{reason}_outside_cutoff", decision.reasons)
+        for end in ("effective_to", "recorded_to"):
+            ended = replace(
+                row,
+                envelope=replace(
+                    row.envelope,
+                    **{end: TimestampEvidence("2026-11-03T12:00:00Z", "instant")},
+                ),
+            )
+            self.assertEqual(
+                "excluded", select_versions((ended,), self.cutoff())[0].status
+            )
+
+    def test_uncertain_competitor_withholds_known_version(self):
+        known = self.row()
+        unknown = self.row(
+            "v2", source_available_at=TimestampEvidence("2026-11-03", "date", "UTC")
+        )
+        decisions = select_versions((known, unknown), self.cutoff())
+        self.assertEqual({"unknown"}, {item.status for item in decisions})
+        self.assertIn("ambiguous_active_versions", decisions[0].reasons)
+        overlap = select_versions((known, self.row("v3")), self.cutoff())
+        self.assertEqual({"unknown"}, {item.status for item in overlap})
+        missing = select_versions((self.row(source_available_at=None),), self.cutoff())[
+            0
+        ]
+        self.assertEqual("unknown", missing.status)
+
+    def test_visible_correction_chain_and_future_correction(self):
+        old = self.row(event=True)
+        new = self.row("v2", event=True)
+        new = replace(new, payload={**new.payload, "supersedes_version_id": "v1"})
+        decisions = select_versions((new, old), self.cutoff())
+        self.assertEqual(
+            ["v2"],
+            [
+                d.record.envelope.key.version_id
+                for d in decisions
+                if d.status == "selected"
+            ],
+        )
+        future = replace(
+            new,
+            envelope=replace(
+                new.envelope,
+                source_available_at=TimestampEvidence(
+                    "2026-11-04T00:00:00Z", "instant"
+                ),
+            ),
+        )
+        self.assertEqual(
+            ["v1"],
+            [
+                d.record.envelope.key.version_id
+                for d in select_versions((old, future), self.cutoff())
+                if d.status == "selected"
+            ],
+        )
+        fork = replace(
+            new,
+            envelope=replace(
+                new.envelope, key=replace(new.envelope.key, version_id="v3")
+            ),
+        )
+        self.assertEqual(
+            {"unknown"},
+            {d.status for d in select_versions((old, new, fork), self.cutoff())},
+        )
+
+    def test_version_identity_is_scoped_and_order_is_deterministic(self):
+        rows = (self.row(source="a"), self.row(source="b"))
+        self.assertEqual(
+            select_versions(rows, self.cutoff()),
+            select_versions(rows[::-1], self.cutoff()),
+        )
+        self.assertEqual(
+            ["selected", "selected"],
+            [d.status for d in select_versions(rows, self.cutoff())],
+        )
+
     def test_exact_offsets_and_cutoffs(self):
         point = TimestampEvidence("2026-11-03T07:00:00-05:00", "instant")
         noon = datetime(2026, 11, 3, 12, tzinfo=UTC)
