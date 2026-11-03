@@ -1,13 +1,13 @@
 # 001 — Securities-finance implementation plan
 
-Status: **WP-01 design complete; WP-02A implemented; WP-02B onward pending**.
+Status: **WP-01 design complete; WP-02A/B implemented; WP-02C onward pending**.
 Created 2026-11-03.
 Specification: [spec.md](spec.md). Parent boundary:
 [extension contract](../../docs/securities-finance-extension.md).
 
 This plan implements the stable modules in the specification. Work packages below
 are the feature's ordered implementation backlog. WP-01 is complete at design
-scope; WP-02A is implemented and WP-02B/C onward remain pending. They do not
+scope; WP-02A/B are implemented and WP-02C onward remain pending. They do not
 replace the main product task register or authorize a live deployment.
 
 ## WP-01 decision register
@@ -35,8 +35,10 @@ replay identity and acceptance traces. Synthetic example weights and thresholds
 are explicit test settings, not asserted real-source operating policies.
 
 **WP-02A is complete** at its typed contract/reference scope; see
-[validation evidence](../../reports/spec001-wp02a-validation.md). **WP-02B is next**:
-business fixtures and JSON/CSV adapters. Later implementation, optimizer package
+[validation evidence](../../reports/spec001-wp02a-validation.md). **WP-02B is also
+complete** at input-fixture/adapter scope, with
+[file-equivalence evidence](../../reports/spec001-wp02b-validation.md).
+**WP-02C is next**: cutoff/version and event-inclusion selection. Later implementation, optimizer package
 installation, database integration and complete feature acceptance remain pending.
 Josh remains the project review owner; no restricted access is implied.
 
@@ -65,18 +67,19 @@ chain of ownership/re-lending without explicit allocation records.
 
 ## Proposed file/module layout
 
-The contract and catalog modules below are implemented in WP-02A. Other runtime
-paths remain proposals. Design-time contracts/settings under `specs/001/` exist
-but are not consumed by a runtime file parser yet:
+Contract/catalog modules are implemented in WP-02A; source-table, fixture and
+file-adapter modules in WP-02B. Other runtime paths remain proposals. The example
+TOML is consumed and validated by the input writer/reader, without solver execution:
 
 | Path | Responsibility |
 | --- | --- |
 | `specs/001/contracts.md` | WP-01 normalized file, temporal, quantity, coefficient and numerical contracts |
-| `specs/001/settings.example.toml` | Parseable synthetic defaults; not yet runtime-consumed |
+| `specs/001/settings.example.toml` | Synthetic defaults consumed/validated by WP-02B file APIs |
 | `src/market_atlas/securities_finance/contracts.py` | Typed/versioned input contracts, identity/unit/time checks |
 | `.../catalog.py` | Implemented immutable synthetic instrument/convention catalog and quantity/reference binding |
-| `.../fixtures.py` | Deterministic invented cases referencing synthetic instrument node IDs |
-| `.../adapters.py` | JSON and CSV readers into one normalized contract; split format adapters if needed |
+| `.../records.py` | Implemented table schemas, normalized business records and retained reference checks |
+| `.../fixtures.py` | Implemented deterministic business fixtures and staged immutable input-pack writer |
+| `.../adapters.py` | Implemented JSON/CSV codecs, TOML/manifest validation, single-authority input reader and provenance |
 | `.../selection.py` | Effective/source-knowledge/system-record cutoff selection |
 | `.../eligibility.py` | Approved typed rules, aggregation and reason/input evidence |
 | `.../matching.py` | Hard allocation model, capacity ledger, solver adapter and FIFO baseline; split further before implementation if needed |
@@ -354,9 +357,9 @@ Test both composition modes on the same hard-constraint fixture, show raw and
 weighted components separately, and reject invalid/nonfinite weights or undefined
 scales. A weighted preference score cannot be labeled money or strict priority.
 
-The complete design-time configuration is
-[settings.example.toml](settings.example.toml); its runtime parser is not
-implemented. This excerpt uses the same version-1 structure:
+The complete synthetic input configuration is
+[settings.example.toml](settings.example.toml); WP-02B parses/validates it. Objective
+and solver execution remain WP-04. This excerpt uses the same version-1 structure:
 
 ```toml
 schema_version = 1
@@ -467,15 +470,15 @@ than silently extending the existing macro report or public fixture publication.
 
 ## Ordered work packages and verification
 
-WP-01 is complete at design scope and WP-02A at its stated implementation scope.
-WP-02B/C and later packages remain pending. Split implementation further if a slice would need
+WP-01 is complete at design scope; WP-02A/B at their stated implementation scopes.
+WP-02C and later packages remain pending. Split implementation further if a slice would need
 more than about five source/test files. Require actual retained evidence before
 checking any acceptance row.
 
 | Work | Deliverable / acceptance | Depends on | Verification |
 | --- | --- | --- | --- |
 | SF-WP-01 | Complete (design): selected policies, version-1 contracts, synthetic settings and requirement traces | User decisions and governing boundary | contracts.md/settings.example.toml; Markdown/TOML/reference/default-consistency checks; no runtime acceptance claimed |
-| SF-WP-02 | In progress: WP-02A typed envelope/quantity/reference foundation complete; WP-02B business fixtures/adapters and WP-02C temporal selection pending | WP-01 | WP-02A evidence linked above; full adapter/selection scenarios still needed for SF-AC-003/004/015/016/017 |
+| SF-WP-02 | In progress: WP-02A contracts/reference foundation and WP-02B business fixtures/adapters complete; WP-02C temporal selection pending | WP-01 | WP-02A/B evidence linked above; complete selection/downstream scenarios still needed for SF-AC-003/004/015/016/017 |
 | SF-WP-03 | Add capacity normalization and typed rule evaluation with explanation rows | WP-02 | Independent gross/net and four-state cases for both asset classes; SF-AC-001/003/005/015 |
 | SF-WP-04 | Add typed policy/model contract, coverage-first optimizer, FIFO baseline and reconciled ledgers; split solver/profile adapters into bounded tasks | WP-03 | 180k/90k/10k fixture; joint allocation fills 100k versus greedy 60k; independent optima, exact quantity/increment/minimum constraints, canonical ties, profile validation and outcome statuses; SF-AC-001/002/013/014/015/017 |
 | SF-WP-05 | Add explicit loan-allocation and recall investigation | WP-02 | 15k+5k attribution, unrelated same-security loan exclusion, returns/replay; SF-AC-004/006 |
@@ -488,7 +491,7 @@ checking any acceptance row.
 | Slice | Deliverable | Focused evidence |
 | --- | --- | --- |
 | WP-02A | Complete: typed envelope/quantity/reference contracts and independent validators | 22 focused tests; unchanged pinned base fixture; full regression/lint results in the validation report |
-| WP-02B | Deterministic fixture generator and JSON/CSV adapters | Identical normalized business facts, missing versus zero, keyed child tables, one authoritative representation |
+| WP-02B | Complete: deterministic business fixtures, JSON/CSV adapters, settings/manifest loader and provenance | 33 new tests; 17 tables/95 records with equal normalized facts, missing/zero distinction and one authority; evidence linked above |
 | WP-02C | Three-cutoff selection and snapshot/event inclusion accounting | Precise/date-only boundaries, corrections, included versus new events, ambiguous facts withheld; no eligibility or optimizer claim |
 
 Keep each slice to about five source/test files, splitting further if needed.
@@ -566,7 +569,8 @@ under shuffled source order; sorted solver inputs alone are not evidence of it.
 
 WP-01 is complete at design scope: selected policies and explicit synthetic
 technical defaults are documented in the contracts/settings. WP-02A is implemented
-and validated at its stated scope. **WP-02B is next**.
+and validated at its stated scope; WP-02B's fixtures/file APIs are complete.
+**WP-02C is next**.
 The exact optimization package/wheel lock and backend build identity are WP-04
 implementation artifacts, not unresolved business choices. No solver is installed
 and all feature acceptance rows remain pending.

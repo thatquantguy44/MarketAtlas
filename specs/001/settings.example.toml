@@ -1,4 +1,5 @@
-# Spec 001 design example, schema v1. No runtime parser exists yet.
+# Spec 001 synthetic input settings, schema v1; consumed by WP-02B file APIs.
+# Objective/solver execution remains future WP-04 work.
 # Synthetic engineering defaults; coefficients are supplied, not fee-calculated.
 schema_version = 1
 classification = "synthetic"

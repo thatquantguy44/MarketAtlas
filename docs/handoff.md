@@ -4,8 +4,55 @@ Updated: 2026-11-03. This is an early implementation handoff, not a completed pi
 
 ## Start here next session
 
-**Spec 001 / WP-02A checkpoint (2026-11-03): implemented and validated.**
-Current implementation branch: `feat/securities-finance-wp02a`, based on pushed
+**Spec 001 / WP-02B checkpoint (2026-11-03): implemented and validated.**
+Current branch: `feat/securities-finance-wp02b`, from pushed WP-02A `c2f40f8`.
+See [evidence](../reports/spec001-wp02b-validation.md),
+[file API/run instructions](../specs/001/contracts.md#implemented-wp-02b-file-api)
+and [work packages](../specs/001/plan.md#ordered-work-packages-and-verification).
+
+`records.py`, `adapters.py` and `fixtures.py` add 17 table schemas, immutable
+normalized business records, strict JSON/CSV codecs, TOML/settings and catalog
+checks, manifest/file hashes and a staged immutable input writer/reader. Both
+physical representations are verified and compared as normalized facts, but only
+one authority per logical dataset enters the result/provenance. Source locations
+retain selected file path/format/hash and one-based logical record ordinal.
+
+The fixture has 95 records: both assets/conventions, gross/net source alternatives,
+missing/zero balances, unknown permissions, quoted multiline text, precise/date-only
+evidence, retained position versions, known loans/allocations, seven events with
+explicit inclusion links, and supplied signed benefit coefficients. The parser
+retains every supplied version/event; it does not select by the declared cutoffs,
+apply returns/reservations or calculate available inventory/allocations.
+
+55 focused tests pass (22 prior plus 33 new). Full standard-library suite:
+203 discovered, 189 passed/14 expected skips; Dagster-enabled: 198 passed/five
+opt-in database skips. Both disable database opt-in. Changed Python lint/format
+checks pass. A standalone standard-library build/load creates three local packs,
+with equal gross JSON/CSV normalized identity and 95 provenance records each;
+no SciPy, psycopg or Dagster is imported. Base fixture SHA-256 remains
+`15e24cebf895af4e58b1c5a4dfe5712ba28b473ca64ee6c4f4df2f5bac0877da`.
+
+Ignored input directories are under `data/generated/securities-finance-fixture/inputs/`:
+JSON gross `eb05fd4224a0b6e389e37562a2466c2101890ae80928910f370325acfe16b4e1`,
+CSV gross `4189a3b7c18e125aae0e9d3567a0b3b6712e3f18a19025173d8bf89164835ca2`,
+and net `dc1a4b280ecc069794361a4965dcfb6455600a154d555fa986302c84045b3064`.
+The gross normalized input identity is
+`3e4d2185c823019c8a27955068aa941ed66a6659a3d8dd2125a634072f40c53f`.
+Logs and `input-summary.json` are under ignored `wp02b-validation/` alongside
+these inputs. Settings comments/physical hashes are separate from input semantics.
+
+**Exact next task: WP-02C**, supported version selection at business-effective,
+source-knowledge and system-record cutoffs, plus explicit snapshot/event inclusion
+accounting. Owner: implementation engineer, with Josh as review owner. Preserve
+uncertain time states and consequential FIFO ambiguity. B rejects ambiguous
+reference metadata rather than choosing a version; C must own any supported
+selection changes. Inventory normalization/eligibility remain WP-03, optimizer
+WP-04 and recall calculations WP-05. No new CLI, dependency, source/database
+access, public publication or schedule has been added. All complete feature
+acceptance rows remain pending; SF-AC-016 has normalized-input evidence only.
+
+**Earlier WP-02A checkpoint (2026-11-03): implemented and validated.**
+WP-02A branch: `feat/securities-finance-wp02a`, based on pushed
 WP-01 design commit `afce9b6`. See [evidence](../reports/spec001-wp02a-validation.md),
 [plan](../specs/001/plan.md#ordered-work-packages-and-verification) and
 [API documentation](../specs/001/contracts.md#implemented-wp-02a-api).
@@ -30,7 +77,7 @@ A standalone `python3 -S` API smoke validates a valid bond amount and rejects an
 off-step proposal, without importing SciPy, Dagster or psycopg. Logs are ignored
 under `data/generated/securities-finance-fixture/wp02a-validation/`.
 
-**Exact next task: WP-02B**, deterministic business fixtures plus JSON/CSV adapters
+WP-02A handed off WP-02B: deterministic business fixtures plus JSON/CSV adapters
 into these normalized types, preserving provenance and one authoritative input
 representation. Owner: implementation engineer, with Josh as review owner.
 The reference builder currently uses documented fixture constants;

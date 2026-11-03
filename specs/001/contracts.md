@@ -1,7 +1,7 @@
 # 001 — File-first contracts and synthetic settings
 
-Status: WP-01 design baseline with WP-02A typed contract/reference implementation,
-2026-11-03. File adapters, business fixtures, cutoff selection, solver and commands
+Status: WP-01 design baseline with WP-02A/B contract, fixture and file-adapter
+implementation, 2026-11-03. Cutoff selection, solver and securities-finance CLI
 remain pending. Implements the choices in the
 [decision register](plan.md#wp-01-decision-register), under the
 [specification](spec.md) and parent isolation contract. The values in
@@ -284,9 +284,10 @@ establish eligibility, available capacity or executable allocation.
 
 The API accepts normalized typed fields. `from_mapping()` on envelope, reference,
 quantity and convention models rejects missing required or unknown constructor
-fields, including attempts to provide computed values. It does not decode file
-columns or recursively construct nested typed objects. JSON/CSV/TOML decoding,
-business payload models and active-version selection remain WP-02B/C.
+fields, including attempts to provide computed values. These WP-02A constructors
+do not decode file columns or recursively construct nested typed objects. The
+WP-02B file APIs below decode JSON/CSV/TOML and construct normalized payloads;
+active-version selection remains WP-02C.
 
 Quantities are plain nonnegative decimal text, at most 128 characters, with a
 declared precision from 0 through 18 (shares require 0). `units` is an exact scaled
@@ -304,8 +305,9 @@ may lack timezone context, which remains absent for later uncertainty handling.
 The envelope validates known precise intervals and system record times but does
 not select active versions or establish date-only ordering/cutoff inclusion.
 
-The deterministic reference builder uses the documented synthetic conventions;
-it does not yet read TOML. The equity setting is a template bound to IDs
+The WP-02A reference helper uses documented fixture constants; the WP-02B writer
+below consumes TOML and binds conventions from its settings. The equity setting
+is a template bound to IDs
 `equity-whole-v1:I-A`, `equity-whole-v1:I-B`, `equity-whole-v1:I-C`; bond convention
 IDs are `bond-a-v1` and `bond-b-v1`. The catalog contains immutable typed tuples,
 never creates a reference on lookup failure and performs no database lookup/write.
@@ -326,5 +328,85 @@ assert units == 2500  # Valid quantity only; no allocation has been generated.
 ```
 
 WP-02A evidence and reproducible checks:
-[validation report](../../reports/spec001-wp02a-validation.md). WP-02B is next;
-no file-equivalence or complete feature acceptance is established yet.
+[validation report](../../reports/spec001-wp02a-validation.md). WP-02B's input-level
+equivalence is documented below; complete feature acceptance remains pending.
+
+## Implemented WP-02B file API
+
+[records.py](../../src/market_atlas/securities_finance/records.py) defines the 17
+version-1 table schemas and immutable `SourceRecord` values. Quantities are
+normalized exact decimal strings bound through the catalog; envelopes and
+request-order evidence use the WP-02A typed models. Payloads remain immutable
+scalar/evidence mappings. `columns(record_type)` gives the required flat fields
+for either encoding, including timestamp value/precision/timezone columns.
+
+[adapters.py](../../src/market_atlas/securities_finance/adapters.py) exposes
+`encode_table`, `decode_table`, `load_settings` and `read_input_pack`.
+[fixtures.py](../../src/market_atlas/securities_finance/fixtures.py) exposes
+`write_fixture_inputs`. The supported reader requires one dataset for each table
+(empty fact tables are explicit), two physical files per dataset (JSON and CSV),
+and exactly one `selected_format` per logical dataset. A manifest's
+`instrument_catalog` names the catalog dataset ID; `settings_file` contains
+`path`/`sha256`, and each data file contains `path`/`format`/`sha256`.
+
+The reader checks hashes, strict columns/scalars, source/version keys, retained
+foreign keys, instrument/quantity bindings, selected event transitions and
+inclusion references, settings/catalog consistency and workload limits. It does
+not evaluate permissions or choose active versions. Agreement child rows must
+resolve their parent version unambiguously within their declared source; event
+inclusion uses source, event ID and version together. Version-dependent reference
+metadata that cannot be resolved structurally is rejected rather than guessed.
+
+Both representations are validated and compared as canonical facts, but only the
+selected records enter `InputPack.tables` and `InputPack.provenance`. Each
+`SourceLocation` retains logical dataset, table/source, selected file path/format,
+raw SHA-256 and one-based **logical record ordinal**, not a physical CSV line.
+`InputPack.manifest_id` covers physical inputs and authority selection;
+`semantic_identity` covers normalized input facts, parsed settings and logical
+scope, excluding physical format/hashes/row order. This is an input identity, not
+an executed allocation/report result identity.
+
+Input files are limited to 8 MiB each and 10,000 rows per table. Configured logical
+position/request/loan/event limits apply to both representations before reference
+normalization. Required source tables use selected conventions and retain all
+supplied versions, including facts/events later than the declared cutoffs.
+**Do not sum these raw histories as current inventory.** WP-02C performs version
+and inclusion selection; WP-03 performs balance normalization and eligibility.
+Empty permission/coefficient fact tables remain empty, never invented permissions
+or zero benefits. Requested earnings-profile completeness is later WP-04 work.
+
+The writer validates both formats in a temporary directory before installing an
+immutable manifest-ID directory. A repeat build verifies/reuses that directory;
+failed staging preserves previous complete inputs and removes temporary files.
+Tampered existing outputs are rejected, not silently overwritten. No publication
+pointer, database object, live source or optional runtime dependency is involved.
+
+From the repository root, this command is runnable today:
+
+```sh
+PYTHONPATH=src python3 -S - <<'PY'
+from market_atlas.securities_finance.adapters import read_input_pack
+from market_atlas.securities_finance.fixtures import write_fixture_inputs
+
+path = write_fixture_inputs(
+    "data/generated/securities-finance-fixture/inputs",
+    settings_path="specs/001/settings.example.toml",
+    selected_format="json",  # Each table also has a verified CSV alternative.
+    balance_basis="gross",   # Or "net_available" for the equivalent-balance case.
+)
+pack = read_input_pack(path)
+assert len(pack.tables) == 17
+assert sum(len(rows) for rows in pack.tables.values()) == 95
+print(path)
+print(pack.semantic_identity)
+PY
+```
+
+Changing `selected_format` changes physical authority/provenance, not the facts.
+Changing `balance_basis` changes explicit source balances/deduction definitions;
+their eventual normalized-capacity reconciliation belongs to WP-03. TOML bond
+minimum/increment changes are consumed and validated, not merely copied.
+
+Evidence: [WP-02B validation report](../../reports/spec001-wp02b-validation.md).
+WP-02C is next. No securities-finance CLI or downstream solver/report acceptance
+is implied by these Python file APIs.
