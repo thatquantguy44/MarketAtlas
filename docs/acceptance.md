@@ -101,3 +101,14 @@ null handling, pack identity, retained analytics across normal refreshes and
 authored-content rollback pass. This adds browser consumption of the independent
 research pack; it does not establish automatic research generation, predictive
 value or native Power BI execution. AC-009 remains partial.
+
+## Spec 001 / WP-02A foundation (2026-11-03)
+
+[WP-02A evidence](../reports/spec001-wp02a-validation.md) records typed
+envelope/quantity/reference validation and an isolated synthetic instrument
+catalog. The base fixture's hash and existing instrument meanings remain
+unchanged. Spec 001's independent SF-AC-003/004/015/017 have structural subcase
+evidence only; their full scenarios and every complete feature acceptance row
+remain pending. No JSON/CSV equivalence, cutoff selection, eligibility, optimizer,
+restricted database permission or report acceptance is claimed. MarketAtlas
+AC-012 remains passed at design scope; the foundation does not expand that status.

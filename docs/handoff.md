@@ -4,7 +4,43 @@ Updated: 2026-11-03. This is an early implementation handoff, not a completed pi
 
 ## Start here next session
 
-**Spec 001 / WP-01 checkpoint (2026-11-03): design complete; implementation pending.**
+**Spec 001 / WP-02A checkpoint (2026-11-03): implemented and validated.**
+Current implementation branch: `feat/securities-finance-wp02a`, based on pushed
+WP-01 design commit `afce9b6`. See [evidence](../reports/spec001-wp02a-validation.md),
+[plan](../specs/001/plan.md#ordered-work-packages-and-verification) and
+[API documentation](../specs/001/contracts.md#implemented-wp-02a-api).
+
+The isolated `src/market_atlas/securities_finance/` package now provides frozen
+typed keys/envelopes/timestamp evidence, exact quantities/conventions, duplicate
+version checks, and an immutable synthetic reference catalog. Errors retain
+inspectable codes. Date-only evidence never becomes an invented instant. Units,
+currency, precision and instrument/convention binding are checked explicitly;
+unknown quantity remains distinct from zero. Bond proposal minimum/step checks
+are separate from validation of existing balances or partial returns.
+
+The catalog reuses the three core share UUIDs/labels and declares known synthetic
+`SF-BOND-A`/`SF-BOND-B` references only in the isolated feature catalog. Unknown
+references do not create nodes. The base fixture remains unchanged at SHA-256
+`15e24cebf895af4e58b1c5a4dfe5712ba28b473ca64ee6c4f4df2f5bac0877da`.
+
+Validation: 22 focused tests pass. Full standard-library suite discovers 170 tests,
+156 pass/14 expected skips; the Dagster-enabled suite has 165 pass/five database
+skips. Both force database opt-in off. Changed-file Ruff lint/format checks pass.
+A standalone `python3 -S` API smoke validates a valid bond amount and rejects an
+off-step proposal, without importing SciPy, Dagster or psycopg. Logs are ignored
+under `data/generated/securities-finance-fixture/wp02a-validation/`.
+
+**Exact next task: WP-02B**, deterministic business fixtures plus JSON/CSV adapters
+into these normalized types, preserving provenance and one authoritative input
+representation. Owner: implementation engineer, with Josh as review owner.
+The reference builder currently uses documented fixture constants;
+TOML decoding is not implemented. WP-02C adds active-version/cutoff and event
+inclusion selection. No eligibility, free-capacity calculation, solver, report,
+securities-finance CLI, source access, migration or new dependency is implemented.
+SF-AC-003/004/015/017 have structural subcase evidence only; all complete feature
+acceptance rows remain pending. Keep WP-02B source/test slices bounded.
+
+**Earlier WP-01 checkpoint (2026-11-03): design baseline.**
 Josh finished the choice-by-choice review for the synthetic lender/agent pilot.
 The [specification](../specs/001/spec.md) and [plan](../specs/001/plan.md) now link
 [version-1 file-first contracts](../specs/001/contracts.md) and
@@ -60,18 +96,15 @@ unchanged; do not claim these extra catalog entries are existing database rows.
 The [parent extension contract](securities-finance-extension.md) clarifies this
 file-first boundary. Unmapped inputs never trigger public node creation.
 
-**Exact next task: WP-02A**, typed envelope/quantity/reference contracts and
-independent validation, including an isolated bond reference catalog and proof
-that the base fixture is unchanged. Then WP-02B generates equivalent JSON/CSV
-fixtures/adapters; WP-02C adds three-cutoff and snapshot/event selection. These
-slices do not implement eligibility, the optimizer, reports or restricted access.
-Keep slices to about five source/test files, splitting further if needed.
+The design baseline split WP-02 into A (typed contracts/reference catalog), B
+(business fixtures/adapters) and C (three-cutoff/event selection). The current
+WP-02A checkpoint above supersedes the earlier next-task instruction.
 
 WP-01 closes design only. SF-AC-001 through SF-AC-017 remain pending implementation;
 MarketAtlas AC-012 remains design-level evidence. No solver package is installed,
-no proposed securities-finance CLI exists, and no runtime, grants, sources or
-schedules changed. Restricted persistence and collateral retain separate gates.
-The current documentation branch is `docs/securities-finance-spec-001`; consult
+no proposed securities-finance CLI exists. WP-01 changed no runtime, grants,
+sources or schedules; WP-02A adds only the isolated foundation above. Restricted persistence and collateral retain separate gates.
+The earlier documentation branch is `docs/securities-finance-spec-001`; consult
 Git for commit/push status. Macro automation remains a separate priority.
 
 WP-01 documentation validation passed: local links/anchors, Markdown fences,

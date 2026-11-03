@@ -1,7 +1,8 @@
 # 001 — File-first contracts and synthetic settings
 
-Status: WP-01 design baseline, 2026-11-03; parsers, fixtures, solver and commands
-are not implemented. Implements the choices in the
+Status: WP-01 design baseline with WP-02A typed contract/reference implementation,
+2026-11-03. File adapters, business fixtures, cutoff selection, solver and commands
+remain pending. Implements the choices in the
 [decision register](plan.md#wp-01-decision-register), under the
 [specification](spec.md) and parent isolation contract. The values in
 [settings.example.toml](settings.example.toml) are explicit synthetic engineering
@@ -109,9 +110,9 @@ still produce an unknown rule outcome when required evidence is unavailable.
 
 ## Canonical instrument fixture boundary
 
-The current base fixture contains `I-A`, `I-B`, `I-C` share instruments. Reuse their
-identity and meaning unchanged. WP-02 must additionally declare isolated synthetic
-bond reference records `SF-BOND-A` and `SF-BOND-B` in this feature's file catalog,
+The current base fixture contains `I-A`, `I-B`, `I-C` share instruments. WP-02A
+reuses their identity and meaning unchanged and declares isolated synthetic bond
+reference records `SF-BOND-A` and `SF-BOND-B` in this feature's catalog,
 using the existing `graph.fixture_loader.stable_id("node", source_id)` identity
 contract and `node_type = instrument`. Their `asset_class = fixed_income` is an
 explicit invented fixture fact. They are not asserted existing database rows.
@@ -270,3 +271,60 @@ WP-01 is complete at design scope with these explicit defaults. WP-02 implements
 the contracts, both fixture encodings, reference catalog and cutoff selection;
 WP-03 implements eligibility/balances, WP-04 the optimizer and profiles, and WP-05
 recall calculations. No implementation acceptance row is passed by this document.
+
+## Implemented WP-02A API
+
+[contracts.py](../../src/market_atlas/securities_finance/contracts.py) provides
+immutable `TimestampEvidence`, `RecordKey`, `RecordEnvelope`, `InstrumentReference`,
+`QuantityValue` and `QuantityConvention` models, `validate_unique_envelopes` and
+`ContractError` with inspectable `code`/`field` attributes.
+[catalog.py](../../src/market_atlas/securities_finance/catalog.py) provides
+`ReferenceCatalog` and `build_reference_catalog()`. Structural validity does not
+establish eligibility, available capacity or executable allocation.
+
+The API accepts normalized typed fields. `from_mapping()` on envelope, reference,
+quantity and convention models rejects missing required or unknown constructor
+fields, including attempts to provide computed values. It does not decode file
+columns or recursively construct nested typed objects. JSON/CSV/TOML decoding,
+business payload models and active-version selection remain WP-02B/C.
+
+Quantities are plain nonnegative decimal text, at most 128 characters, with a
+declared precision from 0 through 18 (shares require 0). `units` is an exact scaled
+integer, or `None` for unavailable. Numeric literals/exponents/nonfinite values
+and unrepresentable fractions fail; equivalent decimal strings normalize without
+ambient Decimal rounding. Allocation-mode checks apply minimum/increment rules;
+balance-mode checks allow exact residuals. Instrument, convention, unit, currency
+and precision must all agree through the catalog.
+
+Timed evidence uses offset-aware `YYYY-MM-DDTHH:MM:SS[.ffffff]` with `Z` or an
+`HH:MM` offset; unsupported precision, leap seconds and out-of-range UTC conversion
+fail rather than being rounded. `as_utc()` returns a normalized instant, or `None`
+for date-only evidence; source text/precision remain retained. Date-only evidence
+may lack timezone context, which remains absent for later uncertainty handling.
+The envelope validates known precise intervals and system record times but does
+not select active versions or establish date-only ordering/cutoff inclusion.
+
+The deterministic reference builder uses the documented synthetic conventions;
+it does not yet read TOML. The equity setting is a template bound to IDs
+`equity-whole-v1:I-A`, `equity-whole-v1:I-B`, `equity-whole-v1:I-C`; bond convention
+IDs are `bond-a-v1` and `bond-b-v1`. The catalog contains immutable typed tuples,
+never creates a reference on lookup failure and performs no database lookup/write.
+
+```python
+from market_atlas.securities_finance.catalog import build_reference_catalog
+from market_atlas.securities_finance.contracts import QuantityValue
+
+catalog = build_reference_catalog()
+bond = catalog.convention("bond-b-v1")
+units = catalog.validate_quantity(
+    bond.instrument_node_id,
+    bond.convention_id,
+    QuantityValue("2500", "nominal", "USD", 0),
+    for_allocation=True,
+)
+assert units == 2500  # Valid quantity only; no allocation has been generated.
+```
+
+WP-02A evidence and reproducible checks:
+[validation report](../../reports/spec001-wp02a-validation.md). WP-02B is next;
+no file-equivalence or complete feature acceptance is established yet.

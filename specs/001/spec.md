@@ -1,8 +1,9 @@
 # 001 — Securities-finance knowledge graph
 
-Status: **WP-01 design complete; implementation pending**. Created 2026-11-03.
+Status: **WP-01 design complete; WP-02A foundation implemented; later work pending**.
+Created 2026-11-03.
 Owner: Josh / project owner; proposed implementation responsibilities are in
-[plan.md](plan.md). This package specifies future work; creating it does not
+[plan.md](plan.md). This package specifies staged work; it does not
 authorize source access, migrations, trading or a restricted-data deployment.
 
 The parent [extension contract](../../docs/securities-finance-extension.md)
@@ -95,8 +96,10 @@ and duration-effect calculators are deferred.
 
 WP-01's [file-first contracts](contracts.md) and
 [synthetic settings](settings.example.toml) consolidate the selected policies and
-explicit engineering defaults. WP-02 is the next implementation package; no
-implementation acceptance is claimed by closing design work.
+explicit engineering defaults. WP-02A implements the typed envelope/quantity/reference
+foundation; [its evidence](../../reports/spec001-wp02a-validation.md) covers structural
+subcases only. WP-02B/C and later packages remain pending; no complete feature
+acceptance is claimed by closing design or this foundation slice.
 
 Help a securities-finance operator answer:
 
@@ -275,8 +278,11 @@ contracts; an unweighted neighbor count is not such a measure.
 
 ## Acceptance criteria
 
-All rows below are **pending implementation**. File-first acceptance does not
-claim the parent contract's database permission checks passed.
+All rows below are **pending full acceptance**. WP-02A supplies partial structural
+evidence for SF-AC-003/004/015/017 in the
+[validation report](../../reports/spec001-wp02a-validation.md); it does not complete
+their adapter, temporal-selection, eligibility, optimizer or report scenarios.
+File-first acceptance does not claim the parent's database permission checks passed.
 
 | ID | Scenario and required evidence | Requirements |
 | --- | --- | --- |
@@ -308,8 +314,9 @@ engineering defaults are consolidated in [contracts.md](contracts.md) and
 [settings.example.toml](settings.example.toml). All feature acceptance rows remain
 pending; closing design does not establish a completed implementation review.
 
-The next implementation package is WP-02, starting with typed contracts and the
-isolated canonical-reference catalog. The optimizer/package lock follows in WP-04.
+WP-02A's typed contracts and isolated canonical-reference catalog are implemented
+and validated at their stated scope. WP-02B's business fixtures and format adapters
+are next, followed by WP-02C temporal selection. The optimizer/package lock follows in WP-04.
 Real-source interfaces, ownership, freshness thresholds, agreement interpretation,
 valuation/netting, hosting and support remain later integration decisions. The
 first earnings profile consumes supplied modeled benefit; fee/rate/valuation/FX

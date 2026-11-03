@@ -1,12 +1,13 @@
 # 001 — Securities-finance implementation plan
 
-Status: **WP-01 design complete; implementation pending**. Created 2026-11-03.
+Status: **WP-01 design complete; WP-02A implemented; WP-02B onward pending**.
+Created 2026-11-03.
 Specification: [spec.md](spec.md). Parent boundary:
 [extension contract](../../docs/securities-finance-extension.md).
 
 This plan implements the stable modules in the specification. Work packages below
 are the feature's ordered implementation backlog. WP-01 is complete at design
-scope; WP-02 onward remain pending implementation. They do not
+scope; WP-02A is implemented and WP-02B/C onward remain pending. They do not
 replace the main product task register or authorize a live deployment.
 
 ## WP-01 decision register
@@ -33,9 +34,11 @@ quantity conventions, freshness clocks, objective coefficients, numerical proof,
 replay identity and acceptance traces. Synthetic example weights and thresholds
 are explicit test settings, not asserted real-source operating policies.
 
-**Next: WP-02**, beginning with its typed contract/canonical-reference slice below.
-Implementation, package installation, database integration and acceptance remain
-pending. Josh remains the project review owner; no restricted access is implied.
+**WP-02A is complete** at its typed contract/reference scope; see
+[validation evidence](../../reports/spec001-wp02a-validation.md). **WP-02B is next**:
+business fixtures and JSON/CSV adapters. Later implementation, optimizer package
+installation, database integration and complete feature acceptance remain pending.
+Josh remains the project review owner; no restricted access is implied.
 
 ## Architecture and build order
 
@@ -62,14 +65,16 @@ chain of ownership/re-lending without explicit allocation records.
 
 ## Proposed file/module layout
 
-Runtime paths below are proposals, not implemented interfaces. The design-time
-contracts and settings under `specs/001/` already exist:
+The contract and catalog modules below are implemented in WP-02A. Other runtime
+paths remain proposals. Design-time contracts/settings under `specs/001/` exist
+but are not consumed by a runtime file parser yet:
 
 | Path | Responsibility |
 | --- | --- |
 | `specs/001/contracts.md` | WP-01 normalized file, temporal, quantity, coefficient and numerical contracts |
 | `specs/001/settings.example.toml` | Parseable synthetic defaults; not yet runtime-consumed |
 | `src/market_atlas/securities_finance/contracts.py` | Typed/versioned input contracts, identity/unit/time checks |
+| `.../catalog.py` | Implemented immutable synthetic instrument/convention catalog and quantity/reference binding |
 | `.../fixtures.py` | Deterministic invented cases referencing synthetic instrument node IDs |
 | `.../adapters.py` | JSON and CSV readers into one normalized contract; split format adapters if needed |
 | `.../selection.py` | Effective/source-knowledge/system-record cutoff selection |
@@ -462,14 +467,15 @@ than silently extending the existing macro report or public fixture publication.
 
 ## Ordered work packages and verification
 
-WP-01 is complete at design scope; later packages remain pending implementation. Split implementation further if a slice would need
+WP-01 is complete at design scope and WP-02A at its stated implementation scope.
+WP-02B/C and later packages remain pending. Split implementation further if a slice would need
 more than about five source/test files. Require actual retained evidence before
 checking any acceptance row.
 
 | Work | Deliverable / acceptance | Depends on | Verification |
 | --- | --- | --- | --- |
 | SF-WP-01 | Complete (design): selected policies, version-1 contracts, synthetic settings and requirement traces | User decisions and governing boundary | contracts.md/settings.example.toml; Markdown/TOML/reference/default-consistency checks; no runtime acceptance claimed |
-| SF-WP-02 | Implement deterministic equity and fixed-income fixtures, JSON/CSV adapters into one contract, canonical links, quantity conventions and temporal selection; split into bounded tasks | WP-01 | Offline generation/replay, adapter equivalence, authoritative representation/no duplicate supply; wrong-type/duplicate/unit/time/convention rejection; SF-AC-003/004/015/016/017 (identity boundary only) |
+| SF-WP-02 | In progress: WP-02A typed envelope/quantity/reference foundation complete; WP-02B business fixtures/adapters and WP-02C temporal selection pending | WP-01 | WP-02A evidence linked above; full adapter/selection scenarios still needed for SF-AC-003/004/015/016/017 |
 | SF-WP-03 | Add capacity normalization and typed rule evaluation with explanation rows | WP-02 | Independent gross/net and four-state cases for both asset classes; SF-AC-001/003/005/015 |
 | SF-WP-04 | Add typed policy/model contract, coverage-first optimizer, FIFO baseline and reconciled ledgers; split solver/profile adapters into bounded tasks | WP-03 | 180k/90k/10k fixture; joint allocation fills 100k versus greedy 60k; independent optima, exact quantity/increment/minimum constraints, canonical ties, profile validation and outcome statuses; SF-AC-001/002/013/014/015/017 |
 | SF-WP-05 | Add explicit loan-allocation and recall investigation | WP-02 | 15k+5k attribution, unrelated same-security loan exclusion, returns/replay; SF-AC-004/006 |
@@ -481,7 +487,7 @@ checking any acceptance row.
 
 | Slice | Deliverable | Focused evidence |
 | --- | --- | --- |
-| WP-02A | Typed envelope/quantity/reference contracts and independent validators | Invalid/duplicate keys, fractional equities, exact nominal conventions, known isolated bond catalog, base fixture unchanged |
+| WP-02A | Complete: typed envelope/quantity/reference contracts and independent validators | 22 focused tests; unchanged pinned base fixture; full regression/lint results in the validation report |
 | WP-02B | Deterministic fixture generator and JSON/CSV adapters | Identical normalized business facts, missing versus zero, keyed child tables, one authoritative representation |
 | WP-02C | Three-cutoff selection and snapshot/event inclusion accounting | Precise/date-only boundaries, corrections, included versus new events, ambiguous facts withheld; no eligibility or optimizer claim |
 
@@ -559,7 +565,8 @@ under shuffled source order; sorted solver inputs alone are not evidence of it.
   deletion is involved.
 
 WP-01 is complete at design scope: selected policies and explicit synthetic
-technical defaults are documented in the contracts/settings. **WP-02A is next**.
+technical defaults are documented in the contracts/settings. WP-02A is implemented
+and validated at its stated scope. **WP-02B is next**.
 The exact optimization package/wheel lock and backend build identity are WP-04
 implementation artifacts, not unresolved business choices. No solver is installed
 and all feature acceptance rows remain pending.
