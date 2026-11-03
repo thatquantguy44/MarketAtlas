@@ -100,7 +100,9 @@ explicit engineering defaults. WP-02A implements the typed envelope/quantity/ref
 foundation; [its evidence](../../reports/spec001-wp02a-validation.md) covers structural
 subcases only. WP-02B adds deterministic business fixtures and equivalent file
 adapters; [its evidence](../../reports/spec001-wp02b-validation.md) establishes
-normalized input facts and provenance. WP-02C and later packages remain pending; no complete feature
+normalized input facts and provenance. WP-02C adds supported cutoff selection and
+snapshot/event reconciliation plans; [its evidence](../../reports/spec001-wp02c-validation.md)
+does not establish component arithmetic. WP-03 onward remain pending; no complete feature
 acceptance is claimed by closing design or this foundation slice.
 
 Help a securities-finance operator answer:
@@ -285,8 +287,10 @@ evidence for SF-AC-003/004/015/017 in its
 [validation report](../../reports/spec001-wp02a-validation.md). WP-02B supplies
 additional input-validation/provenance/equivalence evidence, including the
 normalized-fact portion of SF-AC-016, in
-[its report](../../reports/spec001-wp02b-validation.md). Temporal selection,
-eligibility, optimizer and downstream report scenarios remain pending.
+[its report](../../reports/spec001-wp02b-validation.md). WP-02C adds temporal,
+selected-parent, FIFO-evidence and event-inclusion/replacement/reversal planning
+subcases for SF-AC-003/004/016 in [its report](../../reports/spec001-wp02c-validation.md).
+Component arithmetic, eligibility, optimizer and downstream report scenarios remain pending.
 File-first acceptance does not claim the parent's database permission checks passed.
 
 | ID | Scenario and required evidence | Requirements |
@@ -320,8 +324,9 @@ engineering defaults are consolidated in [contracts.md](contracts.md) and
 pending; closing design does not establish a completed implementation review.
 
 WP-02A's typed contracts/catalog and WP-02B's business fixtures/file APIs are
-implemented and validated at their stated scopes. WP-02C temporal selection is
-next. The optimizer/package lock follows in WP-04.
+implemented and validated at their stated scopes, as are WP-02C's temporal selection
+and event reconciliation plans. WP-03 capacity normalization and typed eligibility
+are next. The optimizer/package lock follows in WP-04.
 Real-source interfaces, ownership, freshness thresholds, agreement interpretation,
 valuation/netting, hosting and support remain later integration decisions. The
 first earnings profile consumes supplied modeled benefit; fee/rate/valuation/FX

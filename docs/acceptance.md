@@ -125,3 +125,20 @@ structural/input-equivalence evidence only: active version selection, event
 application, balances, eligibility, optimization and downstream reports remain
 pending. No complete feature acceptance or expansion of parent AC-012's design
 status is claimed.
+
+## Spec 001 / WP-02C temporal selection and event plans (2026-11-03)
+
+[WP-02C evidence](../reports/spec001-wp02c-validation.md) records three independent
+cutoffs, half-open state/system intervals, conservative source-day predicates,
+supported version/correction selection, unavailable selected-parent propagation,
+FIFO uncertainty and JSON/CSV selection equivalence. Exact snapshot-version,
+stream/component and completeness declarations support immutable inclusion,
+replacement and reversal plans. Unknown boundaries, late unsupported effects and
+duplicate reversals block affected calculations; replays do not append effects.
+
+87 focused tests pass (32 new). Full standard-library and Dagster-enabled suites
+discover 235 tests: 221 passed/14 skips and 230 passed/five skips respectively.
+The base fixture is unchanged. SF-AC-003/004/016 gain partial selection/planning
+evidence; all complete feature rows remain pending. Effect arithmetic, capacity,
+freshness/eligibility, allocation, recall impact, publication recovery and reports
+remain later work. MarketAtlas AC-012 retains its design-only scope.

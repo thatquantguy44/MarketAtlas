@@ -287,7 +287,7 @@ quantity and convention models rejects missing required or unknown constructor
 fields, including attempts to provide computed values. These WP-02A constructors
 do not decode file columns or recursively construct nested typed objects. The
 WP-02B file APIs below decode JSON/CSV/TOML and construct normalized payloads;
-active-version selection remains WP-02C.
+the WP-02C selection API below selects supported active versions.
 
 Quantities are plain nonnegative decimal text, at most 128 characters, with a
 declared precision from 0 through 18 (shares require 0). `units` is an exact scaled
@@ -408,5 +408,104 @@ their eventual normalized-capacity reconciliation belongs to WP-03. TOML bond
 minimum/increment changes are consumed and validated, not merely copied.
 
 Evidence: [WP-02B validation report](../../reports/spec001-wp02b-validation.md).
-WP-02C is next. No securities-finance CLI or downstream solver/report acceptance
-is implied by these Python file APIs.
+The WP-02C API below consumes these inputs. No securities-finance CLI or downstream
+solver/report acceptance is implied by these Python file APIs.
+
+## Implemented WP-02C selection API
+
+`selection.select_input_pack(pack, cutoffs=None)` returns an immutable `Selection`.
+By default it uses the three manifest cutoffs. An explicit `temporal.Cutoffs`
+override supports replay without rewriting retained inputs. Each cutoff must be an
+offset-aware instant; there is no wall-clock default. Effective and recorded
+intervals are half-open; availability is inclusive at the knowledge cutoff.
+`source_confirmed_at` is retained for WP-03 freshness, not substituted for source
+availability. Current-source reconstruction (earlier business time, later knowledge
+and system cutoffs) differs from an earlier-knowledge/system replay.
+
+The result contains:
+
+- `decisions`: every retained row, with `selected`, `excluded` or `unknown` status
+  and reason codes. Known cutoff failures and unknown checks are both retained.
+- `tables`: only selected temporal/reference facts. Overlapping active state
+  versions, uncertain competing versions and unavailable selected parents withhold
+  affected rows. Agreement child tables follow the exact selected parent version.
+  Retained-row existence never resolves an unavailable selected parent.
+- `request_order`: pairwise chronology within the same instrument/convention.
+  Relations are -1/0/1 or `None`. Zero means equal proven instants; the allocation
+  stage must use request ID for those ties. Overlapping dates remain `None` and
+  must never acquire an ID-based chronology. WP-04 must establish whether ambiguity
+  could affect allocations and preserve the previous complete pack when it could.
+- `event_plan`: assessments for every retained event, supported actions and
+  `blocked_targets`, keyed by `(source_name, state_component, target_record_id)`.
+  **Selected tables are baseline facts, not reconciled balances.** Consumers must
+  honor blocked targets and use only the plan's actions for event processing.
+- `semantic_identity`: deterministic `sf-selection-v1` identity over input
+  semantics, UTC cutoffs and decisions; physical manifest ID and immutable source
+  provenance remain separately available as `input_manifest_id` and `provenance`.
+
+`temporal.evidence_bounds`, `at_or_before`, `after` and `compare` preserve source-day
+intervals, including DST. Missing timezone, ambiguous/nonexistent local midnight,
+skipped days or unsupported date bounds remain unknown. No midnight is asserted
+as a date-only observation's known timestamp. There is no latest-ingest fallback.
+Visible event corrections use explicit, source/event-scoped supersession chains;
+future corrections cannot suppress an earlier supported version. Forks/cycles and
+unknown competing versions cannot establish a winner.
+
+New manifests add `event_boundaries`, a list with these exact fields:
+
+| Field | Meaning |
+| --- | --- |
+| `snapshot_id`, `source_name`, `event_stream_id` | Explicit snapshot/source/selected-event stream |
+| `state_component`, `target_record_id`, `target_version_id` | Exact affected state version; components are reservation, loan outstanding or recall instruction |
+| `snapshot_as_of` | Precise captured-state instant, within the target version's validity and not after the requested business cutoff |
+| `complete` | Boolean declaring whether the explicit inclusion list is complete for this target/component/stream at this snapshot |
+
+One declaration is permitted per snapshot/source/stream/component/target. Retained
+target/stream identity is checked on load. The fixture declares five boundaries at
+11:50 UTC, with two exact event-version receipts. Completeness concerns those
+declared components and event types, not all historical activity. A capture time
+without a complete explicit inclusion list cannot establish inclusion.
+
+Legacy WP-02B manifests without the optional field still load with their original
+input semantics. Selection blocks event reconciliation for affected scopes until
+supported boundaries are supplied; an absent list never means complete/empty.
+New boundaries participate in manifest and semantic identities.
+
+Exact included effects are `already_included` and have no action. A supported new
+effect strictly after the baseline becomes one `new_effect` action. A correction
+with an exact included ancestor becomes a `replacement` action carrying both the
+old and new records; consumers replace the old effect rather than adding the new
+quantity in full. Reversals retain their original-event reference and require a
+supported earlier effect with the same quantity. Multiple reversals of one effect
+are blocked. Partial reversals, changed effect target/type, missing quantities,
+incomplete boundaries, unproved lineage and late unincluded effects are withheld
+with reasons. An unreconciled correction blocks its earlier targets as well.
+
+The plan is an immutable set of effect instructions, not a mutation journal or a
+capacity calculation. Re-encoding/replaying returns the same identities/actions;
+it never appends another effect. Component arithmetic, gross/net deductions,
+settlement/free-capacity proof and freshness/eligibility remain WP-03; recall
+impact remains WP-05. The loader still rejects ambiguous retained reference/unit
+metadata (including multiple conflicting convention definitions); selection does
+not silently repair unsupported histories. No report is published by this API.
+
+```sh
+PYTHONPATH=src python3 -S - <<'PY'
+from market_atlas.securities_finance.adapters import read_input_pack
+from market_atlas.securities_finance.fixtures import write_fixture_inputs
+from market_atlas.securities_finance.selection import select_input_pack
+
+path = write_fixture_inputs(
+    "data/generated/securities-finance-fixture/inputs",
+    settings_path="specs/001/settings.example.toml",
+)
+selection = select_input_pack(read_input_pack(path))
+assert len(selection.tables["inventory_position"]) == 10
+assert not selection.event_plan.blocked_targets
+assert [a.after.payload["event_id"] for a in selection.event_plan.actions] == ["sf:event:recall"]
+print(selection.semantic_identity)
+PY
+```
+
+Evidence: [WP-02C validation report](../../reports/spec001-wp02c-validation.md).
+Next: WP-03 capacity normalization and typed eligibility checks.

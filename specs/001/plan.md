@@ -1,13 +1,13 @@
 # 001 — Securities-finance implementation plan
 
-Status: **WP-01 design complete; WP-02A/B implemented; WP-02C onward pending**.
+Status: **WP-01 design complete; WP-02A/B/C implemented; WP-03 onward pending**.
 Created 2026-11-03.
 Specification: [spec.md](spec.md). Parent boundary:
 [extension contract](../../docs/securities-finance-extension.md).
 
 This plan implements the stable modules in the specification. Work packages below
 are the feature's ordered implementation backlog. WP-01 is complete at design
-scope; WP-02A/B are implemented and WP-02C onward remain pending. They do not
+scope; WP-02A/B/C are implemented and WP-03 onward remain pending. They do not
 replace the main product task register or authorize a live deployment.
 
 ## WP-01 decision register
@@ -38,7 +38,9 @@ are explicit test settings, not asserted real-source operating policies.
 [validation evidence](../../reports/spec001-wp02a-validation.md). **WP-02B is also
 complete** at input-fixture/adapter scope, with
 [file-equivalence evidence](../../reports/spec001-wp02b-validation.md).
-**WP-02C is next**: cutoff/version and event-inclusion selection. Later implementation, optimizer package
+**WP-02C is complete** at cutoff/version and event-inclusion planning scope, with
+[temporal/reconciliation evidence](../../reports/spec001-wp02c-validation.md).
+**WP-03 is next**: capacity normalization and typed eligibility. Later implementation, optimizer package
 installation, database integration and complete feature acceptance remain pending.
 Josh remains the project review owner; no restricted access is implied.
 
@@ -68,7 +70,8 @@ chain of ownership/re-lending without explicit allocation records.
 ## Proposed file/module layout
 
 Contract/catalog modules are implemented in WP-02A; source-table, fixture and
-file-adapter modules in WP-02B. Other runtime paths remain proposals. The example
+file-adapter modules in WP-02B; temporal/selection/event-planning modules in WP-02C.
+Other runtime paths remain proposals. The example
 TOML is consumed and validated by the input writer/reader, without solver execution:
 
 | Path | Responsibility |
@@ -80,7 +83,9 @@ TOML is consumed and validated by the input writer/reader, without solver execut
 | `.../records.py` | Implemented table schemas, normalized business records and retained reference checks |
 | `.../fixtures.py` | Implemented deterministic business fixtures and staged immutable input-pack writer |
 | `.../adapters.py` | Implemented JSON/CSV codecs, TOML/manifest validation, single-authority input reader and provenance |
-| `.../selection.py` | Effective/source-knowledge/system-record cutoff selection |
+| `.../temporal.py` | Implemented precise/source-day predicates and supported version selection |
+| `.../selection.py` | Implemented cutoff-selected facts, selected-parent resolution, FIFO evidence and provenance |
+| `.../events.py` | Implemented exact snapshot boundaries and immutable event inclusion/replacement/reversal plans; no balance arithmetic |
 | `.../eligibility.py` | Approved typed rules, aggregation and reason/input evidence |
 | `.../matching.py` | Hard allocation model, capacity ledger, solver adapter and FIFO baseline; split further before implementation if needed |
 | `.../policy.py` | Typed objective registry, profile validation, objective stages and coefficient provenance |
@@ -470,15 +475,15 @@ than silently extending the existing macro report or public fixture publication.
 
 ## Ordered work packages and verification
 
-WP-01 is complete at design scope; WP-02A/B at their stated implementation scopes.
-WP-02C and later packages remain pending. Split implementation further if a slice would need
+WP-01 is complete at design scope; WP-02A/B/C at their stated implementation scopes.
+WP-03 and later packages remain pending. Split implementation further if a slice would need
 more than about five source/test files. Require actual retained evidence before
 checking any acceptance row.
 
 | Work | Deliverable / acceptance | Depends on | Verification |
 | --- | --- | --- | --- |
 | SF-WP-01 | Complete (design): selected policies, version-1 contracts, synthetic settings and requirement traces | User decisions and governing boundary | contracts.md/settings.example.toml; Markdown/TOML/reference/default-consistency checks; no runtime acceptance claimed |
-| SF-WP-02 | In progress: WP-02A contracts/reference foundation and WP-02B business fixtures/adapters complete; WP-02C temporal selection pending | WP-01 | WP-02A/B evidence linked above; complete selection/downstream scenarios still needed for SF-AC-003/004/015/016/017 |
+| SF-WP-02 | Complete: WP-02A contracts/reference foundation, WP-02B business fixtures/adapters and WP-02C supported temporal selection/event planning | WP-01 | WP-02A/B/C evidence linked above; component arithmetic and complete downstream SF-AC scenarios remain pending |
 | SF-WP-03 | Add capacity normalization and typed rule evaluation with explanation rows | WP-02 | Independent gross/net and four-state cases for both asset classes; SF-AC-001/003/005/015 |
 | SF-WP-04 | Add typed policy/model contract, coverage-first optimizer, FIFO baseline and reconciled ledgers; split solver/profile adapters into bounded tasks | WP-03 | 180k/90k/10k fixture; joint allocation fills 100k versus greedy 60k; independent optima, exact quantity/increment/minimum constraints, canonical ties, profile validation and outcome statuses; SF-AC-001/002/013/014/015/017 |
 | SF-WP-05 | Add explicit loan-allocation and recall investigation | WP-02 | 15k+5k attribution, unrelated same-security loan exclusion, returns/replay; SF-AC-004/006 |
@@ -492,7 +497,7 @@ checking any acceptance row.
 | --- | --- | --- |
 | WP-02A | Complete: typed envelope/quantity/reference contracts and independent validators | 22 focused tests; unchanged pinned base fixture; full regression/lint results in the validation report |
 | WP-02B | Complete: deterministic business fixtures, JSON/CSV adapters, settings/manifest loader and provenance | 33 new tests; 17 tables/95 records with equal normalized facts, missing/zero distinction and one authority; evidence linked above |
-| WP-02C | Three-cutoff selection and snapshot/event inclusion accounting | Precise/date-only boundaries, corrections, included versus new events, ambiguous facts withheld; no eligibility or optimizer claim |
+| WP-02C | Complete: three-cutoff selection and snapshot/event inclusion accounting | 32 new tests; precise/date-only boundaries, corrections, included/new effects, reversals, ambiguity and encoding equivalence; immutable effect plans only, no eligibility or optimizer claim |
 
 Keep each slice to about five source/test files, splitting further if needed.
 Use the proposed feature modules in this plan; copy the documented settings into
@@ -569,8 +574,11 @@ under shuffled source order; sorted solver inputs alone are not evidence of it.
 
 WP-01 is complete at design scope: selected policies and explicit synthetic
 technical defaults are documented in the contracts/settings. WP-02A is implemented
-and validated at its stated scope; WP-02B's fixtures/file APIs are complete.
-**WP-02C is next**.
+and validated at its stated scope; WP-02B's fixtures/file APIs and WP-02C's
+temporal selection/event plans are complete. **WP-03 is next**. It must consume
+only selected facts, honor `event_plan.blocked_targets`, apply supported component
+effects once, reconcile gross/net deductions and evaluate the configured typed
+rules/freshness without treating unknown evidence as zero or permission.
 The exact optimization package/wheel lock and backend build identity are WP-04
 implementation artifacts, not unresolved business choices. No solver is installed
 and all feature acceptance rows remain pending.

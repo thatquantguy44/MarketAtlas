@@ -4,7 +4,56 @@ Updated: 2026-11-03. This is an early implementation handoff, not a completed pi
 
 ## Start here next session
 
-**Spec 001 / WP-02B checkpoint (2026-11-03): implemented and validated.**
+**Spec 001 / WP-02C checkpoint (2026-11-03): implemented and validated.**
+Current branch: `feat/securities-finance-wp02c`, from pushed WP-02B `7ace21f`.
+Runtime checkpoint: `feaffab` (local incremental commits; no push requested).
+See [validation evidence](../reports/spec001-wp02c-validation.md),
+[selection API/run instructions](../specs/001/contracts.md#implemented-wp-02c-selection-api)
+and [work packages](../specs/001/plan.md#ordered-work-packages-and-verification).
+
+`temporal.py`, `selection.py` and `events.py` implement independent business,
+knowledge and system cutoff selection, conservative source-day predicates,
+supported correction chains, selected-parent propagation, FIFO chronology evidence
+and immutable event reconciliation plans. All 95 retained rows keep decisions and
+source provenance; ten current positions are selected. New manifests bind five
+component/stream boundaries to exact snapshot target versions at 11:50 UTC, with
+complete explicit inclusion lists. Legacy packs still load but missing boundaries
+block affected event reconciliation. At noon, two effects are already included,
+four future events are excluded and only the recall has a new-effect action.
+At 12:30, five actions include three referenced reversals. Corrections replace
+included effects; unknown/late/duplicate-reversal evidence blocks affected scopes.
+
+87 focused tests pass (32 new). Full standard-library suite: 235 discovered,
+221 passed/14 expected skips; Dagster-enabled: 230 passed/five database skips.
+Both disable database opt-in. Changed Python lint/format checks pass. A standalone
+standard-library smoke generates/selects gross JSON/CSV and already-net inputs
+with equal gross selection identities and separate raw provenance; no optional
+runtime module is imported. Base fixture SHA-256 is unchanged:
+`15e24cebf895af4e58b1c5a4dfe5712ba28b473ca64ee6c4f4df2f5bac0877da`.
+Logs and `selection-summary.json` remain ignored under
+`data/generated/securities-finance-fixture/wp02c-validation/`; the report records
+the three new input IDs under the sibling `inputs/` directory.
+
+**Exact next task: WP-03**, capacity normalization and typed eligibility.
+Owner: implementation engineer, with Josh as review owner. Start from
+`select_input_pack`, consume selected facts and honor `event_plan.blocked_targets`.
+Selected baseline tables are not reconciled/eligible inventory: apply supported
+component effects once, normalize tagged gross/net balances without double
+deduction or assumed overlap, retain unknown versus zero, and evaluate the core
+typed checks plus dataset-specific freshness against knowledge cutoff. Preserve
+reason/input evidence and test both assets/encodings. Keep source conventions
+explicit; the loader still rejects unsupported ambiguous retained metadata.
+FIFO consequence/optimizer stays WP-04, recall impact WP-05, packaging/recovery
+and reports WP-06. No new dependency, CLI, database access, schedule, publication
+or complete feature acceptance is established. SF-AC-003/004/016 gain partial
+selection/planning evidence; parent AC-012 remains design-only.
+
+Ready-to-paste next prompt: “Implement Spec 001 WP-03 on a new branch from the
+WP-02C checkpoint: first a bounded capacity-normalization slice consuming the
+selected facts/event plan, then typed eligibility/freshness, with independent
+gross/net, missing/zero, overlap and both-asset evidence. Do not start the solver.”
+
+**Earlier WP-02B checkpoint (2026-11-03): implemented and validated.**
 Current branch: `feat/securities-finance-wp02b`, from pushed WP-02A `c2f40f8`.
 See [evidence](../reports/spec001-wp02b-validation.md),
 [file API/run instructions](../specs/001/contracts.md#implemented-wp-02b-file-api)
@@ -41,7 +90,7 @@ The gross normalized input identity is
 Logs and `input-summary.json` are under ignored `wp02b-validation/` alongside
 these inputs. Settings comments/physical hashes are separate from input semantics.
 
-**Exact next task: WP-02C**, supported version selection at business-effective,
+WP-02B handed off WP-02C: supported version selection at business-effective,
 source-knowledge and system-record cutoffs, plus explicit snapshot/event inclusion
 accounting. Owner: implementation engineer, with Josh as review owner. Preserve
 uncertain time states and consequential FIFO ambiguity. B rejects ambiguous
