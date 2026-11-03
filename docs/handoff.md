@@ -4,30 +4,81 @@ Updated: 2026-11-03. This is an early implementation handoff, not a completed pi
 
 ## Start here next session
 
-**Spec 001 documentation checkpoint (2026-11-03):** Josh requested a dedicated
-securities-finance spec/plan under `specs/001/`. Created
-[feature specification](../specs/001/spec.md) and
-[implementation plan](../specs/001/plan.md), linked from the parent extension
-contract and README. Both are drafts; implementation and feature acceptance
-remain pending. Initial scope is a synthetic file-first whole-share pilot for
-borrow coverage, allocation blockers and explicitly attributable recall paths.
-Separate later gates cover restricted persistence/adapters and collateral.
+**Spec 001 / WP-01 checkpoint (2026-11-03): design complete; implementation pending.**
+Josh finished the choice-by-choice review for the synthetic lender/agent pilot.
+The [specification](../specs/001/spec.md) and [plan](../specs/001/plan.md) now link
+[version-1 file-first contracts](../specs/001/contracts.md) and
+[parseable example settings](../specs/001/settings.example.toml). User-selected
+policies are distinguished from explicit synthetic engineering defaults.
 
-The spec includes the 180k gross / 90k cleared / 10k shortfall example, balance
-basis/no-double-deduction rules, unknown states, competing-request capacity,
-temporal/provenance contracts and independent acceptance IDs. The plan records
-module dependencies, input/output grains, work packages, proposed CLI paths,
-verification and access boundaries. Proposed commands are explicitly unimplemented.
-The existing extension contract remains governing; AC-012 still has design-level
-status. Documentation work changes no runtime, grants, sources or schedules.
+Confirmed choices:
 
-**Exact next task for this feature:** review the proposed scope and WP-01
-decisions before accepting WP-02 fixture/contract implementation. The user asked
-for documents only; do not start a live adapter or migration from this checkpoint.
-Macro analytics automation remains a separate product priority. Josh subsequently
-requested committing/pushing these documents. Documentation branch is
-`docs/securities-finance-spec-001`, from merged main `9538f89` (PR #15); consult
-Git for the final commit. The earlier merged feature branch is not reused.
+- Lender/agent inventory coverage; default maximize coverage per security, then
+  proven FIFO request priority, then canonical allocation ties. Greedy FIFO is a
+  comparison baseline, not a substitute optimizer.
+- Equities and fixed income from the start. Equities use integer shares and a
+  one-share increment. Each bond declares its own nominal currency, precision,
+  minimum nonzero allocation and increment; fixtures test different conventions.
+- Both gross and already-net balances, explicitly tagged; one normalized capacity,
+  retained included-deduction definitions and no double deduction.
+- JSON and CSV record inputs immediately, JSON manifests and TOML settings; both
+  adapters share a normalized contract and equivalence tests. Select one physical
+  representation per logical dataset; equivalent files never double supply/events.
+- Versioned snapshots plus selected lifecycle events with explicit inclusion
+  boundaries, corrections/reversals and once-only effects. This is not complete
+  event history; returns do not automatically create settled free inventory.
+- Core operational checks with configurable versions/parameters; separate
+  allow/block lists deferred. Dataset-specific freshness limits for inventory,
+  requests and agreement-status confirmation, separate from agreement validity.
+- Precise timezone-aware timestamps normalized to UTC plus retained date-only
+  precision. Withhold ambiguous cutoff/freshness/FIFO claims. Consequential unknown
+  FIFO order withholds affected proposals and retains the prior complete pack;
+  equal known timestamps may still use ID ties.
+- Optional SciPy/HiGHS MILP with sequential objective solves/locks. Publish only
+  proven, independently validated results; unfinished solves retain diagnostics
+  and the prior pack. Both ordered and weighted stages are supported with explicit
+  scales; hard constraints are never tradeable.
+- A separate balance profile minimizes worst shortfall percentage across positive
+  requests in one security/unit group with provably usable eligible supply. Other
+  requests retain shortfalls/reasons; empty populations have no balance score.
+- **Supplied net-benefit coefficients** for potentially allocatable position/request
+  pairs, with quantity basis, currency, common horizon and method/assumption
+  provenance. No first-slice fee/rate/valuation/FX/duration calculator. Missing
+  economic inputs fail the requested economic profile, not a non-economic profile.
+
+Technical defaults are now explicit in the contracts/example TOML, including
+CSV/null/child-table rules, exact units and bond step origins, event IDs, evidence
+clocks, synthetic freshness ages, a shared 60-second optimization budget, numerical
+proof/validation policy and deterministic business-versus-run identities. These
+are synthetic settings, not real-source policy or measured performance claims.
+Select/pin a compatible SciPy distribution/backend build during WP-04.
+
+The base fixture currently has share instruments only. WP-02 must declare known
+invented bond references in a separate feature catalog using the existing ID/type
+contract. Keep base fixture identities, meanings, outputs and public publications
+unchanged; do not claim these extra catalog entries are existing database rows.
+The [parent extension contract](securities-finance-extension.md) clarifies this
+file-first boundary. Unmapped inputs never trigger public node creation.
+
+**Exact next task: WP-02A**, typed envelope/quantity/reference contracts and
+independent validation, including an isolated bond reference catalog and proof
+that the base fixture is unchanged. Then WP-02B generates equivalent JSON/CSV
+fixtures/adapters; WP-02C adds three-cutoff and snapshot/event selection. These
+slices do not implement eligibility, the optimizer, reports or restricted access.
+Keep slices to about five source/test files, splitting further if needed.
+
+WP-01 closes design only. SF-AC-001 through SF-AC-017 remain pending implementation;
+MarketAtlas AC-012 remains design-level evidence. No solver package is installed,
+no proposed securities-finance CLI exists, and no runtime, grants, sources or
+schedules changed. Restricted persistence and collateral retain separate gates.
+The current documentation branch is `docs/securities-finance-spec-001`; consult
+Git for commit/push status. Macro automation remains a separate priority.
+
+WP-01 documentation validation passed: local links/anchors, Markdown fences,
+requirement/decision/work-package IDs, TOML syntax/default consistency and
+independent worked-example arithmetic for coverage, balance, bond minimums/steps
+and supplied benefits. No runtime regression suite or optimizer execution is
+claimed; this change edits documentation/design settings only.
 
 **Historical completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
 foundation and adding the three browser views. Current branch remains
