@@ -93,7 +93,9 @@ class TemporalTests(unittest.TestCase):
         )
         decisions = select_versions((known, unknown), self.cutoff())
         self.assertEqual({"unknown"}, {item.status for item in decisions})
-        self.assertIn("ambiguous_active_versions", decisions[0].reasons)
+        self.assertTrue(
+            any("ambiguous_active_versions" in d.reasons for d in decisions)
+        )
         overlap = select_versions((known, self.row("v3")), self.cutoff())
         self.assertEqual({"unknown"}, {item.status for item in overlap})
         missing = select_versions((self.row(source_available_at=None),), self.cutoff())[
@@ -151,6 +153,49 @@ class TemporalTests(unittest.TestCase):
         self.assertEqual(
             ["selected", "selected"],
             [d.status for d in select_versions(rows, self.cutoff())],
+        )
+
+    def test_adjacent_versions_select_original_then_replacement(self):
+        boundary = TimestampEvidence("2026-11-03T12:00:00Z", "instant")
+        old = self.row("v0", effective_to=boundary, recorded_to=boundary)
+        new = self.row("v1", effective_from=boundary, recorded_from=boundary)
+        current = self.cutoff()
+        earlier = replace(
+            current,
+            business_as_of=current.business_as_of - timedelta(microseconds=1),
+            system_cutoff=current.system_cutoff - timedelta(microseconds=1),
+        )
+        for cutoffs, expected in ((earlier, "v0"), (current, "v1")):
+            selected = [
+                d.record.envelope.key.version_id
+                for d in select_versions((new, old), cutoffs)
+                if d.status == "selected"
+            ]
+            self.assertEqual([expected], selected)
+
+    def test_date_only_end_and_missing_start_withhold_but_known_failures_remain(self):
+        for row in (
+            self.row(effective_to=TimestampEvidence("2026-11-03", "date", "UTC")),
+            self.row(effective_from=None),
+        ):
+            self.assertEqual(
+                "unknown", select_versions((row,), self.cutoff())[0].status
+            )
+        unavailable = self.row(
+            source_available_at=None,
+            effective_from=TimestampEvidence("2026-11-04T00:00:00Z", "instant"),
+        )
+        decision = select_versions((unavailable,), self.cutoff())[0]
+        self.assertEqual("excluded", decision.status)
+        self.assertIn("source_availability_unknown", decision.reasons)
+        self.assertIn("business_start_outside_cutoff", decision.reasons)
+
+    def test_correction_cycle_is_not_an_active_winner(self):
+        a, b = self.row("v1", event=True), self.row("v2", event=True)
+        a = replace(a, payload={**a.payload, "supersedes_version_id": "v2"})
+        b = replace(b, payload={**b.payload, "supersedes_version_id": "v1"})
+        self.assertEqual(
+            {"unknown"}, {d.status for d in select_versions((a, b), self.cutoff())}
         )
 
     def test_exact_offsets_and_cutoffs(self):

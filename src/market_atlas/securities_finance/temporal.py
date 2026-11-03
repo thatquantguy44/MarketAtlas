@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+from market_atlas.contracts import canonical_bytes
 from market_atlas.securities_finance.contracts import TimestampEvidence, _require
 from market_atlas.securities_finance.records import SourceRecord
 
@@ -190,7 +191,7 @@ def select_versions(records: tuple[SourceRecord, ...], cutoffs: Cutoffs):
             key=lambda item: (
                 item.record.record_type,
                 item.record.source_name,
-                repr(item.record.to_row(semantic=True)),
+                canonical_bytes(item.record.to_row(semantic=True)),
             ),
         )
     )
