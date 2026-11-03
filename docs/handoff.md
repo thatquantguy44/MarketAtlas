@@ -1,10 +1,35 @@
 # MarketAtlas — Handoff
 
-Updated: 2026-11-01. This is an early implementation handoff, not a completed pilot or production release.
+Updated: 2026-11-03. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Start here next session
 
-**Completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
+**Spec 001 documentation checkpoint (2026-11-03):** Josh requested a dedicated
+securities-finance spec/plan under `specs/001/`. Created
+[feature specification](../specs/001/spec.md) and
+[implementation plan](../specs/001/plan.md), linked from the parent extension
+contract and README. Both are drafts; implementation and feature acceptance
+remain pending. Initial scope is a synthetic file-first whole-share pilot for
+borrow coverage, allocation blockers and explicitly attributable recall paths.
+Separate later gates cover restricted persistence/adapters and collateral.
+
+The spec includes the 180k gross / 90k cleared / 10k shortfall example, balance
+basis/no-double-deduction rules, unknown states, competing-request capacity,
+temporal/provenance contracts and independent acceptance IDs. The plan records
+module dependencies, input/output grains, work packages, proposed CLI paths,
+verification and access boundaries. Proposed commands are explicitly unimplemented.
+The existing extension contract remains governing; AC-012 still has design-level
+status. Documentation work changes no runtime, grants, sources or schedules.
+
+**Exact next task for this feature:** review the proposed scope and WP-01
+decisions before accepting WP-02 fixture/contract implementation. The user asked
+for documents only; do not start a live adapter or migration from this checkpoint.
+Macro analytics automation remains a separate product priority. Josh subsequently
+requested committing/pushing these documents. Documentation branch is
+`docs/securities-finance-spec-001`, from merged main `9538f89` (PR #15); consult
+Git for the final commit. The earlier merged feature branch is not reused.
+
+**Historical completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
 foundation and adding the three browser views. Current branch remains
 `feat/macro-relationship-analytics`, from main `9548eef`. Foundation commit
 `bd607df` is pushed; [PR #15](https://github.com/thatquantguy44/MarketAtlas/pull/15)

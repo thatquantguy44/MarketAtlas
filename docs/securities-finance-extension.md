@@ -4,6 +4,13 @@ Status: design contract for a future synthetic demonstration. No restricted
 client, agreement, loan, or collateral data is implemented or authorized in
 the current MarketAtlas database.
 
+The dedicated feature package now lives in
+[`specs/001/spec.md`](../specs/001/spec.md) and
+[`specs/001/plan.md`](../specs/001/plan.md). Those draft documents expand the
+synthetic inventory/borrow workflows, acceptance criteria and implementation
+sequence. This document remains the governing integration/isolation boundary;
+the new package does not establish implementation or authorize restricted access.
+
 ## Boundary and reuse
 
 The extension reuses an existing public MarketAtlas **instrument** only by its
