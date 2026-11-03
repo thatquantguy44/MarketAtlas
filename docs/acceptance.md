@@ -101,3 +101,44 @@ null handling, pack identity, retained analytics across normal refreshes and
 authored-content rollback pass. This adds browser consumption of the independent
 research pack; it does not establish automatic research generation, predictive
 value or native Power BI execution. AC-009 remains partial.
+
+## Spec 001 / WP-02A foundation (2026-11-03)
+
+[WP-02A evidence](../reports/spec001-wp02a-validation.md) records typed
+envelope/quantity/reference validation and an isolated synthetic instrument
+catalog. The base fixture's hash and existing instrument meanings remain
+unchanged. Spec 001's independent SF-AC-003/004/015/017 have structural subcase
+evidence only; their full scenarios and every complete feature acceptance row
+remain pending. No JSON/CSV equivalence, cutoff selection, eligibility, optimizer,
+restricted database permission or report acceptance is claimed. MarketAtlas
+AC-012 remains passed at design scope; the foundation does not expand that status.
+
+## Spec 001 / WP-02B input fixtures and adapters (2026-11-03)
+
+[WP-02B evidence](../reports/spec001-wp02b-validation.md) records deterministic
+17-table/95-record input packs, strict JSON/CSV adapters into common normalized
+facts, TOML/settings and manifest/hash checks, one authoritative representation
+per dataset and record-level physical provenance. Gross/net source variants,
+unknown/zero quantities, versions, children and selected events remain explicit.
+The base public fixture remains unchanged. SF-AC-003/004/015/016/017 have additional
+structural/input-equivalence evidence only: active version selection, event
+application, balances, eligibility, optimization and downstream reports remain
+pending. No complete feature acceptance or expansion of parent AC-012's design
+status is claimed.
+
+## Spec 001 / WP-02C temporal selection and event plans (2026-11-03)
+
+[WP-02C evidence](../reports/spec001-wp02c-validation.md) records three independent
+cutoffs, half-open state/system intervals, conservative source-day predicates,
+supported version/correction selection, unavailable selected-parent propagation,
+FIFO uncertainty and JSON/CSV selection equivalence. Exact snapshot-version,
+stream/component and completeness declarations support immutable inclusion,
+replacement and reversal plans. Unknown boundaries, late unsupported effects and
+duplicate reversals block affected calculations; replays do not append effects.
+
+87 focused tests pass (32 new). Full standard-library and Dagster-enabled suites
+discover 235 tests: 221 passed/14 skips and 230 passed/five skips respectively.
+The base fixture is unchanged. SF-AC-003/004/016 gain partial selection/planning
+evidence; all complete feature rows remain pending. Effect arithmetic, capacity,
+freshness/eligibility, allocation, recall impact, publication recovery and reports
+remain later work. MarketAtlas AC-012 retains its design-only scope.

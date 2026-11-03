@@ -1,0 +1,136 @@
+# Spec 001 synthetic input settings, schema v1; consumed by WP-02B file APIs.
+# Objective/solver execution remains future WP-04 work.
+# Synthetic engineering defaults; coefficients are supplied, not fee-calculated.
+schema_version = 1
+classification = "synthetic"
+default_profile = "coverage_first"
+
+[inputs]
+record_formats = ["json", "csv"]
+manifest_format = "json"
+settings_format = "toml"
+source_shape = "versioned_snapshots_plus_selected_events"
+authoritative_representation = "one_per_logical_dataset"
+snapshot_event_boundary = "explicit_event_version_ids"
+
+[inputs.csv]
+encoding = "utf-8"
+delimiter = ","
+quotechar = '"'
+null_token = '\N'
+header_required = true
+
+[time]
+business_as_of = "2026-11-03T12:00:00Z"
+knowledge_cutoff = "2026-11-03T12:00:00Z"
+system_cutoff = "2026-11-03T12:00:00Z"
+date_only_policy = "preserve_interval_withhold_ambiguous_claims"
+ambiguous_consequential_fifo = "withhold_preserve_prior_pack"
+known_equal_timestamp_tie_break = "request_id"
+
+[freshness]
+reference_clock = "knowledge_cutoff"
+evidence_field = "source_confirmed_at"
+max_age_inclusive = true
+inventory_max_age_seconds = 300
+request_max_age_seconds = 300
+agreement_status_max_age_seconds = 86400
+
+[quantity.equity]
+convention_id = "equity-whole-v1"
+quantity_unit = "share"
+quantity_precision = 0
+minimum_allocation = "1"
+allocation_increment = "1"
+increment_origin = "minimum"
+minimum_scope = "proposal_edge"
+
+[rules]
+version = "core-operational-v1"
+required_checks = ["agreement_active", "party_account_permission", "instrument_compatible", "location_compatible", "settlement_ready", "source_fresh"]
+
+[[quantity.fixed_income]]
+source_instrument_id = "SF-BOND-A"
+convention_id = "bond-a-v1"
+quantity_unit = "nominal"
+quantity_currency = "USD"
+quantity_precision = 0
+minimum_allocation = "2000"
+allocation_increment = "1000"
+increment_origin = "minimum"
+minimum_scope = "proposal_edge"
+
+[[quantity.fixed_income]]
+source_instrument_id = "SF-BOND-B"
+convention_id = "bond-b-v1"
+quantity_unit = "nominal"
+quantity_currency = "USD"
+quantity_precision = 0
+minimum_allocation = "1500"
+allocation_increment = "1000"
+increment_origin = "minimum"
+minimum_scope = "proposal_edge"
+
+[solver]
+adapter = "scipy_highs_milp"
+dependency_extra = "optimization"
+total_time_limit_seconds = 60
+mip_rel_gap = "0"
+presolve = true
+near_integer_abs_tolerance = "0.0000001"
+continuous_objective_abs_tolerance = "0.00000001"
+max_scaled_integer_magnitude = 1000000000000
+require_all_stages_proven = true
+publication_policy = "proven_validated_only"
+
+[bounds]
+max_positions = 100
+max_requests = 20
+max_loans = 20
+max_events = 100
+max_explanation_hops = 6
+max_explanation_rows = 200
+
+[earnings]
+input_method = "supplied_net_benefit"
+currency = "USD"
+horizon_id = "demo-30d"
+horizon_start = "2026-11-03T12:00:00Z"
+horizon_end = "2026-12-03T12:00:00Z"
+objective_currency_precision = 6
+missing_coefficient_policy = "fail_requested_profile"
+
+[profiles.coverage_first]
+policy_id = "coverage-first-v1"
+ordered_terms = ["total_shortfall", "fifo_shortfall", "canonical_allocation"]
+
+[profiles.priority_service]
+policy_id = "synthetic-priority-service-v1"
+ordered_terms = ["priority_tier_shortfall", "total_shortfall", "fifo_shortfall", "canonical_allocation"]
+tier_order = [1, 2, 3]
+
+[profiles.balanced_fulfillment]
+policy_id = "coverage-then-request-balance-v1"
+ordered_terms = ["total_shortfall", "worst_shortfall_fraction", "fifo_shortfall", "canonical_allocation"]
+population = "positive_demand_with_provably_usable_eligible_supply"
+empty_population_metric = "unavailable"
+
+[profiles.net_earnings]
+policy_id = "supplied-earnings-first-v1"
+ordered_terms = ["negative_net_benefit", "total_shortfall", "fifo_shortfall", "canonical_allocation"]
+
+[profiles.preference_blend]
+policy_id = "synthetic-service-benefit-blend-v1"
+ordered_terms = ["weighted_score", "fifo_shortfall", "canonical_allocation"]
+
+[[profiles.preference_blend.weighted_terms]]
+term = "total_shortfall"
+weight = "0.75"
+scale = "group_total_positive_open_demand"
+
+[[profiles.preference_blend.weighted_terms]]
+term = "negative_net_benefit"
+weight = "0.25"
+scale_amount = "100.000000"
+scale_currency = "USD"
+horizon_id = "demo-30d"

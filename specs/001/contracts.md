@@ -1,0 +1,511 @@
+# 001 — File-first contracts and synthetic settings
+
+Status: WP-01 design baseline with WP-02A/B contract, fixture and file-adapter
+implementation, 2026-11-03. Cutoff selection, solver and securities-finance CLI
+remain pending. Implements the choices in the
+[decision register](plan.md#wp-01-decision-register), under the
+[specification](spec.md) and parent isolation contract. The values in
+[settings.example.toml](settings.example.toml) are explicit synthetic engineering
+defaults, not assumed real-source terms or measured performance.
+
+## Version and authority
+
+Use `schema_version = 1`. Reject unknown fields/versions and unsupported policy
+terms rather than guessing. Each logical dataset selects exactly one authoritative
+JSON or CSV representation; the other may be used for equivalence verification.
+Never concatenate equivalent representations as additional supply/demand/events.
+Relationships refer to stable keys, not row order, ticker or display label.
+
+Manifest fields: `schema_version`, `manifest_id`, `classification = synthetic`,
+`datasets`, `instrument_catalog`, `cutoffs`, `settings_file` and its SHA-256.
+Each dataset entry declares `dataset_id`, `record_type`, `schema_version`,
+`source_name`, `snapshot_id` or `event_stream_id`, `selected_format`, and files
+with relative `path`, `format` and `sha256`. JSON/CSV alternatives share a
+`logical_dataset_id` and explicit selected representation. Reject path traversal,
+duplicate selected representations, file hash mismatch and conflicting identities.
+All three cutoffs are explicit timezone-aware instants; never use the wall clock
+as an implicit replay cutoff.
+
+## Encoding and exact values
+
+- JSON: UTF-8, one array of objects per record table; reject duplicate object keys
+  and nonfinite numbers. Quantity, money, weights and scales are decimal strings,
+  not binary floating-point literals. JSON `null` means unavailable, never zero.
+- CSV: UTF-8, header required, comma delimiter, double-quote quoting with doubled
+  embedded quotes, LF output, and exact declared header names. Numeric fields
+  use the same decimal text as JSON. Reserved `\N` means null; an empty string
+  stays an empty string and is invalid for a required numeric/ID field. Literal
+  `\N` is unsupported in version 1 rather than ambiguously escaped. IDs and
+  quantities are not whitespace-trimmed or converted through spreadsheet types.
+- JSON booleans and CSV `true`/`false` normalize to booleans; dates use
+  `YYYY-MM-DD`. Timed values carry an offset or `Z`. Reject naïve timed values.
+- Repeated/nested facts use keyed child tables in both formats, including
+  `agreement_parties`, `agreement_instruments`, `agreement_locations` and
+  `snapshot_included_events`. No lists disappear into ad hoc CSV strings.
+- Normalize decimal text before semantic hashing without losing declared unit or
+  precision. Preserve original file hashes and source row references separately.
+  Equivalent accepted inputs have equal normalized facts; malformed, missing and
+  conflicting data must receive equivalent treatment through both adapters.
+
+## Common record envelope and grains
+
+Every versioned source record has `source_name`, `record_id`, `version_id`,
+`effective_from`, `effective_to`, `source_available_at`, `source_confirmed_at`,
+`recorded_from`, `recorded_to`, and `source_record_reference`. A null end is an
+open interval; selection uses half-open intervals. A missing required start or
+evidence time cannot be replaced with capture time. Field-specific applicability
+is explicit: immutable catalog rows use catalog provenance, and lifecycle events
+use `effective_at` instead of an effective interval.
+
+For each evidence time, represent `value`, `precision` (`instant` or `date`) and
+`source_timezone` as separate flattened columns, e.g. `source_available_at_value`.
+Date precision needs source calendar/timezone context to resolve a day interval.
+System record times are precise instants. Use child tables for relations below;
+child keys include parent `version_id`, preserving the parent's time/provenance.
+
+| Table / grain | Additional required fields |
+| --- | --- |
+| `instrument_catalog`: instrument | `instrument_node_id`, `canonical_key`, `node_type`, `asset_class`, `label`, `provenance_reference` |
+| `quantity_convention`: instrument/convention version | `convention_id`, `instrument_node_id`, `quantity_unit`, `quantity_currency`, `quantity_precision`, `minimum_allocation`, `allocation_increment`, `increment_origin`, `minimum_scope` |
+| `legal_entity`: party version | `party_id`, `label`, `role` |
+| `account`: account version | `account_id`, `owner_party_id`, `lender_party_id`, `custodian_party_id` |
+| `inventory_position`: authoritative position version | `position_id`, `account_id`, `instrument_node_id`, `location_id`, `convention_id`, `quantity`, `balance_basis`, `deduction_contract_id`, `settlement_state`, `ready_date`, `snapshot_id` |
+| `deduction_contract`: source balance definition | `deduction_contract_id`, `balance_basis`, `reservations_already_deducted`, `encumbrances_already_deducted`, `outstanding_loans_already_deducted`, `definition_reference` |
+| `capacity_component`: identified component version | `component_id`, `position_id`, `kind`, `quantity`, `status`, `overlap_group_id`, `snapshot_id` |
+| `borrow_request`: open request version | `request_id`, `borrower_party_id`, `instrument_node_id`, `location_id`, `convention_id`, `open_quantity`, `required_date`, `request_order_at`, `priority_tier`, `agreement_id`, `input_kind = open_request`, `snapshot_id` |
+| `agreement`: agreement version | `agreement_id`, `status`, `business_valid_from`, `business_valid_to`, `permission_reference`, `snapshot_id` |
+| `agreement_parties`: agreement-version/party/role | `agreement_version_id`, `party_id`, `role`, `permission_state` |
+| `agreement_instruments`: agreement-version/instrument | `agreement_version_id`, `instrument_node_id`, `permission_state` |
+| `agreement_locations`: agreement-version/location | `agreement_version_id`, `location_id`, `permission_state` |
+| `loan`: outstanding loan version | `loan_id`, `agreement_id`, `instrument_node_id`, `convention_id`, `outstanding_quantity`, `status`, `input_kind = outstanding_loan`, `snapshot_id` |
+| `loan_allocation`: owner-position/known-loan attribution version | `allocation_id`, `loan_id`, `position_id`, `outstanding_quantity`, `snapshot_id` |
+| `lifecycle_event`: identified event version | `event_id`, `event_stream_id`, `event_type`, `state_component`, `target_record_id`, `quantity`, `status`, `effective_at`, `supersedes_version_id`, `reverses_event_id` |
+| `snapshot_included_events`: snapshot/component/included-event version | `snapshot_id`, `state_component`, `target_record_id`, `source_name`, `event_id`, `event_version_id` |
+| `net_benefit`: proposed position/request pairing and horizon version | `coefficient_id`, `position_id`, `request_id`, `convention_id`, `net_benefit_amount`, `basis_quantity`, `currency`, `horizon_id`, `horizon_start`, `horizon_end`, `method_version`, `assumption_reference` |
+
+Record keys are `(source_name, record_type, record_id, version_id)`; referenced
+business IDs must be source-qualified or resolved through an explicit source
+mapping. Required columns/keys must be present even when their value is null to
+represent unavailable evidence. Nullability never makes a missing fact eligible.
+Baseline enums are `asset_class = equity|fixed_income`,
+`balance_basis = gross|net_available`, `permission_state = permitted|denied`
+(nullable for unknown), `settlement_state = settled|pending|failed`, agreement
+`status = active|inactive`, and `capacity_component.kind = reservation|encumbrance|on_loan`.
+Other lifecycle statuses/types are selected typed transitions, not arbitrary
+expressions. Quantity and unit fields on components/events inherit and validate
+the referenced position/loan convention, rather than defaulting a missing unit.
+
+Rules live in versioned TOML configuration, not executable expressions from data:
+`rules.version` plus the required typed check IDs below. The source tables supply
+facts and references; evaluations retain resolved rule version/parameters and each
+input reference. New vocabulary needs a schema/method version and tests.
+
+Foreign keys resolve within the selected retained input set. Missing permission
+facts are unknown, not implied permission; a missing optional custodian is null.
+`permission_state` is an explicit synthetic fact, not a legal-prose interpretation
+or a separate configurable block-list engine. Required-input absence remains
+inspectable. Unknown fields, malformed values, conflicting duplicate keys and
+broken identity/unit references are validation failures; selected valid facts may
+still produce an unknown rule outcome when required evidence is unavailable.
+
+## Canonical instrument fixture boundary
+
+The current base fixture contains `I-A`, `I-B`, `I-C` share instruments. WP-02A
+reuses their identity and meaning unchanged and declares isolated synthetic bond
+reference records `SF-BOND-A` and `SF-BOND-B` in this feature's catalog,
+using the existing `graph.fixture_loader.stable_id("node", source_id)` identity
+contract and `node_type = instrument`. Their `asset_class = fixed_income` is an
+explicit invented fixture fact. They are not asserted existing database rows.
+
+This catalog is separate from `fixtures.build_fixture()` and public publications;
+do not relabel existing shares, alter existing fixture outputs or write nodes to
+repair an unmapped input. The feature's generator creates declared known bond
+fixtures; the adapter only validates references. Later database integration must
+resolve actual existing canonical instrument rows under its separate gate.
+
+## Quantity and capacity semantics
+
+The example settings declare whole-share equities and two USD nominal bond
+conventions. Minimums apply to each proposed position/request allocation edge.
+For bonds, `increment_origin = minimum` permits zero or `minimum + k*increment`
+for nonnegative integer `k`. A different origin or aggregate-ticket minimum is an
+unsupported version-1 convention, not silently translated. Existing balances and
+partial returns need exact precision but need not meet a *new proposal's* minimum
+or increment; retain residual quantities and explain unallocatable remainders.
+
+For an edge with cap `U`, use exact scaled quantity units. With minimum `m` and
+increment `s`, a bounded formulation is `x = m*y + s*k`, binary `y`, integer
+`k >= 0`, and `k <= floor((U-m)/s)*y` when `U >= m`; otherwise force `x = 0`.
+Recheck all quantities against the original exact contracts after solving.
+Equities use ordinary nonnegative integer share quantities. No arbitrary rounding
+can turn an infeasible fractional solution into an accepted allocation.
+
+Gross normalization subtracts only disjoint authoritative components. Already-net
+normalization uses the declared net baseline and does not re-subtract included
+components. Alternative gross/net fixtures are representations of the same
+position, not additive holdings. Missing balance definitions or unresolved overlap
+withhold affected capacity. Never reconstruct an unsupported gross breakdown from
+net alone. Shared quantity headroom is scoped to the same instrument/unit/currency;
+version 1 does not couple independent groups through cross-security limits.
+
+## Time, events and freshness
+
+Normalize offset-aware instants to UTC, preserving precision/context. Date-only
+timestamp evidence denotes the supported source-day interval, not a known instant.
+Only establish inclusion or freshness if the entire supported interval satisfies
+the check. Otherwise retain unknown. Equal known request instants use request ID;
+overlapping uncertain times are not equal known instants. If order could affect
+allocation, withhold affected proposals and preserve the previous complete pack.
+Conservatively withhold unless order-independence is actually established.
+
+Use business-effective cutoff for state validity, knowledge cutoff for source
+availability, and system cutoff for record-version selection. The synthetic
+freshness reference is the **knowledge cutoff**, using `source_confirmed_at`;
+the maximum age comparison is inclusive. Require confirmation not later than the
+reference and age not greater than the dataset's configured maximum. Do not use
+file modification, ingestion or agreement document age as confirmation. Agreement
+business-validity dates are separate business-date fields, not date-only source
+timestamp substitutes. Retain all failed and missing/stale checks.
+
+For version 1, snapshot inclusion uses explicit event/version IDs, not inferred
+timestamp watermarks. Initial selected events are reservation create/release,
+recall issue/cancel, and return settle/reverse. Each identifies the affected
+reservation, recall or known loan allocation. Apply not-already-included supported
+effects once; reversals reference retained original effects. Ambiguous inclusion,
+late corrections or attribution cannot create capacity/known impact. Returns
+may reduce explicitly attributable outstanding allocations; free inventory still
+needs an authoritative balance/settlement fact. Selected event coverage is not a
+complete-history claim.
+
+## Rule and objective contracts
+
+Required typed checks: active agreement, party/account permission,
+instrument compatibility, location compatibility, settlement readiness and source
+freshness. Settlement uses explicit `settlement_state`/`ready_date` against the
+request's `required_date`, without inventing a market holiday calendar. Missing
+required facts yield unknown, known failures remain visible, and only all-pass
+required checks clear candidate supply. Quantity/headroom constraints remain hard.
+
+Example profiles in the settings are synthetic, separately versioned policies:
+coverage first; priority-tier service; coverage then worst-percentage balance;
+earnings first; and an explicit weighted preference blend. They share hard facts
+and constraints. Priority tiers 1/2/3 are invented fixture labels, with 1 first;
+they are not an inferred borrower ranking. FIFO is within declared remaining ties.
+Alternative orders/weights require a new resolved policy identity, never a silent
+change to the selected default.
+
+For balance, use positive-demand requests with provably positive feasible supply
+under hard rules/quantity constraints in the security/unit group. Minimize `z`
+subject to `u[j] <= z*d[j]`. Preserve every excluded request's shortfall/reason.
+Empty populations have an unavailable metric. This single stage does not promise
+recursive fairness or exact pro rata under incompatible constraints.
+
+## Supplied net-benefit coefficients
+
+The first earnings profile **consumes supplied modeled net-benefit coefficients**;
+it does not compute fees, rates, rebates, valuations, FX or duration effects.
+For each potentially allocatable position/request pairing, provide a finite signed
+decimal `net_benefit_amount` per positive `basis_quantity`, matching that pairing's
+quantity convention, plus currency, a common declared horizon, method version and
+assumption/source references. The amount is already net of its declared modeled
+costs for that horizon. Do not charge those costs again or multiply by duration a
+second time. Expected benefit is `x * net_benefit_amount / basis_quantity`.
+
+The initial examples use USD and one common synthetic 30-day horizon. Reject
+mixed currencies/horizons or missing coefficients for a requested earnings/blend
+profile; do not drop inconvenient candidate edges or invent zero benefits. Negative
+coefficients are valid modeled losses. Coverage-only profiles do not require money
+inputs. Preference points never substitute for money, and provided figures never
+become claims of realized earnings.
+
+Represent per-unit coefficients on the declared micro-currency objective scale;
+reject nonrepresentable coefficients rather than silently rounding. Store the
+original amount/basis and exact scaled conversion. A future fee calculator needs
+its own method/input contract and acceptance evidence; it is outside WP-04.
+
+## Numerical, publication and replay contract
+
+The optional optimizer uses SciPy/HiGHS MILP with sequential solves and explicit
+earlier-objective locks. Select a Python-compatible exact package/wheel lock in
+WP-04; preserve SciPy/backend build identity and settings with validation evidence.
+Contracts/fixtures/validation remain standard-library usable. The example's
+60-second total optimization budget is shared across groups, objectives and final
+ties; it is a configurable cap, not a promise the workload finishes in 60 seconds.
+No silent greedy fallback or partial/provisional report publication is allowed.
+
+Use zero requested relative MIP gap for required optimum stages. Recompute integer
+objective values and constraint checks exactly; verify finite bounds/gaps consistent
+with the required optimum, not just a success flag. Numeric-range and near-integer
+checks may canonicalize floating representation noise only if every original exact
+constraint still passes; they cannot repair a truly fractional solution. Continuous
+balance/scaled-score stages use the declared absolute proof tolerance. "Proven"
+means solver optimality/bounds satisfying this recorded numerical policy plus
+independent exact allocation validation, not a formal exact-arithmetic certificate.
+
+Publish only after every configured stage and canonical tie-break passes. Failures,
+ambiguous consequential FIFO order and unfinished solves retain diagnostics and
+the prior complete pack; a failed first run has no complete pack to serve.
+Canonical allocation ties lexicographically minimize edge quantities by
+`(position_id, request_id)` after locking earlier objectives. IDs use ordinal
+string ordering, not locale-dependent sorting.
+
+Separate identities: raw source hashes/provenance identify the physical input;
+normalized semantic hashes and resolved schema/settings/cutoffs/method/code identify
+business results. Runtime, invocation ID and operational solver traces belong to
+the run envelope, outside the deterministic business digest. Hash and validate
+every physical artifact independently. JSON/CSV equivalents may have different
+raw manifest/artifact identities while producing the same business identity.
+
+## Requirement trace and WP-02 entry
+
+| Contract area | Requirement / future acceptance evidence |
+| --- | --- |
+| Envelopes, grains, encodings and identity | SF-FR-001/002/003/014; SF-AC-003/004/016 |
+| Unit conventions, capacity and boundaries | SF-FR-004/006/007; SF-AC-001/002/015 |
+| Time, events, required checks and freshness | SF-FR-003/005/008; SF-AC-004/005/006 |
+| Profiles, coefficients and proof | SF-FR-006/010/013/015; SF-AC-013/014/017 |
+| Reports, replay and isolated delivery | SF-FR-009/010/011; SF-AC-007/008/009/012 |
+| Restricted persistence and collateral | SF-FR-011/012; SF-AC-010/011 remain separate gates |
+
+WP-01 is complete at design scope with these explicit defaults. WP-02 implements
+the contracts, both fixture encodings, reference catalog and cutoff selection;
+WP-03 implements eligibility/balances, WP-04 the optimizer and profiles, and WP-05
+recall calculations. No implementation acceptance row is passed by this document.
+
+## Implemented WP-02A API
+
+[contracts.py](../../src/market_atlas/securities_finance/contracts.py) provides
+immutable `TimestampEvidence`, `RecordKey`, `RecordEnvelope`, `InstrumentReference`,
+`QuantityValue` and `QuantityConvention` models, `validate_unique_envelopes` and
+`ContractError` with inspectable `code`/`field` attributes.
+[catalog.py](../../src/market_atlas/securities_finance/catalog.py) provides
+`ReferenceCatalog` and `build_reference_catalog()`. Structural validity does not
+establish eligibility, available capacity or executable allocation.
+
+The API accepts normalized typed fields. `from_mapping()` on envelope, reference,
+quantity and convention models rejects missing required or unknown constructor
+fields, including attempts to provide computed values. These WP-02A constructors
+do not decode file columns or recursively construct nested typed objects. The
+WP-02B file APIs below decode JSON/CSV/TOML and construct normalized payloads;
+the WP-02C selection API below selects supported active versions.
+
+Quantities are plain nonnegative decimal text, at most 128 characters, with a
+declared precision from 0 through 18 (shares require 0). `units` is an exact scaled
+integer, or `None` for unavailable. Numeric literals/exponents/nonfinite values
+and unrepresentable fractions fail; equivalent decimal strings normalize without
+ambient Decimal rounding. Allocation-mode checks apply minimum/increment rules;
+balance-mode checks allow exact residuals. Instrument, convention, unit, currency
+and precision must all agree through the catalog.
+
+Timed evidence uses offset-aware `YYYY-MM-DDTHH:MM:SS[.ffffff]` with `Z` or an
+`HH:MM` offset; unsupported precision, leap seconds and out-of-range UTC conversion
+fail rather than being rounded. `as_utc()` returns a normalized instant, or `None`
+for date-only evidence; source text/precision remain retained. Date-only evidence
+may lack timezone context, which remains absent for later uncertainty handling.
+The envelope validates known precise intervals and system record times but does
+not select active versions or establish date-only ordering/cutoff inclusion.
+
+The WP-02A reference helper uses documented fixture constants; the WP-02B writer
+below consumes TOML and binds conventions from its settings. The equity setting
+is a template bound to IDs
+`equity-whole-v1:I-A`, `equity-whole-v1:I-B`, `equity-whole-v1:I-C`; bond convention
+IDs are `bond-a-v1` and `bond-b-v1`. The catalog contains immutable typed tuples,
+never creates a reference on lookup failure and performs no database lookup/write.
+
+```python
+from market_atlas.securities_finance.catalog import build_reference_catalog
+from market_atlas.securities_finance.contracts import QuantityValue
+
+catalog = build_reference_catalog()
+bond = catalog.convention("bond-b-v1")
+units = catalog.validate_quantity(
+    bond.instrument_node_id,
+    bond.convention_id,
+    QuantityValue("2500", "nominal", "USD", 0),
+    for_allocation=True,
+)
+assert units == 2500  # Valid quantity only; no allocation has been generated.
+```
+
+WP-02A evidence and reproducible checks:
+[validation report](../../reports/spec001-wp02a-validation.md). WP-02B's input-level
+equivalence is documented below; complete feature acceptance remains pending.
+
+## Implemented WP-02B file API
+
+[records.py](../../src/market_atlas/securities_finance/records.py) defines the 17
+version-1 table schemas and immutable `SourceRecord` values. Quantities are
+normalized exact decimal strings bound through the catalog; envelopes and
+request-order evidence use the WP-02A typed models. Payloads remain immutable
+scalar/evidence mappings. `columns(record_type)` gives the required flat fields
+for either encoding, including timestamp value/precision/timezone columns.
+
+[adapters.py](../../src/market_atlas/securities_finance/adapters.py) exposes
+`encode_table`, `decode_table`, `load_settings` and `read_input_pack`.
+[fixtures.py](../../src/market_atlas/securities_finance/fixtures.py) exposes
+`write_fixture_inputs`. The supported reader requires one dataset for each table
+(empty fact tables are explicit), two physical files per dataset (JSON and CSV),
+and exactly one `selected_format` per logical dataset. A manifest's
+`instrument_catalog` names the catalog dataset ID; `settings_file` contains
+`path`/`sha256`, and each data file contains `path`/`format`/`sha256`.
+
+The reader checks hashes, strict columns/scalars, source/version keys, retained
+foreign keys, instrument/quantity bindings, selected event transitions and
+inclusion references, settings/catalog consistency and workload limits. It does
+not evaluate permissions or choose active versions. Agreement child rows must
+resolve their parent version unambiguously within their declared source; event
+inclusion uses source, event ID and version together. Version-dependent reference
+metadata that cannot be resolved structurally is rejected rather than guessed.
+
+Both representations are validated and compared as canonical facts, but only the
+selected records enter `InputPack.tables` and `InputPack.provenance`. Each
+`SourceLocation` retains logical dataset, table/source, selected file path/format,
+raw SHA-256 and one-based **logical record ordinal**, not a physical CSV line.
+`InputPack.manifest_id` covers physical inputs and authority selection;
+`semantic_identity` covers normalized input facts, parsed settings and logical
+scope, excluding physical format/hashes/row order. This is an input identity, not
+an executed allocation/report result identity.
+
+Input files are limited to 8 MiB each and 10,000 rows per table. Configured logical
+position/request/loan/event limits apply to both representations before reference
+normalization. Required source tables use selected conventions and retain all
+supplied versions, including facts/events later than the declared cutoffs.
+**Do not sum these raw histories as current inventory.** WP-02C performs version
+and inclusion selection; WP-03 performs balance normalization and eligibility.
+Empty permission/coefficient fact tables remain empty, never invented permissions
+or zero benefits. Requested earnings-profile completeness is later WP-04 work.
+
+The writer validates both formats in a temporary directory before installing an
+immutable manifest-ID directory. A repeat build verifies/reuses that directory;
+failed staging preserves previous complete inputs and removes temporary files.
+Tampered existing outputs are rejected, not silently overwritten. No publication
+pointer, database object, live source or optional runtime dependency is involved.
+
+From the repository root, this command is runnable today:
+
+```sh
+PYTHONPATH=src python3 -S - <<'PY'
+from market_atlas.securities_finance.adapters import read_input_pack
+from market_atlas.securities_finance.fixtures import write_fixture_inputs
+
+path = write_fixture_inputs(
+    "data/generated/securities-finance-fixture/inputs",
+    settings_path="specs/001/settings.example.toml",
+    selected_format="json",  # Each table also has a verified CSV alternative.
+    balance_basis="gross",   # Or "net_available" for the equivalent-balance case.
+)
+pack = read_input_pack(path)
+assert len(pack.tables) == 17
+assert sum(len(rows) for rows in pack.tables.values()) == 95
+print(path)
+print(pack.semantic_identity)
+PY
+```
+
+Changing `selected_format` changes physical authority/provenance, not the facts.
+Changing `balance_basis` changes explicit source balances/deduction definitions;
+their eventual normalized-capacity reconciliation belongs to WP-03. TOML bond
+minimum/increment changes are consumed and validated, not merely copied.
+
+Evidence: [WP-02B validation report](../../reports/spec001-wp02b-validation.md).
+The WP-02C API below consumes these inputs. No securities-finance CLI or downstream
+solver/report acceptance is implied by these Python file APIs.
+
+## Implemented WP-02C selection API
+
+`selection.select_input_pack(pack, cutoffs=None)` returns an immutable `Selection`.
+By default it uses the three manifest cutoffs. An explicit `temporal.Cutoffs`
+override supports replay without rewriting retained inputs. Each cutoff must be an
+offset-aware instant; there is no wall-clock default. Effective and recorded
+intervals are half-open; availability is inclusive at the knowledge cutoff.
+`source_confirmed_at` is retained for WP-03 freshness, not substituted for source
+availability. Current-source reconstruction (earlier business time, later knowledge
+and system cutoffs) differs from an earlier-knowledge/system replay.
+
+The result contains:
+
+- `decisions`: every retained row, with `selected`, `excluded` or `unknown` status
+  and reason codes. Known cutoff failures and unknown checks are both retained.
+- `tables`: only selected temporal/reference facts. Overlapping active state
+  versions, uncertain competing versions and unavailable selected parents withhold
+  affected rows. Agreement child tables follow the exact selected parent version.
+  Retained-row existence never resolves an unavailable selected parent.
+- `request_order`: pairwise chronology within the same instrument/convention.
+  Relations are -1/0/1 or `None`. Zero means equal proven instants; the allocation
+  stage must use request ID for those ties. Overlapping dates remain `None` and
+  must never acquire an ID-based chronology. WP-04 must establish whether ambiguity
+  could affect allocations and preserve the previous complete pack when it could.
+- `event_plan`: assessments for every retained event, supported actions and
+  `blocked_targets`, keyed by `(source_name, state_component, target_record_id)`.
+  **Selected tables are baseline facts, not reconciled balances.** Consumers must
+  honor blocked targets and use only the plan's actions for event processing.
+- `semantic_identity`: deterministic `sf-selection-v1` identity over input
+  semantics, UTC cutoffs and decisions; physical manifest ID and immutable source
+  provenance remain separately available as `input_manifest_id` and `provenance`.
+
+`temporal.evidence_bounds`, `at_or_before`, `after` and `compare` preserve source-day
+intervals, including DST. Missing timezone, ambiguous/nonexistent local midnight,
+skipped days or unsupported date bounds remain unknown. No midnight is asserted
+as a date-only observation's known timestamp. There is no latest-ingest fallback.
+Visible event corrections use explicit, source/event-scoped supersession chains;
+future corrections cannot suppress an earlier supported version. Forks/cycles and
+unknown competing versions cannot establish a winner.
+
+New manifests add `event_boundaries`, a list with these exact fields:
+
+| Field | Meaning |
+| --- | --- |
+| `snapshot_id`, `source_name`, `event_stream_id` | Explicit snapshot/source/selected-event stream |
+| `state_component`, `target_record_id`, `target_version_id` | Exact affected state version; components are reservation, loan outstanding or recall instruction |
+| `snapshot_as_of` | Precise captured-state instant, within the target version's validity and not after the requested business cutoff |
+| `complete` | Boolean declaring whether the explicit inclusion list is complete for this target/component/stream at this snapshot |
+
+One declaration is permitted per snapshot/source/stream/component/target. Retained
+target/stream identity is checked on load. The fixture declares five boundaries at
+11:50 UTC, with two exact event-version receipts. Completeness concerns those
+declared components and event types, not all historical activity. A capture time
+without a complete explicit inclusion list cannot establish inclusion.
+
+Legacy WP-02B manifests without the optional field still load with their original
+input semantics. Selection blocks event reconciliation for affected scopes until
+supported boundaries are supplied; an absent list never means complete/empty.
+New boundaries participate in manifest and semantic identities.
+
+Exact included effects are `already_included` and have no action. A supported new
+effect strictly after the baseline becomes one `new_effect` action. A correction
+with an exact included ancestor becomes a `replacement` action carrying both the
+old and new records; consumers replace the old effect rather than adding the new
+quantity in full. Reversals retain their original-event reference and require a
+supported earlier effect with the same quantity. Multiple reversals of one effect
+are blocked. Partial reversals, changed effect target/type, missing quantities,
+incomplete boundaries, unproved lineage and late unincluded effects are withheld
+with reasons. An unreconciled correction blocks its earlier targets as well.
+
+The plan is an immutable set of effect instructions, not a mutation journal or a
+capacity calculation. Re-encoding/replaying returns the same identities/actions;
+it never appends another effect. Component arithmetic, gross/net deductions,
+settlement/free-capacity proof and freshness/eligibility remain WP-03; recall
+impact remains WP-05. The loader still rejects ambiguous retained reference/unit
+metadata (including multiple conflicting convention definitions); selection does
+not silently repair unsupported histories. No report is published by this API.
+
+```sh
+PYTHONPATH=src python3 -S - <<'PY'
+from market_atlas.securities_finance.adapters import read_input_pack
+from market_atlas.securities_finance.fixtures import write_fixture_inputs
+from market_atlas.securities_finance.selection import select_input_pack
+
+path = write_fixture_inputs(
+    "data/generated/securities-finance-fixture/inputs",
+    settings_path="specs/001/settings.example.toml",
+)
+selection = select_input_pack(read_input_pack(path))
+assert len(selection.tables["inventory_position"]) == 10
+assert not selection.event_plan.blocked_targets
+assert [a.after.payload["event_id"] for a in selection.event_plan.actions] == ["sf:event:recall"]
+print(selection.semantic_identity)
+PY
+```
+
+Evidence: [WP-02C validation report](../../reports/spec001-wp02c-validation.md).
+Next: WP-03 capacity normalization and typed eligibility checks.

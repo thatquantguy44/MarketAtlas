@@ -174,7 +174,7 @@ Read in order:
 13. [Contributor demo](docs/contributor-demo.md): exercised clean-room fixture and browser walkthrough.
 14. [Operations handoff](docs/operations.md): manual refresh and controlled recovery posture.
 15. [Data and license notice](docs/data-and-license-notice.md): code license versus source-data rights.
-16. [Securities-finance extension contract](docs/securities-finance-extension.md): future restricted-domain boundary.
+16. [Securities-finance extension contract](docs/securities-finance-extension.md): future restricted-domain boundary; dedicated [feature specification](specs/001/spec.md) and [implementation plan](specs/001/plan.md) cover the proposed synthetic inventory/borrow pilot.
 17. [Power BI source package](powerbi/README.md): pinned-snapshot semantic-model template and required in-product reconciliation.
 18. [Power BI data jobs](powerbi/guides/data-jobs.md): reproducible CSV packs, report-only internal exports, Power Query loading, and a synthetic GitHub artifact job.
 19. [Power BI report recipes](powerbi/guides/report-recipes.md): compelling report questions, model relationships, DAX, visual layouts, and reconciliation checks.

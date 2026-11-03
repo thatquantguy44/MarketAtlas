@@ -1,10 +1,215 @@
 # MarketAtlas — Handoff
 
-Updated: 2026-11-01. This is an early implementation handoff, not a completed pilot or production release.
+Updated: 2026-11-03. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Start here next session
 
-**Completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
+**Spec 001 / WP-02C checkpoint (2026-11-03): implemented and validated.**
+Current branch: `feat/securities-finance-wp02c`, from pushed WP-02B `7ace21f`.
+Runtime checkpoint: `feaffab` (local incremental commits; no push requested).
+See [validation evidence](../reports/spec001-wp02c-validation.md),
+[selection API/run instructions](../specs/001/contracts.md#implemented-wp-02c-selection-api)
+and [work packages](../specs/001/plan.md#ordered-work-packages-and-verification).
+
+`temporal.py`, `selection.py` and `events.py` implement independent business,
+knowledge and system cutoff selection, conservative source-day predicates,
+supported correction chains, selected-parent propagation, FIFO chronology evidence
+and immutable event reconciliation plans. All 95 retained rows keep decisions and
+source provenance; ten current positions are selected. New manifests bind five
+component/stream boundaries to exact snapshot target versions at 11:50 UTC, with
+complete explicit inclusion lists. Legacy packs still load but missing boundaries
+block affected event reconciliation. At noon, two effects are already included,
+four future events are excluded and only the recall has a new-effect action.
+At 12:30, five actions include three referenced reversals. Corrections replace
+included effects; unknown/late/duplicate-reversal evidence blocks affected scopes.
+
+87 focused tests pass (32 new). Full standard-library suite: 235 discovered,
+221 passed/14 expected skips; Dagster-enabled: 230 passed/five database skips.
+Both disable database opt-in. Changed Python lint/format checks pass. A standalone
+standard-library smoke generates/selects gross JSON/CSV and already-net inputs
+with equal gross selection identities and separate raw provenance; no optional
+runtime module is imported. Base fixture SHA-256 is unchanged:
+`15e24cebf895af4e58b1c5a4dfe5712ba28b473ca64ee6c4f4df2f5bac0877da`.
+Logs and `selection-summary.json` remain ignored under
+`data/generated/securities-finance-fixture/wp02c-validation/`; the report records
+the three new input IDs under the sibling `inputs/` directory.
+
+**Exact next task: WP-03**, capacity normalization and typed eligibility.
+Owner: implementation engineer, with Josh as review owner. Start from
+`select_input_pack`, consume selected facts and honor `event_plan.blocked_targets`.
+Selected baseline tables are not reconciled/eligible inventory: apply supported
+component effects once, normalize tagged gross/net balances without double
+deduction or assumed overlap, retain unknown versus zero, and evaluate the core
+typed checks plus dataset-specific freshness against knowledge cutoff. Preserve
+reason/input evidence and test both assets/encodings. Keep source conventions
+explicit; the loader still rejects unsupported ambiguous retained metadata.
+FIFO consequence/optimizer stays WP-04, recall impact WP-05, packaging/recovery
+and reports WP-06. No new dependency, CLI, database access, schedule, publication
+or complete feature acceptance is established. SF-AC-003/004/016 gain partial
+selection/planning evidence; parent AC-012 remains design-only.
+
+Ready-to-paste next prompt: “Implement Spec 001 WP-03 on a new branch from the
+WP-02C checkpoint: first a bounded capacity-normalization slice consuming the
+selected facts/event plan, then typed eligibility/freshness, with independent
+gross/net, missing/zero, overlap and both-asset evidence. Do not start the solver.”
+
+**Earlier WP-02B checkpoint (2026-11-03): implemented and validated.**
+Current branch: `feat/securities-finance-wp02b`, from pushed WP-02A `c2f40f8`.
+See [evidence](../reports/spec001-wp02b-validation.md),
+[file API/run instructions](../specs/001/contracts.md#implemented-wp-02b-file-api)
+and [work packages](../specs/001/plan.md#ordered-work-packages-and-verification).
+
+`records.py`, `adapters.py` and `fixtures.py` add 17 table schemas, immutable
+normalized business records, strict JSON/CSV codecs, TOML/settings and catalog
+checks, manifest/file hashes and a staged immutable input writer/reader. Both
+physical representations are verified and compared as normalized facts, but only
+one authority per logical dataset enters the result/provenance. Source locations
+retain selected file path/format/hash and one-based logical record ordinal.
+
+The fixture has 95 records: both assets/conventions, gross/net source alternatives,
+missing/zero balances, unknown permissions, quoted multiline text, precise/date-only
+evidence, retained position versions, known loans/allocations, seven events with
+explicit inclusion links, and supplied signed benefit coefficients. The parser
+retains every supplied version/event; it does not select by the declared cutoffs,
+apply returns/reservations or calculate available inventory/allocations.
+
+55 focused tests pass (22 prior plus 33 new). Full standard-library suite:
+203 discovered, 189 passed/14 expected skips; Dagster-enabled: 198 passed/five
+opt-in database skips. Both disable database opt-in. Changed Python lint/format
+checks pass. A standalone standard-library build/load creates three local packs,
+with equal gross JSON/CSV normalized identity and 95 provenance records each;
+no SciPy, psycopg or Dagster is imported. Base fixture SHA-256 remains
+`15e24cebf895af4e58b1c5a4dfe5712ba28b473ca64ee6c4f4df2f5bac0877da`.
+
+Ignored input directories are under `data/generated/securities-finance-fixture/inputs/`:
+JSON gross `eb05fd4224a0b6e389e37562a2466c2101890ae80928910f370325acfe16b4e1`,
+CSV gross `4189a3b7c18e125aae0e9d3567a0b3b6712e3f18a19025173d8bf89164835ca2`,
+and net `dc1a4b280ecc069794361a4965dcfb6455600a154d555fa986302c84045b3064`.
+The gross normalized input identity is
+`3e4d2185c823019c8a27955068aa941ed66a6659a3d8dd2125a634072f40c53f`.
+Logs and `input-summary.json` are under ignored `wp02b-validation/` alongside
+these inputs. Settings comments/physical hashes are separate from input semantics.
+
+WP-02B handed off WP-02C: supported version selection at business-effective,
+source-knowledge and system-record cutoffs, plus explicit snapshot/event inclusion
+accounting. Owner: implementation engineer, with Josh as review owner. Preserve
+uncertain time states and consequential FIFO ambiguity. B rejects ambiguous
+reference metadata rather than choosing a version; C must own any supported
+selection changes. Inventory normalization/eligibility remain WP-03, optimizer
+WP-04 and recall calculations WP-05. No new CLI, dependency, source/database
+access, public publication or schedule has been added. All complete feature
+acceptance rows remain pending; SF-AC-016 has normalized-input evidence only.
+
+**Earlier WP-02A checkpoint (2026-11-03): implemented and validated.**
+WP-02A branch: `feat/securities-finance-wp02a`, based on pushed
+WP-01 design commit `afce9b6`. See [evidence](../reports/spec001-wp02a-validation.md),
+[plan](../specs/001/plan.md#ordered-work-packages-and-verification) and
+[API documentation](../specs/001/contracts.md#implemented-wp-02a-api).
+
+The isolated `src/market_atlas/securities_finance/` package now provides frozen
+typed keys/envelopes/timestamp evidence, exact quantities/conventions, duplicate
+version checks, and an immutable synthetic reference catalog. Errors retain
+inspectable codes. Date-only evidence never becomes an invented instant. Units,
+currency, precision and instrument/convention binding are checked explicitly;
+unknown quantity remains distinct from zero. Bond proposal minimum/step checks
+are separate from validation of existing balances or partial returns.
+
+The catalog reuses the three core share UUIDs/labels and declares known synthetic
+`SF-BOND-A`/`SF-BOND-B` references only in the isolated feature catalog. Unknown
+references do not create nodes. The base fixture remains unchanged at SHA-256
+`15e24cebf895af4e58b1c5a4dfe5712ba28b473ca64ee6c4f4df2f5bac0877da`.
+
+Validation: 22 focused tests pass. Full standard-library suite discovers 170 tests,
+156 pass/14 expected skips; the Dagster-enabled suite has 165 pass/five database
+skips. Both force database opt-in off. Changed-file Ruff lint/format checks pass.
+A standalone `python3 -S` API smoke validates a valid bond amount and rejects an
+off-step proposal, without importing SciPy, Dagster or psycopg. Logs are ignored
+under `data/generated/securities-finance-fixture/wp02a-validation/`.
+
+WP-02A handed off WP-02B: deterministic business fixtures plus JSON/CSV adapters
+into these normalized types, preserving provenance and one authoritative input
+representation. Owner: implementation engineer, with Josh as review owner.
+The reference builder currently uses documented fixture constants;
+TOML decoding is not implemented. WP-02C adds active-version/cutoff and event
+inclusion selection. No eligibility, free-capacity calculation, solver, report,
+securities-finance CLI, source access, migration or new dependency is implemented.
+SF-AC-003/004/015/017 have structural subcase evidence only; all complete feature
+acceptance rows remain pending. Keep WP-02B source/test slices bounded.
+
+**Earlier WP-01 checkpoint (2026-11-03): design baseline.**
+Josh finished the choice-by-choice review for the synthetic lender/agent pilot.
+The [specification](../specs/001/spec.md) and [plan](../specs/001/plan.md) now link
+[version-1 file-first contracts](../specs/001/contracts.md) and
+[parseable example settings](../specs/001/settings.example.toml). User-selected
+policies are distinguished from explicit synthetic engineering defaults.
+
+Confirmed choices:
+
+- Lender/agent inventory coverage; default maximize coverage per security, then
+  proven FIFO request priority, then canonical allocation ties. Greedy FIFO is a
+  comparison baseline, not a substitute optimizer.
+- Equities and fixed income from the start. Equities use integer shares and a
+  one-share increment. Each bond declares its own nominal currency, precision,
+  minimum nonzero allocation and increment; fixtures test different conventions.
+- Both gross and already-net balances, explicitly tagged; one normalized capacity,
+  retained included-deduction definitions and no double deduction.
+- JSON and CSV record inputs immediately, JSON manifests and TOML settings; both
+  adapters share a normalized contract and equivalence tests. Select one physical
+  representation per logical dataset; equivalent files never double supply/events.
+- Versioned snapshots plus selected lifecycle events with explicit inclusion
+  boundaries, corrections/reversals and once-only effects. This is not complete
+  event history; returns do not automatically create settled free inventory.
+- Core operational checks with configurable versions/parameters; separate
+  allow/block lists deferred. Dataset-specific freshness limits for inventory,
+  requests and agreement-status confirmation, separate from agreement validity.
+- Precise timezone-aware timestamps normalized to UTC plus retained date-only
+  precision. Withhold ambiguous cutoff/freshness/FIFO claims. Consequential unknown
+  FIFO order withholds affected proposals and retains the prior complete pack;
+  equal known timestamps may still use ID ties.
+- Optional SciPy/HiGHS MILP with sequential objective solves/locks. Publish only
+  proven, independently validated results; unfinished solves retain diagnostics
+  and the prior pack. Both ordered and weighted stages are supported with explicit
+  scales; hard constraints are never tradeable.
+- A separate balance profile minimizes worst shortfall percentage across positive
+  requests in one security/unit group with provably usable eligible supply. Other
+  requests retain shortfalls/reasons; empty populations have no balance score.
+- **Supplied net-benefit coefficients** for potentially allocatable position/request
+  pairs, with quantity basis, currency, common horizon and method/assumption
+  provenance. No first-slice fee/rate/valuation/FX/duration calculator. Missing
+  economic inputs fail the requested economic profile, not a non-economic profile.
+
+Technical defaults are now explicit in the contracts/example TOML, including
+CSV/null/child-table rules, exact units and bond step origins, event IDs, evidence
+clocks, synthetic freshness ages, a shared 60-second optimization budget, numerical
+proof/validation policy and deterministic business-versus-run identities. These
+are synthetic settings, not real-source policy or measured performance claims.
+Select/pin a compatible SciPy distribution/backend build during WP-04.
+
+The base fixture currently has share instruments only. WP-02 must declare known
+invented bond references in a separate feature catalog using the existing ID/type
+contract. Keep base fixture identities, meanings, outputs and public publications
+unchanged; do not claim these extra catalog entries are existing database rows.
+The [parent extension contract](securities-finance-extension.md) clarifies this
+file-first boundary. Unmapped inputs never trigger public node creation.
+
+The design baseline split WP-02 into A (typed contracts/reference catalog), B
+(business fixtures/adapters) and C (three-cutoff/event selection). The current
+WP-02A checkpoint above supersedes the earlier next-task instruction.
+
+WP-01 closes design only. SF-AC-001 through SF-AC-017 remain pending implementation;
+MarketAtlas AC-012 remains design-level evidence. No solver package is installed,
+no proposed securities-finance CLI exists. WP-01 changed no runtime, grants,
+sources or schedules; WP-02A adds only the isolated foundation above. Restricted persistence and collateral retain separate gates.
+The earlier documentation branch is `docs/securities-finance-spec-001`; consult
+Git for commit/push status. Macro automation remains a separate priority.
+
+WP-01 documentation validation passed: local links/anchors, Markdown fences,
+requirement/decision/work-package IDs, TOML syntax/default consistency and
+independent worked-example arithmetic for coverage, balance, bond minimums/steps
+and supplied benefits. No runtime regression suite or optimizer execution is
+claimed; this change edits documentation/design settings only.
+
+**Historical completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
 foundation and adding the three browser views. Current branch remains
 `feat/macro-relationship-analytics`, from main `9548eef`. Foundation commit
 `bd607df` is pushed; [PR #15](https://github.com/thatquantguy44/MarketAtlas/pull/15)

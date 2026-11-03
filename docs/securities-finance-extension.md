@@ -4,6 +4,13 @@ Status: design contract for a future synthetic demonstration. No restricted
 client, agreement, loan, or collateral data is implemented or authorized in
 the current MarketAtlas database.
 
+The dedicated feature package now lives in
+[`specs/001/spec.md`](../specs/001/spec.md) and
+[`specs/001/plan.md`](../specs/001/plan.md). Those draft documents expand the
+synthetic inventory/borrow workflows, acceptance criteria and implementation
+sequence. This document remains the governing integration/isolation boundary;
+the new package does not establish implementation or authorize restricted access.
+
 ## Boundary and reuse
 
 The extension reuses an existing public MarketAtlas **instrument** only by its
@@ -76,3 +83,12 @@ evaluation, an `unknown` case, a rejected cross-boundary browser/report query,
 and that public MarketAtlas report outputs are unchanged. This design satisfies
 the extension-design portion of AC-012; implementing a restricted deployment
 requires a separately approved task and security review.
+
+Spec 001 also includes fixed-income fixtures. For its file-first demonstration,
+an isolated, versioned synthetic reference catalog may declare invented bond
+instruments using the existing canonical ID/type contract alongside reused share
+IDs. These are declared fixture records, not assertions that database rows already
+exist or permission to create public nodes for unmapped inputs. Keep the base
+fixture/public outputs unchanged. Database integration still requires actual
+canonical instrument resolution and the separate access/deployment gate. See the
+[file-first contracts](../specs/001/contracts.md#canonical-instrument-fixture-boundary).
