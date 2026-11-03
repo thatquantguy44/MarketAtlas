@@ -535,6 +535,31 @@ def write_fixture_inputs(
         "classification": "synthetic",
         "datasets": datasets,
         "instrument_catalog": "sf:instrument_catalog:v1",
+        "event_boundaries": [
+            {
+                "snapshot_id": SNAPSHOT,
+                "source_name": SOURCE,
+                "event_stream_id": EVENT_STREAM,
+                "state_component": component,
+                "target_record_id": row.envelope.key.record_id,
+                "target_version_id": row.envelope.key.version_id,
+                "snapshot_as_of": (
+                    TimestampEvidence(
+                        settings["time"]["business_as_of"], "instant"
+                    ).as_utc()
+                    - timedelta(minutes=10)
+                )
+                .isoformat()
+                .replace("+00:00", "Z"),
+                "complete": True,
+            }
+            for component, table in (
+                ("reservation", "capacity_component"),
+                ("recall_instruction", "loan"),
+                ("loan_outstanding", "loan_allocation"),
+            )
+            for row in tables[table]
+        ],
         "cutoffs": {
             name: settings["time"][name]
             for name in ("business_as_of", "knowledge_cutoff", "system_cutoff")

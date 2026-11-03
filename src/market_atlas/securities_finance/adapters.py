@@ -22,6 +22,7 @@ from market_atlas.securities_finance.contracts import (
     _scaled_quantity,
     _text,
 )
+from market_atlas.securities_finance.events import validate_event_boundaries
 from market_atlas.securities_finance.records import (
     SCHEMAS,
     Scalar,
@@ -681,6 +682,7 @@ def read_input_pack(directory: str | Path) -> InputPack:
     manifest = _keys(
         _json(manifest_bytes),
         "schema_version manifest_id classification datasets instrument_catalog cutoffs settings_file",
+        "event_boundaries",
     )
     _require(
         type(manifest["schema_version"]) is int and manifest["schema_version"] == 1,
@@ -866,6 +868,11 @@ def read_input_pack(directory: str | Path) -> InputPack:
             for name, entry in metadata.items()
         },
     }
+    if "event_boundaries" in manifest:
+        validate_event_boundaries(manifest["event_boundaries"], tables, metadata)
+        semantic["event_boundaries"] = sorted(
+            manifest["event_boundaries"], key=canonical_bytes
+        )
     return InputPack(
         manifest["manifest_id"],
         sha256(semantic),
