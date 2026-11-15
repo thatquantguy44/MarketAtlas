@@ -1,12 +1,14 @@
 # MarketAtlas — Handoff
 
-Updated: 2026-11-03. This is an early implementation handoff, not a completed pilot or production release.
+Updated: 2026-11-15. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Start here next session
 
-**Spec 001 / WP-02C checkpoint (2026-11-03): implemented and validated.**
-Current branch: `feat/securities-finance-wp02c`, from pushed WP-02B `7ace21f`.
-Runtime checkpoint: `feaffab` (local incremental commits; no push requested).
+**Spec 001 / WP-03 pickup (2026-11-15): branch created; implementation pending.**
+Current working branch: `feat/securities-finance-wp03`, created from merged
+`main` at `9e08161` (PR #16). WP-02C was implemented and validated on
+2026-11-03; its runtime checkpoint `feaffab` is part of that merge. No WP-03
+code or validation is claimed.
 See [validation evidence](../reports/spec001-wp02c-validation.md),
 [selection API/run instructions](../specs/001/contracts.md#implemented-wp-02c-selection-api)
 and [work packages](../specs/001/plan.md#ordered-work-packages-and-verification).
@@ -23,7 +25,8 @@ four future events are excluded and only the recall has a new-effect action.
 At 12:30, five actions include three referenced reversals. Corrections replace
 included effects; unknown/late/duplicate-reversal evidence blocks affected scopes.
 
-87 focused tests pass (32 new). Full standard-library suite: 235 discovered,
+WP-02C validation before the merge: 87 focused tests passed (32 new).
+Full standard-library suite: 235 discovered,
 221 passed/14 expected skips; Dagster-enabled: 230 passed/five database skips.
 Both disable database opt-in. Changed Python lint/format checks pass. A standalone
 standard-library smoke generates/selects gross JSON/CSV and already-net inputs
@@ -48,10 +51,10 @@ and reports WP-06. No new dependency, CLI, database access, schedule, publicatio
 or complete feature acceptance is established. SF-AC-003/004/016 gain partial
 selection/planning evidence; parent AC-012 remains design-only.
 
-Ready-to-paste next prompt: “Implement Spec 001 WP-03 on a new branch from the
-WP-02C checkpoint: first a bounded capacity-normalization slice consuming the
-selected facts/event plan, then typed eligibility/freshness, with independent
-gross/net, missing/zero, overlap and both-asset evidence. Do not start the solver.”
+Ready-to-paste next prompt: “On `feat/securities-finance-wp03`, implement Spec 001
+WP-03: first a bounded capacity-normalization slice consuming the selected
+facts/event plan, then typed eligibility/freshness, with independent gross/net,
+missing/zero, overlap and both-asset evidence. Do not start the solver.”
 
 **Earlier WP-02B checkpoint (2026-11-03): implemented and validated.**
 Current branch: `feat/securities-finance-wp02b`, from pushed WP-02A `c2f40f8`.
