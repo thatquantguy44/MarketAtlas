@@ -1,12 +1,14 @@
 # MarketAtlas — Handoff
 
-Updated: 2026-11-03. This is an early implementation handoff, not a completed pilot or production release.
+Updated: 2026-11-15. This is an early implementation handoff, not a completed pilot or production release.
 
 ## Start here next session
 
-**Spec 001 / WP-02C checkpoint (2026-11-03): implemented and validated.**
-Current branch: `feat/securities-finance-wp02c`, from pushed WP-02B `7ace21f`.
-Runtime checkpoint: `feaffab` (local incremental commits; no push requested).
+**Spec 001 / WP-03 pickup (2026-11-15): branch created; implementation pending.**
+WP-03 branch: `feat/securities-finance-wp03`, created from merged `main`
+at `9e08161` (PR #16). WP-02C was implemented and validated on
+2026-11-03; its runtime checkpoint `feaffab` is part of that merge. No WP-03
+code or validation is claimed.
 See [validation evidence](../reports/spec001-wp02c-validation.md),
 [selection API/run instructions](../specs/001/contracts.md#implemented-wp-02c-selection-api)
 and [work packages](../specs/001/plan.md#ordered-work-packages-and-verification).
@@ -23,7 +25,8 @@ four future events are excluded and only the recall has a new-effect action.
 At 12:30, five actions include three referenced reversals. Corrections replace
 included effects; unknown/late/duplicate-reversal evidence blocks affected scopes.
 
-87 focused tests pass (32 new). Full standard-library suite: 235 discovered,
+WP-02C validation before the merge: 87 focused tests passed (32 new).
+Full standard-library suite: 235 discovered,
 221 passed/14 expected skips; Dagster-enabled: 230 passed/five database skips.
 Both disable database opt-in. Changed Python lint/format checks pass. A standalone
 standard-library smoke generates/selects gross JSON/CSV and already-net inputs
@@ -48,13 +51,13 @@ and reports WP-06. No new dependency, CLI, database access, schedule, publicatio
 or complete feature acceptance is established. SF-AC-003/004/016 gain partial
 selection/planning evidence; parent AC-012 remains design-only.
 
-Ready-to-paste next prompt: “Implement Spec 001 WP-03 on a new branch from the
-WP-02C checkpoint: first a bounded capacity-normalization slice consuming the
-selected facts/event plan, then typed eligibility/freshness, with independent
-gross/net, missing/zero, overlap and both-asset evidence. Do not start the solver.”
+Ready-to-paste next prompt: “On `feat/securities-finance-wp03`, implement Spec 001
+WP-03: first a bounded capacity-normalization slice consuming the selected
+facts/event plan, then typed eligibility/freshness, with independent gross/net,
+missing/zero, overlap and both-asset evidence. Do not start the solver.”
 
 **Earlier WP-02B checkpoint (2026-11-03): implemented and validated.**
-Current branch: `feat/securities-finance-wp02b`, from pushed WP-02A `c2f40f8`.
+Branch at that checkpoint: `feat/securities-finance-wp02b`, from pushed WP-02A `c2f40f8`.
 See [evidence](../reports/spec001-wp02b-validation.md),
 [file API/run instructions](../specs/001/contracts.md#implemented-wp-02b-file-api)
 and [work packages](../specs/001/plan.md#ordered-work-packages-and-verification).
@@ -193,8 +196,8 @@ The [parent extension contract](securities-finance-extension.md) clarifies this
 file-first boundary. Unmapped inputs never trigger public node creation.
 
 The design baseline split WP-02 into A (typed contracts/reference catalog), B
-(business fixtures/adapters) and C (three-cutoff/event selection). The current
-WP-02A checkpoint above supersedes the earlier next-task instruction.
+(business fixtures/adapters) and C (three-cutoff/event selection). The later
+WP-02A checkpoint superseded that earlier next-task instruction.
 
 WP-01 closes design only. SF-AC-001 through SF-AC-017 remain pending implementation;
 MarketAtlas AC-012 remains design-level evidence. No solver package is installed,
@@ -210,8 +213,8 @@ and supplied benefits. No runtime regression suite or optimizer execution is
 claimed; this change edits documentation/design settings only.
 
 **Historical completed T-030 checkpoint (2026-11-01):** Josh requested shipping the analytics
-foundation and adding the three browser views. Current branch remains
-`feat/macro-relationship-analytics`, from main `9548eef`. Foundation commit
+foundation and adding the three browser views. The branch at that checkpoint
+was `feat/macro-relationship-analytics`, from main `9548eef`. Foundation commit
 `bd607df` is pushed; [PR #15](https://github.com/thatquantguy44/MarketAtlas/pull/15)
 contains the foundation and separate browser change. Check actual GitHub state
 for the final head/CI; no merge was requested. Both foundation workflows passed.
@@ -257,8 +260,8 @@ or upstream API ingestion was added. T-015/AC-009 remains open without Power BI
 access; do not repeatedly request it.
 
 **Historical completed T-028/T-029 checkpoint (2026-10-31):** Josh requested comparable
-macro series followed by analytical relationships on a new branch. Current branch
-is `feat/macro-relationship-analytics`, from merged main `9548eef` (MarketAtlas
+macro series followed by analytical relationships on a new branch. The branch
+at that checkpoint was `feat/macro-relationship-analytics`, from merged main `9548eef` (MarketAtlas
 #14). EcoMedallion #95 is also merged. The new branch is local; no commit, push or
 new PR was requested or created in this session. Review actual Git state before
 shipping. Source repair is complete at its prior bounded scope; do not repeat it.

@@ -1,8 +1,9 @@
 # 001 — File-first contracts and synthetic settings
 
-Status: WP-01 design baseline with WP-02A/B contract, fixture and file-adapter
-implementation, 2026-11-03. Cutoff selection, solver and securities-finance CLI
-remain pending. Implements the choices in the
+Status: WP-01 design baseline and WP-02A/B/C contracts, fixtures, file adapters,
+cutoff selection and event reconciliation implemented and validated as of
+2026-11-03. WP-03 capacity/eligibility, the WP-04 solver and the
+securities-finance CLI remain pending. Implements the choices in the
 [decision register](plan.md#wp-01-decision-register), under the
 [specification](spec.md) and parent isolation contract. The values in
 [settings.example.toml](settings.example.toml) are explicit synthetic engineering
